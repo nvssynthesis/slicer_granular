@@ -93,9 +93,8 @@ private:
 	float _skewRand = 0.f;
 	float _panRand = 0.f;
 	
-//	nvs::gen::peek<1, float, vecReal> _peek;
-	vecReal const *_waveVec;
-//	std::span<float, std::dynamic_extent> _waveSpan;
+//	vecReal const *_waveVec;
+	std::span<float> const *_waveSpan;
 	
 	int grainId;
 	// these pointers are set by containing granular synth
@@ -104,17 +103,14 @@ private:
 	
 	occasionalPrinter<float, std::string> printer;
 public:
-	explicit genGrain1(vecReal const *waveVec, numberGenerator<float> *const ng, size_t *const numGrains = nullptr, int newId = -1)
+	explicit genGrain1(std::span<float> const *waveSpan, numberGenerator<float> *const ng, size_t *const numGrains = nullptr, int newId = -1)
 	:
-	_waveVec(waveVec),
+	_waveSpan(waveSpan),
 	grainId(newId),
 	_numGrains_ptr(numGrains),
 	_ng_ptr(ng),
 	printer(800)
 	{
-	}
-	void replaceBuffer(vecReal const *waveVec){
-		_waveVec = waveVec;
 	}
 	void setId(int newId){
 		grainId = newId;
@@ -184,7 +180,7 @@ public:
 		
 		// data race READ
 		float sampleIndex = accumVal + latch_offset_result;
-		float sample = nvs::gen::peekBuff<float>(_waveVec->data(), static_cast<size_t>(sampleIndex), _waveVec->size()); 	//_peek(sampleIndexer)[0];
+		float sample = nvs::gen::peekBuff<float>(_waveSpan->data(), static_cast<size_t>(sampleIndex), _waveSpan->size()); 	//_peek(sampleIndexer)[0];
 		
 		float windowIdx = (latch_slope_result * accumVal);
 
@@ -212,8 +208,8 @@ public:
 struct genGranPoly1 {
 private:
 	float const &_sampleRate;				// dependent on owning instantiator, subject to change value from above
-	vecReal const *_waveform { nullptr };	// dependent on owning instantiator, subject to change address from above
-	size_t numGrains { 16 };
+	std::span<float> const *_wavespan { nullptr };	// dependent on owning instantiator, subject to change address from above
+	size_t _numGrains { 16 };
 	std::vector<genGrain1> _grains;
 	gen::phasor _phasorInternalTrig;
 	nvs::gen::history<float> _slopeHisto;
@@ -228,21 +224,18 @@ private:
 	
 	numberGenerator<float> _ng;
 public:
-	explicit genGranPoly1(float const &sampleRate, vecReal const *waveform = nullptr, size_t nGrains = 16)
+	explicit genGranPoly1(float const &sampleRate, std::span<float> const *wavespan = nullptr, size_t nGrains = 16)
 	:
 	_sampleRate(sampleRate),
-	_waveform(waveform),
-	numGrains(nGrains),
-	_grains(numGrains, genGrain1(_waveform, &_ng, &numGrains) ),
+	_wavespan(wavespan),
+	_numGrains(nGrains),
+	_grains(_numGrains, genGrain1(wavespan, &_ng, &_numGrains) ),
 	_phasorInternalTrig(sampleRate),
 	_rateRandomLatch(1.f)
 	{
-		for (int i = 0; i < numGrains; ++i){
+		for (int i = 0; i < _numGrains; ++i){
 			_grains[i].setId(i);
 		}
-	}
-	void setWaveform(vecReal const *newWaveform){
-		_waveform = newWaveform;
 	}
 	void setRate(float newRate){
 		newRate = nvs::memoryless::clamp<float>(newRate, 0.f, _sampleRate/2.f);
@@ -260,7 +253,7 @@ public:
 	}
 	void setPosition(float positionNormalized){
 		positionNormalized = nvs::memoryless::clamp<float>(positionNormalized, 0.f, 1.f);
-		auto pos = positionNormalized * static_cast<float>(_waveform->size());
+		auto pos = positionNormalized * static_cast<float>(_wavespan->size());
 		_offsetHisto(pos);
 		for (auto &g : _grains)
 			g.setOffset(_offsetHisto.val);
@@ -275,7 +268,7 @@ public:
 			g.setPan(pan);
 	}
 	void setPositionRandomness(float randomness){
-		randomness = randomness * static_cast<float>(_waveform->size());
+		randomness = randomness * static_cast<float>(_wavespan->size());
 		for (auto &g : _grains)
 			g.setOffsetRand(randomness);
 	}
@@ -305,21 +298,21 @@ public:
 			trig = 1.f;
 		}
 		
-		std::vector<genGrain1::outs> _outs(numGrains);
+		std::vector<genGrain1::outs> _outs(_numGrains);
 		_outs[0] = _grains[0](trig);
 		float audioOut = _outs[0].audio;
 		float audioOut_R = _outs[0].audio_R;
 		float voicesActive = _outs[0].busy;
 		
-		for (size_t i = 1; i < numGrains; ++i){
+		for (size_t i = 1; i < _numGrains; ++i){
 			float currentTrig = _outs[i-1].next;
 			_outs[i] = _grains[i](currentTrig);
 			audioOut += _outs[i].audio;
 			audioOut_R += _outs[i].audio_R;
 			voicesActive += _outs[i].busy;
 		}
-		float samp = audioOut / numGrains;
-		float samp_R = audioOut_R / numGrains;
+		float samp = audioOut / _numGrains;
+		float samp_R = audioOut_R / _numGrains;
 		output[0] = samp;
 		output[1] = samp_R;
 		return output;
