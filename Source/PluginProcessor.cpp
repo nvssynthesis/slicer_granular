@@ -235,7 +235,7 @@ void Slicer_granularAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
 		}
 	}
 	for (auto samp = 0; samp < buffer.getNumSamples(); ++samp){
-#if 0
+#if 1
 		std::array<float, 2> output = gen_granular(trigger);
 
 		trigger = 0.f;

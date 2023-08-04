@@ -67,6 +67,10 @@ private:
 	juce::AudioFormatManager formatManager;
 	
 	class AudioBuffersChannels{
+	public:
+		AudioBuffersChannels(){
+			updateStereoSpans();
+		}
 	private:
 		typedef std::array<std::vector<float>, 2> stereoVector_t;
 		typedef std::array<std::span<float>, 2> stereoSpan_t;

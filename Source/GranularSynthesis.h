@@ -224,7 +224,7 @@ private:
 	
 	numberGenerator<float> _ng;
 public:
-	explicit genGranPoly1(float const &sampleRate, std::span<float> const *wavespan = nullptr, size_t nGrains = 16)
+	explicit genGranPoly1(float const &sampleRate, std::span<float> const *wavespan, size_t nGrains = 16)
 	:
 	_sampleRate(sampleRate),
 	_wavespan(wavespan),
