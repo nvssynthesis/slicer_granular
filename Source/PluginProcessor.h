@@ -68,36 +68,43 @@ private:
 	
 	class AudioBuffersChannels{
 	private:
-		typedef std::array<std::vector<float>, 2> stereoVector;
-		typedef std::array<float *, 2> stereoVectorData;
+		typedef std::array<std::vector<float>, 2> stereoVector_t;
+		typedef std::array<std::span<float>, 2> stereoSpan_t;
 		
-		std::array<stereoVector, 2> buffers;
-		std::array<stereoVectorData, 2> dataPointers;
+		std::array<stereoVector_t, 2> stereoBuffers;
+		std::array<stereoSpan_t, 2> stereoSpans;
+		std::array<std::span<float> const*, 2> activeSpanPtrs;
 		
 		unsigned int activeBufferIdx { 0 };
 		inline void updateActiveBufferIndex(){
 			activeBufferIdx = !activeBufferIdx;
 			jassert((activeBufferIdx == 0) | (activeBufferIdx == 1));
 		}
-		inline void updateDataPointers(){
-			dataPointers[activeBufferIdx][0] = buffers[activeBufferIdx][0].data();
-			dataPointers[activeBufferIdx][1] = buffers[activeBufferIdx][1].data();
+		inline void updateStereoSpans(){
+			stereoSpans[activeBufferIdx][0] = std::span(stereoBuffers[activeBufferIdx][0]);
+			stereoSpans[activeBufferIdx][1] = std::span(stereoBuffers[activeBufferIdx][1]);
+			assert(stereoSpans[activeBufferIdx][0].data() == stereoBuffers[activeBufferIdx][0].data());
+			assert(stereoSpans[activeBufferIdx][1].data() == stereoBuffers[activeBufferIdx][1].data());
+			assert(stereoSpans[activeBufferIdx][0].size() == stereoBuffers[activeBufferIdx][0].size());
+			assert(stereoSpans[activeBufferIdx][1].size() == stereoBuffers[activeBufferIdx][1].size());
+			activeSpanPtrs[0] = &stereoSpans[activeBufferIdx][0];
+			activeSpanPtrs[1] = &stereoSpans[activeBufferIdx][1];
 		}
 	public:
 		void prepareForWrite(size_t length, size_t numChannels){
 			updateActiveBufferIndex();
-			numChannels = std::min(numChannels, buffers[activeBufferIdx].size());
+			numChannels = std::min(numChannels, stereoBuffers[activeBufferIdx].size());
 			for (int i = 0; i < numChannels; ++i){
-				buffers[activeBufferIdx][i].resize(length);
+				stereoBuffers[activeBufferIdx][i].resize(length);
 			}
-			updateDataPointers();
+			updateStereoSpans();
 		}
-		stereoVectorData &getActiveStereoDataPtrs(){
-			return dataPointers[activeBufferIdx];
+		std::array<std::span<float> const*, 2> getActiveStereoSpanPtr(){
+			return activeSpanPtrs;
 		}
-		stereoVector &getActiveStereoVector(){
-			return buffers[activeBufferIdx];
-		}
+//		stereoVector_t &getActiveStereoVector(){
+//			return stereoBuffers[activeBufferIdx];
+//		}
 	};
 	AudioBuffersChannels audioBuffersChannels;
 	

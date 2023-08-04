@@ -30,7 +30,7 @@ Slicer_granularAudioProcessor::Slicer_granularAudioProcessor()
 #endif
 apvts(*this, nullptr, "PARAMETERS", createParameterLayout())
 , ess_hold(ess_init)
-, gen_granular(lastSampleRate, &(audioBuffersChannels.getActiveStereoVector()[0]))
+, gen_granular(lastSampleRate, audioBuffersChannels.getActiveStereoSpanPtr()[0])
 , logFile("/Users/nicholassolem/development/slicer_granular/Builds/MacOSX/build/Debug/log.txt")
 , fileLogger(logFile, "hello")
 {
@@ -161,8 +161,13 @@ void Slicer_granularAudioProcessor::loadAudioFile(juce::File const f){
 	// feed into AudioBuffersChannels upcoming size. it should
 	audioBuffersChannels.prepareForWrite(newLength, reader->numChannels);
 	
-	float *const *destChannels = &(audioBuffersChannels.getActiveStereoDataPtrs()[0]);
-	reader->read(destChannels,	// float *const *destChannels
+	std::array<std::span<float> const *, 2> spanPtrs = audioBuffersChannels.getActiveStereoSpanPtr();
+	float *const channel0 = spanPtrs[0]->data();
+	float *const channel1 = spanPtrs[1]->data();
+	std::array<float *const, 2> chans {channel0, channel1};
+
+//	float *const *destChannels = &(audioBuffersChannels.getActiveStereoDataPtrs()[0]);
+	reader->read(&chans[0],	// float *const *destChannels
 				 reader->numChannels,		// int numDestChannels
 				 0,		// int64 startSampleInSource
 				 newLength);	// int numSamplesToRead
