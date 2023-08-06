@@ -13,7 +13,6 @@
 #include "nvs_libraries/include/nvs_gen.h"
 #include "/Users/nicholassolem/development/Xoshiro-cpp/XoshiroCpp.hpp"
 #include <span>
-#include "plotting.h"
 
 namespace nvs {
 namespace gran {
@@ -103,8 +102,6 @@ private:
 	numberGenerator<float> *const _ng_ptr;
 	
 	occasionalPrinter<float, std::string> printer;
-	nvs::plotter plotting;
-	std::vector<float> vecToPlot;
 public:
 	explicit genGrain1(std::span<float> const &waveSpan, numberGenerator<float> *const ng, size_t *const numGrains = nullptr, int newId = -1)
 	:
@@ -115,14 +112,8 @@ public:
 	printer(800)
 	{
 		printer(0.f, "hi");
-		vecToPlot.reserve(44100 * 2);
 	}
-	~genGrain1(){
-		if (grainId == 0){
-//			vecToPlot = {0.f, 0.5f, 1.f, 0.5f, 0.f, -0.5f, -1.f, -0.5f, 0.f};
-			plotting.plotVector(vecToPlot, "/Users/nicholassolem/development/slicer_granular/Builds/MacOSX/build/Debug/woah.svg", 1);
-		}
-	}
+
 	void setId(int newId){
 		grainId = newId;
 	}
@@ -196,11 +187,7 @@ public:
 
 		nvs::memoryless::clamp<float>(windowIdx, 0.f, 1.f);
 		float win = nvs::gen::triangle<float, false>(windowIdx, _skew);
-		if (grainId == 0){
-			if (vecToPlot.size() < (44100*6)){
-				vecToPlot.push_back(win);
-			}
-		}
+
 		win = nvs::gen::parzen(win);
 		sample *= win;
 		
@@ -239,8 +226,6 @@ private:
 	
 	numberGenerator<float> _ng;
 	
-	nvs::plotter plotting;
-	std::vector<float> vecToPlot;
 public:
 	explicit genGranPoly1(float const &sampleRate, std::span<float> const &wavespan, size_t nGrains = 16)
 	:
@@ -254,10 +239,6 @@ public:
 		for (int i = 0; i < _numGrains; ++i){
 			_grains[i].setId(i);
 		}
-		vecToPlot.reserve(44100 * 8);
-	}
-	~genGranPoly1(){
-		plotting.plotVector(vecToPlot, "/Users/nicholassolem/development/slicer_granular/Builds/MacOSX/build/Debug/poly");
 	}
 
 	void setDuration(float dur_ms){
@@ -296,10 +277,9 @@ public:
 		_rateHisto(newRate);
 	}
 	void setSpeedRandomness(float randomness){
-		float val = _ng();
-		val *= randomness;
-		val = std::exp2f(val);
-		_rateRandomness = val;
+		// because this value is added as multiplier of rate. we do not want rate to become 0, or it will freeze all grains.
+		randomness = nvs::memoryless::clamp_low(randomness, -0.99f);
+		_rateRandomness = randomness;
 	}
 	void setPanRandomness(float randomness){
 		for (auto &g : _grains)
@@ -309,13 +289,14 @@ public:
 		std::array<float, 2> output;
 		
 		float freqTmp = _rateHisto.val;
-		freqTmp += _rateRandomLatch( _rateRandomness, _triggerHisto.val );
+		float randFreq = _rateRandomLatch( _rateRandomness * _ng(), _triggerHisto.val );
+		randFreq *= freqTmp;
+		freqTmp += randFreq;
+		assert(freqTmp > 0.f);
 		
 		_phasorInternalTrig.setFrequency(freqTmp);
 		++_phasorInternalTrig;
-		
-		vecToPlot.push_back( _phasorInternalTrig.getPhase() );
-		
+				
 		float trig = _ramp2trig(_phasorInternalTrig.getPhase());
 		_triggerHisto(trig);
 
