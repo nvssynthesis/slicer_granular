@@ -11,7 +11,9 @@
 //==============================================================================
 
 Slicer_granularAudioProcessorEditor::Slicer_granularAudioProcessorEditor (Slicer_granularAudioProcessor& p)
-    : AudioProcessorEditor (&p), audioProcessor (p)
+    : AudioProcessorEditor (&p)
+, triggeringButton("hi")
+, audioProcessor (p)
 {
 	fileComp = std::make_unique<juce::FilenameComponent> ("fileComp",
 												juce::File(), 			 // current file
@@ -23,6 +25,10 @@ Slicer_granularAudioProcessorEditor::Slicer_granularAudioProcessorEditor (Slicer
 												 "Select file to open");  // text when nothing selected
 	addAndMakeVisible (fileComp.get());
 	fileComp->addListener (this);
+	
+	addAndMakeVisible(triggeringButton);
+	triggeringButton.onClick = [this, &p]{ updateToggleState(&triggeringButton, "Trigger", p.triggerValFromEditor);	};
+	triggeringButton.setClickingTogglesState(true);
 	
 	for (size_t i = 0; i < static_cast<size_t>(params_e::count); ++i){
 		params_e param = static_cast<params_e>(i);
@@ -58,7 +64,15 @@ Slicer_granularAudioProcessorEditor::~Slicer_granularAudioProcessorEditor()
 	for (auto &a : paramSliderAttachments)
 		a = nullptr;
 }
+//==============================================================================
+void Slicer_granularAudioProcessorEditor::updateToggleState (juce::Button* button, juce::String name, bool &valToAffect)
+{
+	bool state = button->getToggleState();
+	valToAffect = state;
+	juce::String stateString = state ? "ON" : "OFF";
 
+	juce::Logger::outputDebugString (name + " Button changed to " + stateString);
+}
 //==============================================================================
 void Slicer_granularAudioProcessorEditor::paint (juce::Graphics& g)
 {
@@ -94,11 +108,15 @@ void Slicer_granularAudioProcessorEditor::resized()
 {
 	std::cout << "resized\n";
 
+	
 	int fileCompLeftPad = 10;
 	int fileCompTopPad = 10;
 	int fileCompWidth = getWidth() - (fileCompLeftPad * 2);
 	int fileCompHeight = 20;
 	fileComp->setBounds    (fileCompLeftPad, fileCompTopPad, fileCompWidth, fileCompHeight);
+	
+	triggeringButton.setBounds(fileCompLeftPad, fileCompTopPad + fileCompHeight + fileCompTopPad, 25, 25);
+
 	
 	int const numParams = static_cast<size_t>(params_e::count);
 	

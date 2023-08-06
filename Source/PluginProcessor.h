@@ -62,53 +62,52 @@ public:
 	void writeToLog(std::string const s);
 	void loadAudioFile(juce::File const f);
 	
+	bool triggerValFromEditor {false};
+	
 private:
 	juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
 	juce::AudioFormatManager formatManager;
 	
 	class AudioBuffersChannels{
-	public:
-		AudioBuffersChannels(){
-			updateStereoSpans();
-		}
 	private:
 		typedef std::array<std::vector<float>, 2> stereoVector_t;
-		typedef std::array<std::span<float>, 2> stereoSpan_t;
 		
 		std::array<stereoVector_t, 2> stereoBuffers;
-		std::array<stereoSpan_t, 2> stereoSpans;
-		std::array<std::span<float> const*, 2> activeSpanPtrs;
+		std::span<float> activeSpan;
 		
 		unsigned int activeBufferIdx { 0 };
 		inline void updateActiveBufferIndex(){
 			activeBufferIdx = !activeBufferIdx;
 			jassert((activeBufferIdx == 0) | (activeBufferIdx == 1));
 		}
-		inline void updateStereoSpans(){
-			stereoSpans[activeBufferIdx][0] = std::span(stereoBuffers[activeBufferIdx][0]);
-			stereoSpans[activeBufferIdx][1] = std::span(stereoBuffers[activeBufferIdx][1]);
-			assert(stereoSpans[activeBufferIdx][0].data() == stereoBuffers[activeBufferIdx][0].data());
-			assert(stereoSpans[activeBufferIdx][1].data() == stereoBuffers[activeBufferIdx][1].data());
-			assert(stereoSpans[activeBufferIdx][0].size() == stereoBuffers[activeBufferIdx][0].size());
-			assert(stereoSpans[activeBufferIdx][1].size() == stereoBuffers[activeBufferIdx][1].size());
-			activeSpanPtrs[0] = &stereoSpans[activeBufferIdx][0];
-			activeSpanPtrs[1] = &stereoSpans[activeBufferIdx][1];
-		}
+
 	public:
-		void prepareForWrite(size_t length, size_t numChannels){
-			updateActiveBufferIndex();
-			numChannels = std::min(numChannels, stereoBuffers[activeBufferIdx].size());
+		AudioBuffersChannels(){
+			activeSpan = std::span<float>(stereoBuffers[activeBufferIdx][0]);
+		}
+		std::span<float> const &getActiveSpanRef(){
+			return activeSpan;
+		}
+		[[nodiscard]]
+		std::array<float *const, 2> prepareForWrite(size_t length, size_t numChannels){
+			auto inactiveBufferIdx = !activeBufferIdx;
+			
+			numChannels = std::min(numChannels, stereoBuffers[inactiveBufferIdx].size());
 			for (int i = 0; i < numChannels; ++i){
-				stereoBuffers[activeBufferIdx][i].resize(length);
+				stereoBuffers[inactiveBufferIdx][i].resize(length);
 			}
-			updateStereoSpans();
+			std::array<float *const, 2> ptrsToWriteTo = {
+				stereoBuffers[inactiveBufferIdx][0].data(),
+				stereoBuffers[inactiveBufferIdx][1].data()
+			};
+			return ptrsToWriteTo;
 		}
-		std::array<std::span<float> const*, 2> getActiveStereoSpanPtr(){
-			return activeSpanPtrs;
+
+		inline void updateActive(){
+			updateActiveBufferIndex();
+			activeSpan = std::span<float>(stereoBuffers[activeBufferIdx][0]);
 		}
-//		stereoVector_t &getActiveStereoVector(){
-//			return stereoBuffers[activeBufferIdx];
-//		}
+
 	};
 	AudioBuffersChannels audioBuffersChannels;
 	

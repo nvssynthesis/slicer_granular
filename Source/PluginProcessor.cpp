@@ -30,7 +30,7 @@ Slicer_granularAudioProcessor::Slicer_granularAudioProcessor()
 #endif
 apvts(*this, nullptr, "PARAMETERS", createParameterLayout())
 , ess_hold(ess_init)
-, gen_granular(lastSampleRate, audioBuffersChannels.getActiveStereoSpanPtr()[0])
+, gen_granular(lastSampleRate, audioBuffersChannels.getActiveSpanRef())
 , logFile("/Users/nicholassolem/development/slicer_granular/Builds/MacOSX/build/Debug/log.txt")
 , fileLogger(logFile, "hello")
 {
@@ -153,25 +153,17 @@ void Slicer_granularAudioProcessor::writeToLog(std::string const s){
 }
 void Slicer_granularAudioProcessor::loadAudioFile(juce::File const f){
 	juce::AudioFormatReader *reader = formatManager.createReaderFor(f);
-	int newLength = static_cast<int>(reader->lengthInSamples);
-//	audioBuffers[inactiveBufferIdx].setSize(reader->numChannels, newLength);
-//	reader->read(&(audioBuffers[inactiveBufferIdx]), 0, newLength, 0, true, true);
-	// read into vector instead?
-
-	// feed into AudioBuffersChannels upcoming size. it should
-	audioBuffersChannels.prepareForWrite(newLength, reader->numChannels);
 	
-	std::array<std::span<float> const *, 2> spanPtrs = audioBuffersChannels.getActiveStereoSpanPtr();
-	float *const channel0 = spanPtrs[0]->data();
-	float *const channel1 = spanPtrs[1]->data();
-	std::array<float *const, 2> chans {channel0, channel1};
-
-//	float *const *destChannels = &(audioBuffersChannels.getActiveStereoDataPtrs()[0]);
-	reader->read(&chans[0],	// float *const *destChannels
-				 reader->numChannels,		// int numDestChannels
+	int newLength = static_cast<int>(reader->lengthInSamples);
+	
+	std::array<float * const, 2> ptrsToWriteTo = audioBuffersChannels.prepareForWrite(newLength, reader->numChannels);
+	
+	reader->read(&ptrsToWriteTo[0],	// float *const *destChannels
+				 1, 	//reader->numChannels,		// int numDestChannels
 				 0,		// int64 startSampleInSource
 				 newLength);	// int numSamplesToRead
-
+	
+	audioBuffersChannels.updateActive();
 	delete reader;
 }
 
@@ -227,7 +219,7 @@ void Slicer_granularAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
 		lastPanRand = tmp;
 		gen_granular.setPanRandomness(lastPanRand);
 	}
-	float trigger = 0.f;
+	float trigger = static_cast<float>(triggerValFromEditor);
 	for (const juce::MidiMessageMetadata metadata : midiMessages){
 		if (metadata.numBytes == 3){
             fileLogger.writeToLog (metadata.getMessage().getDescription());
@@ -238,7 +230,7 @@ void Slicer_granularAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
 #if 1
 		std::array<float, 2> output = gen_granular(trigger);
 
-		trigger = 0.f;
+//		trigger = 0.f;
 		for (int channel = 0; channel < totalNumOutputChannels; ++channel)
 		{
 			output[channel] = juce::jlimit(-1.f, 1.f, output[channel]);

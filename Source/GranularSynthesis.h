@@ -13,6 +13,7 @@
 #include "nvs_libraries/include/nvs_gen.h"
 #include "/Users/nicholassolem/development/Xoshiro-cpp/XoshiroCpp.hpp"
 #include <span>
+#include "plotting.h"
 
 namespace nvs {
 namespace gran {
@@ -94,7 +95,7 @@ private:
 	float _panRand = 0.f;
 	
 //	vecReal const *_waveVec;
-	std::span<float> const *_waveSpan;
+	std::span<float> const &_waveSpan;
 	
 	int grainId;
 	// these pointers are set by containing granular synth
@@ -102,8 +103,10 @@ private:
 	numberGenerator<float> *const _ng_ptr;
 	
 	occasionalPrinter<float, std::string> printer;
+	nvs::plotter plotting;
+	std::vector<float> vecToPlot;
 public:
-	explicit genGrain1(std::span<float> const *waveSpan, numberGenerator<float> *const ng, size_t *const numGrains = nullptr, int newId = -1)
+	explicit genGrain1(std::span<float> const &waveSpan, numberGenerator<float> *const ng, size_t *const numGrains = nullptr, int newId = -1)
 	:
 	_waveSpan(waveSpan),
 	grainId(newId),
@@ -111,6 +114,14 @@ public:
 	_ng_ptr(ng),
 	printer(800)
 	{
+		printer(0.f, "hi");
+		vecToPlot.reserve(44100 * 2);
+	}
+	~genGrain1(){
+		if (grainId == 0){
+//			vecToPlot = {0.f, 0.5f, 1.f, 0.5f, 0.f, -0.5f, -1.f, -0.5f, 0.f};
+			plotting.plotVector(vecToPlot, "/Users/nicholassolem/development/slicer_granular/Builds/MacOSX/build/Debug/woah.svg", 1);
+		}
 	}
 	void setId(int newId){
 		grainId = newId;
@@ -157,9 +168,8 @@ public:
 
 		o.next = gater[0];
 		_accum(1.f, static_cast<bool>(gater[1]));
-		
 		auto accumVal = _accum.val;
-		
+
 		// offset, slope, pan, skew
 		std::array<float, 4> tmp_rand = {0.f, 0.f, 0.f, 0.f};
 		// this should just get all randoms
@@ -180,13 +190,17 @@ public:
 		
 		// data race READ
 		float sampleIndex = accumVal + latch_offset_result;
-		float sample = nvs::gen::peekBuff<float>(_waveSpan->data(), static_cast<size_t>(sampleIndex), _waveSpan->size()); 	//_peek(sampleIndexer)[0];
-		
+		float sample = nvs::gen::peekBuff<float>(_waveSpan.data(), static_cast<size_t>(sampleIndex), _waveSpan.size());
+
 		float windowIdx = (latch_slope_result * accumVal);
 
 		nvs::memoryless::clamp<float>(windowIdx, 0.f, 1.f);
-		float win = nvs::gen::triangle(windowIdx, _skew);
-		
+		float win = nvs::gen::triangle<float, false>(windowIdx, _skew);
+		if (grainId == 0){
+			if (vecToPlot.size() < (44100*6)){
+				vecToPlot.push_back(win);
+			}
+		}
 		win = nvs::gen::parzen(win);
 		sample *= win;
 		
@@ -194,8 +208,8 @@ public:
 		latch_pan_result *= 1.570796326794897f;
 		std::array<float, 2> lr = nvs::gen::pol2car<float>(sample, latch_pan_result);
 		o.audio = 	lr[0];
-		o.audio_R = lr[1];
-
+		o.audio_R = lr[1];		
+		
 		float busy_tmp = (win > 0.f);
 		o.busy = busy_tmp;
 		
@@ -208,10 +222,11 @@ public:
 struct genGranPoly1 {
 private:
 	float const &_sampleRate;				// dependent on owning instantiator, subject to change value from above
-	std::span<float> const *_wavespan { nullptr };	// dependent on owning instantiator, subject to change address from above
+	std::span<float> const &_wavespan;	// dependent on owning instantiator, subject to change address from above
 	size_t _numGrains { 16 };
 	std::vector<genGrain1> _grains;
 	gen::phasor _phasorInternalTrig;
+	nvs::gen::history<float> _rateHisto;
 	nvs::gen::history<float> _slopeHisto;
 	nvs::gen::history<float> _offsetHisto;
 	nvs::gen::history<float> _triggerHisto;
@@ -223,8 +238,11 @@ private:
 	nvs::gen::change<float> change_test;
 	
 	numberGenerator<float> _ng;
+	
+	nvs::plotter plotting;
+	std::vector<float> vecToPlot;
 public:
-	explicit genGranPoly1(float const &sampleRate, std::span<float> const *wavespan, size_t nGrains = 16)
+	explicit genGranPoly1(float const &sampleRate, std::span<float> const &wavespan, size_t nGrains = 16)
 	:
 	_sampleRate(sampleRate),
 	_wavespan(wavespan),
@@ -236,11 +254,12 @@ public:
 		for (int i = 0; i < _numGrains; ++i){
 			_grains[i].setId(i);
 		}
+		vecToPlot.reserve(44100 * 8);
 	}
-	void setRate(float newRate){
-		newRate = nvs::memoryless::clamp<float>(newRate, 0.f, _sampleRate/2.f);
-		_phasorInternalTrig.setFrequency(newRate);
+	~genGranPoly1(){
+		plotting.plotVector(vecToPlot, "/Users/nicholassolem/development/slicer_granular/Builds/MacOSX/build/Debug/poly");
 	}
+
 	void setDuration(float dur_ms){
 		dur_ms = nvs::memoryless::clamp_low<float>(dur_ms, 0.f);
 		auto dur_samps = (dur_ms / 1000.f) * _sampleRate;
@@ -253,7 +272,7 @@ public:
 	}
 	void setPosition(float positionNormalized){
 		positionNormalized = nvs::memoryless::clamp<float>(positionNormalized, 0.f, 1.f);
-		auto pos = positionNormalized * static_cast<float>(_wavespan->size());
+		auto pos = positionNormalized * static_cast<float>(_wavespan.size());
 		_offsetHisto(pos);
 		for (auto &g : _grains)
 			g.setOffset(_offsetHisto.val);
@@ -268,9 +287,13 @@ public:
 			g.setPan(pan);
 	}
 	void setPositionRandomness(float randomness){
-		randomness = randomness * static_cast<float>(_wavespan->size());
+		randomness = randomness * static_cast<float>(_wavespan.size());
 		for (auto &g : _grains)
 			g.setOffsetRand(randomness);
+	}
+	void setRate(float newRate){
+		newRate = nvs::memoryless::clamp<float>(newRate, 0.f, _sampleRate/2.f);
+		_rateHisto(newRate);
 	}
 	void setSpeedRandomness(float randomness){
 		float val = _ng();
@@ -285,9 +308,13 @@ public:
 	std::array<float, 2> operator()(float triggerIn){
 		std::array<float, 2> output;
 		
-		float freqTmp = _rateRandomLatch(_rateRandomness, _triggerHisto.val );
+		float freqTmp = _rateHisto.val;
+		freqTmp += _rateRandomLatch( _rateRandomness, _triggerHisto.val );
+		
 		_phasorInternalTrig.setFrequency(freqTmp);
 		++_phasorInternalTrig;
+		
+		vecToPlot.push_back( _phasorInternalTrig.getPhase() );
 		
 		float trig = _ramp2trig(_phasorInternalTrig.getPhase());
 		_triggerHisto(trig);

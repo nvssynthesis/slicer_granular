@@ -23,7 +23,8 @@ class Slicer_granularAudioProcessorEditor  : public juce::AudioProcessorEditor
 public:
     Slicer_granularAudioProcessorEditor (Slicer_granularAudioProcessor&);
     ~Slicer_granularAudioProcessorEditor() override;
-
+	//==============================================================================
+	void updateToggleState (juce::Button* button, juce::String name, bool &valToAffect);
     //==============================================================================
     void paint (juce::Graphics&) override;
     void resized() override;
@@ -43,6 +44,7 @@ private:
 	std::array<juce::Label, static_cast<size_t>(params_e::count)> paramLabels;
     std::unique_ptr<juce::FilenameComponent> fileComp;
 
+	juce::ToggleButton triggeringButton;
 	
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
