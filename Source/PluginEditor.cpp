@@ -14,6 +14,7 @@ Slicer_granularAudioProcessorEditor::Slicer_granularAudioProcessorEditor (Slicer
     : AudioProcessorEditor (&p)
 , triggeringButton("hi")
 , audioProcessor (p)
+, updateState(colourOffsetIndex, gradientColors.size())
 {
 	fileComp = std::make_unique<juce::FilenameComponent> ("fileComp",
 												juce::File(), 			 // current file
@@ -81,14 +82,14 @@ void Slicer_granularAudioProcessorEditor::paint (juce::Graphics& g)
 #if way1
 	juce::Image image(juce::Image::ARGB, getWidth(), getHeight(), true);
     juce::Graphics tg(image);
-    
-	juce::Colour red(juce::Colours::transparentBlack );
-	juce::Colour black(juce::Colours::black);
+
+	juce::Colour upperLeftColour  = gradientColors[(colourOffsetIndex + 0) % gradientColors.size()];
+	juce::Colour lowerRightColour = gradientColors[(colourOffsetIndex + 4) % gradientColors.size()];
 //    juce::ColourGradient cg = juce::ColourGradient::horizontal(red.darker(1.0), 0.0, red.darker(20.0), getWidth());
-	juce::ColourGradient cg(red, 0, 0, black, getWidth(), getHeight(), true);
-	cg.addColour(0.3, juce::Colours::darkred);
-	cg.addColour(0.5, juce::Colours::red);
-	cg.addColour(0.7, juce::Colours::darkred);
+	juce::ColourGradient cg(upperLeftColour, 0, 0, lowerRightColour, getWidth(), getHeight(), true);
+	cg.addColour(0.3, gradientColors[(colourOffsetIndex + 1) % gradientColors.size()]);
+	cg.addColour(0.5, gradientColors[(colourOffsetIndex + 2) % gradientColors.size()]);
+	cg.addColour(0.7, gradientColors[(colourOffsetIndex + 3) % gradientColors.size()]);
     tg.setGradientFill(cg);
     tg.fillAll();
 

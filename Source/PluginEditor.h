@@ -19,6 +19,7 @@
 class Slicer_granularAudioProcessorEditor  : public juce::AudioProcessorEditor
 ,			                                 public juce::Slider::Listener
 ,											 public juce::FilenameComponentListener
+//,											 public juce::Timer
 {
 public:
     Slicer_granularAudioProcessorEditor (Slicer_granularAudioProcessor&);
@@ -45,6 +46,46 @@ private:
     std::unique_ptr<juce::FilenameComponent> fileComp;
 
 	juce::ToggleButton triggeringButton;
+	std::array<juce::Colour, 5> gradientColors {
+		juce::Colours::transparentBlack,
+		juce::Colours::darkred,
+		juce::Colours::red,
+		juce::Colours::darkred,
+		juce::Colours::black
+	};
+	size_t colourOffsetIndex {0};
+	template<typename ExternalStateType>
+	struct UpdateState{
+		UpdateState(ExternalStateType &s, ExternalStateType externalBound)
+		:	ext(s),
+			extUpperBound(externalBound)
+		{}
+		size_t counter {0};
+		static constexpr size_t upperBound {20};
+		ExternalStateType &ext;
+		ExternalStateType extUpperBound;
+		bool operator()(){
+			++counter;
+			if (counter >= upperBound){
+				++ext;
+				if (ext >= extUpperBound){
+					ext = 0;
+				}
+				counter = 0;
+				return true;
+			}
+			return false;
+		}
+	};
+	UpdateState<size_t> updateState;
+	void update()
+	{
+		const auto needsToRepaint = updateState();
+	   
+		if (needsToRepaint)
+			repaint();
+	}
+	juce::VBlankAttachment vbAttachment { this, [this] { update(); } };
 	
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
