@@ -15,9 +15,12 @@
       <FILE id="LIA7dU" name="PluginEditor.cpp" compile="1" resource="0"
             file="Source/PluginEditor.cpp"/>
       <FILE id="mApci6" name="PluginEditor.h" compile="0" resource="0" file="Source/PluginEditor.h"/>
+      <FILE id="OW557g" name="dsp_util.h" compile="0" resource="0" file="Source/dsp_util.h"/>
       <FILE id="aExhKH" name="OnsetAnalysis.h" compile="0" resource="0" file="Source/OnsetAnalysis.h"/>
       <FILE id="uteSqY" name="OnsetAnalysis.cpp" compile="1" resource="0"
             file="Source/OnsetAnalysis.cpp"/>
+      <FILE id="kR8qWl" name="GranularSynthesis.cpp" compile="1" resource="0"
+            file="Source/GranularSynthesis.cpp"/>
       <FILE id="Rf1ssv" name="GranularSynthesis.h" compile="0" resource="0"
             file="Source/GranularSynthesis.h"/>
       <FILE id="X2xDrG" name="EssentiaSetup.h" compile="0" resource="0" file="Source/EssentiaSetup.h"/>

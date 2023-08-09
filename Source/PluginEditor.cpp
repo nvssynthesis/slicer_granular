@@ -13,8 +13,8 @@
 Slicer_granularAudioProcessorEditor::Slicer_granularAudioProcessorEditor (Slicer_granularAudioProcessor& p)
     : AudioProcessorEditor (&p)
 , triggeringButton("hi")
+//, updateState(colourOffsetIndex, gradientColors.size())
 , audioProcessor (p)
-, updateState(colourOffsetIndex, gradientColors.size())
 {
 	fileComp = std::make_unique<juce::FilenameComponent> ("fileComp",
 												juce::File(), 			 // current file

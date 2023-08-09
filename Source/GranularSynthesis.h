@@ -103,44 +103,17 @@ private:
 	
 	occasionalPrinter<float, std::string> printer;
 public:
-	explicit genGrain1(std::span<float> const &waveSpan, numberGenerator<float> *const ng, size_t *const numGrains = nullptr, int newId = -1)
-	:
-	_waveSpan(waveSpan),
-	grainId(newId),
-	_numGrains_ptr(numGrains),
-	_ng_ptr(ng),
-	printer(800)
-	{
-		printer(0.f, "hi");
-	}
+	explicit genGrain1(std::span<float> const &waveSpan, numberGenerator<float> *const ng, size_t *const numGrains = nullptr, int newId = -1);
 
-	void setId(int newId){
-		grainId = newId;
-	}
-	void setSlope(float slope){
-		_slope = slope;
-	}
-	void setOffset(float offset){
-		_offset = offset;
-	}
-	void setSkew(float skew){
-		_skew = skew;
-	}
-	void setPan(float pan){
-		_pan = pan;
-	}
-	void setSlopeRand(float slopeRand){
-		_slopeRand = slopeRand;
-	}
-	void setOffsetRand(float offsetRand){
-		_offsetRand = offsetRand;
-	}
-	void setSkewRand(float skewRand){
-		_skewRand = skewRand;
-	}
-	void setPanRand(float panRand){
-		_panRand = panRand;
-	}
+	void setId(int newId);
+	void setSlope(float slope);
+	void setOffset(float offset);
+	void setSkew(float skew);
+	void setPan(float pan);
+	void setSlopeRand(float slopeRand);
+	void setOffsetRand(float offsetRand);
+	void setSkewRand(float skewRand);
+	void setPanRand(float panRand);
 	struct outs {
 		float next;
 		float busy;
@@ -148,62 +121,7 @@ public:
 		float audio_R;
 	};
 	
-	outs operator()(float trig_in){
-		outs o;
-		
-		using namespace nvs::gen;
-		// return 1 if histo = TRUE, 2 if histo = FALSE
-		float switch2 = switcher(_histo.val, 1.f, 2.f);
-		
-		std::array<float, 2> gater = gateSelect<float, 2>(switch2, trig_in);
-
-		o.next = gater[0];
-		_accum(1.f, static_cast<bool>(gater[1]));
-		auto accumVal = _accum.val;
-
-		// offset, slope, pan, skew
-		std::array<float, 4> tmp_rand = {0.f, 0.f, 0.f, 0.f};
-		// this should just get all randoms
-		if (_ng_ptr != nullptr){
-			tmp_rand[0] = (*_ng_ptr)();	// offset
-			tmp_rand[1] = (*_ng_ptr)(); // slope
-			tmp_rand[2] = (*_ng_ptr)();	// pan
-			tmp_rand[3] = (*_ng_ptr)();	// skew?
-		}
-		float offsetTmp = _offset + tmp_rand[0] * _offsetRand;
-		float latch_offset_result = _offsetLatch(offsetTmp, gater[1]);
-		
-		float latch_slope_result = _slopeLatch(_slope, gater[1]);
-		
-		float panTmp = _pan * nvs::memoryless::unibi<float>(tmp_rand[2]);// * _panRand;
-		panTmp = nvs::memoryless::biuni<float>(panTmp);
-		float latch_pan_result = _panLatch(panTmp, gater[1]);	// overall panning trend
-		
-		// data race READ
-		float sampleIndex = accumVal + latch_offset_result;
-		float sample = nvs::gen::peekBuff<float>(_waveSpan.data(), static_cast<size_t>(sampleIndex), _waveSpan.size());
-
-		float windowIdx = (latch_slope_result * accumVal);
-
-		nvs::memoryless::clamp<float>(windowIdx, 0.f, 1.f);
-		float win = nvs::gen::triangle<float, false>(windowIdx, _skew);
-
-		win = nvs::gen::parzen(win);
-		sample *= win;
-		
-		latch_pan_result = nvs::memoryless::clamp<float>(latch_pan_result, 0.f, 1.f);
-		latch_pan_result *= 1.570796326794897f;
-		std::array<float, 2> lr = nvs::gen::pol2car<float>(sample, latch_pan_result);
-		o.audio = 	lr[0];
-		o.audio_R = lr[1];		
-		
-		float busy_tmp = (win > 0.f);
-		o.busy = busy_tmp;
-		
-		// original first takes care of denorm...
-		_histo(busy_tmp);
-		return o;
-	}
+	outs operator()(float trig_in);
 };
 
 struct genGranPoly1 {
@@ -227,196 +145,17 @@ private:
 	numberGenerator<float> _ng;
 	
 public:
-	explicit genGranPoly1(float const &sampleRate, std::span<float> const &wavespan, size_t nGrains = 16)
-	:
-	_sampleRate(sampleRate),
-	_wavespan(wavespan),
-	_numGrains(nGrains),
-	_grains(_numGrains, genGrain1(wavespan, &_ng, &_numGrains) ),
-	_phasorInternalTrig(sampleRate),
-	_rateRandomLatch(1.f)
-	{
-		for (int i = 0; i < _numGrains; ++i){
-			_grains[i].setId(i);
-		}
-	}
-
-	void setDuration(float dur_ms){
-		dur_ms = nvs::memoryless::clamp_low<float>(dur_ms, 0.f);
-		auto dur_samps = (dur_ms / 1000.f) * _sampleRate;
-
-		dur_samps = nvs::memoryless::clamp_low<float>(dur_samps, 1.f);
-		float freq_samps = 1.f / dur_samps;
-		_slopeHisto(freq_samps);
-		for (auto &g : _grains)
-			g.setSlope(_slopeHisto.val);
-	}
-	void setPosition(float positionNormalized){
-		positionNormalized = nvs::memoryless::clamp<float>(positionNormalized, 0.f, 1.f);
-		auto pos = positionNormalized * static_cast<float>(_wavespan.size());
-		_offsetHisto(pos);
-		for (auto &g : _grains)
-			g.setOffset(_offsetHisto.val);
-	}
-	void setSkew(float skew){
-		skew = nvs::memoryless::clamp<float>(skew, 0.001, 0.999);
-		for (auto &g : _grains)
-			g.setSkew(skew);
-	}
-	void setPan(float pan){
-		for (auto &g : _grains)
-			g.setPan(pan);
-	}
-	void setPositionRandomness(float randomness){
-		randomness = randomness * static_cast<float>(_wavespan.size());
-		for (auto &g : _grains)
-			g.setOffsetRand(randomness);
-	}
-	void setRate(float newRate){
-		newRate = nvs::memoryless::clamp<float>(newRate, 0.f, _sampleRate/2.f);
-		_rateHisto(newRate);
-	}
-	void setSpeedRandomness(float randomness){
-		// because this value is added as multiplier of rate. we do not want rate to become 0, or it will freeze all grains.
-		randomness = nvs::memoryless::clamp_low(randomness, -0.99f);
-		_rateRandomness = randomness;
-	}
-	void setPanRandomness(float randomness){
-		for (auto &g : _grains)
-			g.setPanRand(randomness);
-	}
-	std::array<float, 2> operator()(float triggerIn){
-		std::array<float, 2> output;
-		
-		float freqTmp = _rateHisto.val;
-		float randFreq = _rateRandomLatch( _rateRandomness * _ng(), _triggerHisto.val );
-		randFreq *= freqTmp;
-		freqTmp += randFreq;
-		assert(freqTmp > 0.f);
-		
-		_phasorInternalTrig.setFrequency(freqTmp);
-		++_phasorInternalTrig;
-				
-		float trig = _ramp2trig(_phasorInternalTrig.getPhase());
-		_triggerHisto(trig);
-
-		if ((trig == 0.f) && (triggerIn == 0.f)){
-			trig = 0.f;
-		} else {
-			trig = 1.f;
-		}
-		
-		std::vector<genGrain1::outs> _outs(_numGrains);
-		_outs[0] = _grains[0](trig);
-		float audioOut = _outs[0].audio;
-		float audioOut_R = _outs[0].audio_R;
-		float voicesActive = _outs[0].busy;
-		
-		for (size_t i = 1; i < _numGrains; ++i){
-			float currentTrig = _outs[i-1].next;
-			_outs[i] = _grains[i](currentTrig);
-			audioOut += _outs[i].audio;
-			audioOut_R += _outs[i].audio_R;
-			voicesActive += _outs[i].busy;
-		}
-		float samp = audioOut / _numGrains;
-		float samp_R = audioOut_R / _numGrains;
-		output[0] = samp;
-		output[1] = samp_R;
-		return output;
-	}
+	explicit genGranPoly1(float const &sampleRate, std::span<float> const &wavespan, size_t nGrains = 16);
+	void setPosition(float positionNormalized);
+	void setRate(float newRate);
+	void setDuration(float dur_ms);
+	void setSkew(float skew);
+	void setPan(float pan);
+	void setPositionRandomness(float randomness);
+	void setSpeedRandomness(float randomness);
+	void setPanRandomness(float randomness);
+	std::array<float, 2> operator()(float triggerIn);
 };
-
-
-
-/*
-struct phasor {
-private:
-	float phase { 0.f };
-	float phaseDelta {0.f};	// frequency / samplerate
-public:
-	inline void setPhase(float ph){
-		phase = ph;
-	}
-	inline float getPhase() const {
-		return phase;
-	}
-	inline void reset(){
-		phase = 0.f;
-	}
-	inline void setPhaseDelta(float pd){
-		phaseDelta = pd;
-	}
-	// may be called every sample, so no check for aliasing or divide by 0
-	inline void setFrequency(float frequency, float sampleRate){
-		phaseDelta = frequency / sampleRate;
-	}
-	// prefix increment
-	phasor& operator++(){
-		phase += phaseDelta;
-		while (phase >= 1.f)
-			phase -= 1.f;
-		while (phase < 0.f)
-			phase += 1.f;
-		return *this;
-	}
-	// postfix increment
-	phasor operator++(int){
-		phasor old = *this;
-		phase += phaseDelta;
-		while (phase >= 1.f)
-			phase -= 1.f;
-		while (phase < 0.f)
-			phase += 1.f;
-		return old;
-	}
-};
-*/
-// non-cyclic counter, always counting in samples
-struct line {
-private:
-	unsigned int idxSamps { 0 };
-	unsigned int durationSamps { 44100 };
-public:
-	inline float getPhase() const {
-		return static_cast<float>(idxSamps) / durationSamps;
-	}
-	inline void reset(){
-		idxSamps = 0;
-	}
-	inline void setDuration(unsigned int dur){
-		// shift position of idxSamps based on ratio of previous duration and next
-		auto phase = getPhase();
-		durationSamps = dur;
-		idxSamps = phase * static_cast<float>(durationSamps);
-	}
-	inline void setDuration(float dur, float sampleRate){
-		unsigned int ds = static_cast<unsigned int>(dur * sampleRate);
-		setDuration(ds);
-	}
-	inline bool complete(){
-		return (idxSamps >= durationSamps);
-	}
-	// prefix increment
-	line& operator++(){
-		if (idxSamps < durationSamps)
-			++idxSamps;
-		return *this;
-	}
-	// postfix increment
-	line operator++(int){
-		line old = *this;
-		if (idxSamps < durationSamps)
-			++idxSamps;
-		return old;
-	}
-};
-
-inline float fractionalIndex(float phase, size_t lower, size_t range){
-	assert(phase >= 0.f);
-	assert(phase <= 1.f);
-	return (phase * static_cast<float>(range)) + static_cast<float>(lower);
-}
 
 }	// namespace granular
 }	// namespace nvs

@@ -10,6 +10,7 @@
 
 #include <JuceHeader.h>
 #include "GranularSynthesis.h"
+#include "dsp_util.h"
 
 //==============================================================================
 /**
@@ -63,11 +64,40 @@ public:
 	void loadAudioFile(juce::File const f);
 	
 	bool triggerValFromEditor {false};
+#if 0
+	class EditorInformant{
+		float loudness {0.f};
+		float loudnessThreshold {0.f};
+	public:
+		void reset(){
+			loudness = 0.f;
+		}
+		void accumulate(float v){
+			loudness += v*v;
+		}
+		void updateEndOfBlock(){
+			//sharableValue = loudness;
+		}
+		float query(){
+			return 0;//sharableLoudness;
+		}
+	};
+//	EditorInformant editorInformant;
+#endif
+	template<typename T>
+	struct editorInformant{
+		T val;
+	};
+	editorInformant<float> rmsInformant;
+	editorInformant<float> rmsWAinformant;
 	
 private:
 	juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
 	juce::AudioFormatManager formatManager;
 	
+	RMS<float> rms;
+	WeightedAveragingBuffer<float, 5> weightAvg;
+
 	class AudioBuffersChannels{
 	private:
 		typedef std::array<std::vector<float>, 2> stereoVector_t;

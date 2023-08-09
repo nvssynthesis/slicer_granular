@@ -11,6 +11,7 @@
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
 #include "params.h"
+#include "dsp_util.h"
 
 //==============================================================================
 /**
@@ -54,7 +55,7 @@ private:
 		juce::Colours::black
 	};
 	size_t colourOffsetIndex {0};
-	template<typename ExternalStateType>
+	/*template<typename ExternalStateType>
 	struct UpdateState{
 		UpdateState(ExternalStateType &s, ExternalStateType externalBound)
 		:	ext(s),
@@ -77,13 +78,23 @@ private:
 			return false;
 		}
 	};
+
 	UpdateState<size_t> updateState;
+	*/
 	void update()
 	{
-		const auto needsToRepaint = updateState();
+//		const auto needsToRepaint = updateState();
 	   
-		if (needsToRepaint)
+		const float level = audioProcessor.rmsInformant.val;
+		const float recentLevel = audioProcessor.rmsWAinformant.val;
+
+		const bool needsToRepaint = (level > (recentLevel * 1.2f));
+		
+		if (needsToRepaint){
+			++colourOffsetIndex;
+			colourOffsetIndex %= gradientColors.size();
 			repaint();
+		}
 	}
 	juce::VBlankAttachment vbAttachment { this, [this] { update(); } };
 	

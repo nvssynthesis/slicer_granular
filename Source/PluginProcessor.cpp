@@ -226,10 +226,12 @@ void Slicer_granularAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
 			//trigger = 1.f;
 		}
 	}
+//	editorInformant.reset();
 	for (auto samp = 0; samp < buffer.getNumSamples(); ++samp){
 #if 1
 		std::array<float, 2> output = gen_granular(trigger);
 
+		rms.accumulate(output[0] + output[1]);
 //		trigger = 0.f;
 		for (int channel = 0; channel < totalNumOutputChannels; ++channel)
 		{
@@ -240,6 +242,9 @@ void Slicer_granularAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
 		}
 #endif
 	}
+	const auto rms_val = rms.query();
+	rmsInformant.val = rms_val;
+	rmsWAinformant.val = weightAvg(rms_val);
 }
 
 //==============================================================================
