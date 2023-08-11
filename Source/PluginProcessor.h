@@ -96,7 +96,7 @@ private:
 	juce::AudioFormatManager formatManager;
 	
 	RMS<float> rms;
-	WeightedAveragingBuffer<float, 5> weightAvg;
+	WeightedAveragingBuffer<float, 3> weightAvg;
 
 	class AudioBuffersChannels{
 	private:

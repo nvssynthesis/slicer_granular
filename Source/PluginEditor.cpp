@@ -161,7 +161,7 @@ void Slicer_granularAudioProcessorEditor::resized()
 		auto height = sliderHeight;
 
 		if (isParamOfCategory(static_cast<params_e>(i), param_category_e::random)){
-			auto const xOffset = (widthUnit * numMainParams) ;
+			auto const xOffset = (widthUnit * (numMainParams)) ;
 			
 			y += sliderHeight;
 			y += sliderToKnobLowerPadding;
@@ -169,12 +169,16 @@ void Slicer_granularAudioProcessorEditor::resized()
 			height = knobHeight;
 			x -= xOffset;
 			width = height;
+			
+			auto const extraOffset = (sliderWidth - width) / 1;
+			width += extraOffset;
 		}
 		
 		paramSliders[i].setBounds(x,		// x
 								  y,		// y
 								  width,	// width
 								  height);	// height
+		
 		
 		auto const labelY = height + y ;
 		paramLabels[i].setBounds(x, labelY, width, 24);
