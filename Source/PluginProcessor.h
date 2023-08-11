@@ -144,7 +144,7 @@ private:
 	float lastPosition {0.f};
 	float lastSpeed {0.1f};
 	float lastDuration {100.f};
-	float lastSkew {0.5f};
+	float lastSkew {0.5f}; 
 	
 	float lastPan {0.5f};
 

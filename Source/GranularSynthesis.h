@@ -79,6 +79,7 @@ private:
 	nvs::gen::history<float> _histo;// history of 'busy' boolean signal, goes to [switch 1 2]
 	nvs::gen::latch<float> _slopeLatch;	// latches slope from gate on, goes toward dest windowing
 	nvs::gen::latch<float> _offsetLatch;// latches offset from gate on, goes toward dest windowing
+	nvs::gen::latch<float> _skewLatch;
 	nvs::gen::accum<float> _accum;	// accumulates samplewise and resets from gate on, goes to windowing and sample lookup!
 	
 	nvs::gen::latch<float> _panLatch;

@@ -72,14 +72,14 @@ genGrain1::outs genGrain1::operator()(float trig_in){
 		tmp_rand[2] = (*_ng_ptr)();	// pan
 		tmp_rand[3] = (*_ng_ptr)();	// skew?
 	}
-	float offsetTmp = _offset + tmp_rand[0] * _offsetRand;
-	float latch_offset_result = _offsetLatch(offsetTmp, gater[1]);
+	float offset_tmp = _offset + tmp_rand[0] * _offsetRand;
+	float latch_offset_result = _offsetLatch(offset_tmp, gater[1]);
 	
 	float latch_slope_result = _slopeLatch(_slope, gater[1]);
 	
-	float panTmp = _pan * nvs::memoryless::unibi<float>(tmp_rand[2]);// * _panRand;
-	panTmp = nvs::memoryless::biuni<float>(panTmp);
-	float latch_pan_result = _panLatch(panTmp, gater[1]);	// overall panning trend
+	float pan_tmp = _pan * nvs::memoryless::unibi<float>(tmp_rand[2]);// * _panRand;
+	pan_tmp = nvs::memoryless::biuni<float>(pan_tmp);
+	float latch_pan_result = _panLatch(pan_tmp, gater[1]);	// overall panning trend
 	
 	// data race READ
 	float sampleIndex = accumVal + latch_offset_result;
@@ -88,6 +88,7 @@ genGrain1::outs genGrain1::operator()(float trig_in){
 	float windowIdx = (latch_slope_result * accumVal);
 	
 	nvs::memoryless::clamp<float>(windowIdx, 0.f, 1.f);
+	float skew_tmp = _skewLatch(skew_tmp, gater[1]);
 	float win = nvs::gen::triangle<float, false>(windowIdx, _skew);
 	
 	win = nvs::gen::parzen(win);
@@ -168,13 +169,13 @@ void genGranPoly1::setPanRandomness(float randomness){
 std::array<float, 2> genGranPoly1::operator()(float triggerIn){
 	std::array<float, 2> output;
 	
-	float freqTmp = _rateHisto.val;
+	float freq_tmp = _rateHisto.val;
 	float randFreq = _rateRandomLatch( _rateRandomness * _ng(), _triggerHisto.val );
-	randFreq *= freqTmp;
-	freqTmp += randFreq;
-	assert(freqTmp > 0.f);
+	randFreq *= freq_tmp;
+	freq_tmp += randFreq;
+	assert(freq_tmp > 0.f);
 	
-	_phasorInternalTrig.setFrequency(freqTmp);
+	_phasorInternalTrig.setFrequency(freq_tmp);
 	++_phasorInternalTrig;
 	
 	float trig = _ramp2trig(_phasorInternalTrig.getPhase());
@@ -205,7 +206,6 @@ std::array<float, 2> genGranPoly1::operator()(float triggerIn){
 	output[1] = samp_R;
 	return output;
 }
-
 
 }	// namespace gran
 }	// namespace nvs
