@@ -170,7 +170,7 @@ void Slicer_granularAudioProcessorEditor::resized()
 			x -= xOffset;
 			width = height;
 			
-			auto const extraOffset = (sliderWidth - width) / 1;
+			auto const extraOffset = (sliderWidth - width);
 			width += extraOffset;
 		}
 		
