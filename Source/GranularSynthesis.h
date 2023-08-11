@@ -77,19 +77,19 @@ public:
 struct genGrain1 {
 private:
 	nvs::gen::history<float> _histo;// history of 'busy' boolean signal, goes to [switch 1 2]
-	nvs::gen::latch<float> _slopeLatch;	// latches slope from gate on, goes toward dest windowing
+	nvs::gen::latch<float> _durationLatch;	// latches duration from gate on, goes toward dest windowing
 	nvs::gen::latch<float> _offsetLatch;// latches offset from gate on, goes toward dest windowing
 	nvs::gen::latch<float> _skewLatch;
 	nvs::gen::accum<float> _accum;	// accumulates samplewise and resets from gate on, goes to windowing and sample lookup!
 	
 	nvs::gen::latch<float> _panLatch;
 	
-	float _slope = 1.f;
+	float _duration = 1.f;
 	float _offset = 0.f;
 	float _skew = 0.5f;
 	float _pan = 0.5f;
 	
-	float _slopeRand = 0.f;
+	float _durationRand = 0.f;
 	float _offsetRand = 0.f;
 	float _skewRand = 0.f;
 	float _panRand = 0.f;
@@ -107,12 +107,11 @@ public:
 	explicit genGrain1(std::span<float> const &waveSpan, numberGenerator<float> *const ng, size_t *const numGrains = nullptr, int newId = -1);
 
 	void setId(int newId);
-	void setSlope(float slope);
+	void setDuration(float duration);
 	void setOffset(float offset);
 	void setSkew(float skew);
 	void setPan(float pan);
-	void setSlopeRand(float slopeRand);
-	void setDurationRand(float durRand);
+	void setDurationRand(float durationRand); //('slope' in max patch)
 	void setOffsetRand(float offsetRand);
 	void setSkewRand(float skewRand);
 	void setPanRand(float panRand);
@@ -134,7 +133,7 @@ private:
 	std::vector<genGrain1> _grains;
 	gen::phasor _phasorInternalTrig;
 	nvs::gen::history<float> _rateHisto;
-	nvs::gen::history<float> _slopeHisto;
+	nvs::gen::history<float> _durationHisto;
 	nvs::gen::history<float> _offsetHisto;
 	nvs::gen::history<float> _triggerHisto;
 	nvs::gen::ramp2trig<float> _ramp2trig;

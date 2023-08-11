@@ -25,8 +25,8 @@ printer(800)
 void genGrain1::setId(int newId){
 	grainId = newId;
 }
-void genGrain1::setSlope(float slope){
-	_slope = slope;
+void genGrain1::setDuration(float duration){
+	_duration = duration;
 }
 void genGrain1::setOffset(float offset){
 	_offset = offset;
@@ -37,9 +37,10 @@ void genGrain1::setSkew(float skew){
 void genGrain1::setPan(float pan){
 	_pan = pan;
 }
-void genGrain1::setSlopeRand(float slopeRand){
-	_slopeRand = slopeRand;
+void genGrain1::setDurationRand(float durationRand){
+	_durationRand = durationRand;
 }
+
 void genGrain1::setOffsetRand(float offsetRand){
 	_offsetRand = offsetRand;
 }
@@ -63,36 +64,44 @@ genGrain1::outs genGrain1::operator()(float trig_in){
 	_accum(1.f, static_cast<bool>(gater[1]));
 	auto accumVal = _accum.val;
 	
-	// offset, slope, pan, skew
-	std::array<float, 4> tmp_rand = {0.f, 0.f, 0.f, 0.f};
+	// offset, duration ('slope' in max patch), pan, skew
+	float offsetEffectiveRandomValue {0.f};
+	float durationEffectiveRandomValue {0.f};
+	float panEffectiveRandomValue {0.5f};
+	float skewEffectiveRandomValue {0.f};
 	// this should just get all randoms
 	if (_ng_ptr != nullptr){
-		tmp_rand[0] = (*_ng_ptr)();	// offset
-		tmp_rand[1] = (*_ng_ptr)(); // slope
-		tmp_rand[2] = (*_ng_ptr)();	// pan
-		tmp_rand[3] = (*_ng_ptr)();	// skew?
+		offsetEffectiveRandomValue = (*_ng_ptr)() * _offsetRand;
+		durationEffectiveRandomValue = (*_ng_ptr)() * _durationRand;
+		panEffectiveRandomValue = nvs::memoryless::unibi<float>((*_ng_ptr)()) * _panRand;
+		panEffectiveRandomValue *= 0.5f; 	// range between [-0.5 .. 0.5]
+		assert(panEffectiveRandomValue >= -0.5f);
+		assert(panEffectiveRandomValue <= 0.5f);
+		skewEffectiveRandomValue = (*_ng_ptr)() * _skewRand;
+		skewEffectiveRandomValue *= 0.5f;
 	}
-	float offset_tmp = _offset + tmp_rand[0] * _offsetRand;
+	float offset_tmp = _offset + offsetEffectiveRandomValue;
 	float latch_offset_result = _offsetLatch(offset_tmp, gater[1]);
-	
-	float latch_slope_result = _slopeLatch(_slope, gater[1]);
-	
-	float pan_tmp = _pan * nvs::memoryless::unibi<float>(tmp_rand[2]);// * _panRand;
-	pan_tmp = nvs::memoryless::biuni<float>(pan_tmp);
-	float latch_pan_result = _panLatch(pan_tmp, gater[1]);	// overall panning trend
-	
-	// data race READ
+
 	float sampleIndex = accumVal + latch_offset_result;
 	float sample = nvs::gen::peekBuff<float>(_waveSpan.data(), static_cast<size_t>(sampleIndex), _waveSpan.size());
 	
-	float windowIdx = (latch_slope_result * accumVal);
+	float duration_tmp = _duration + durationEffectiveRandomValue;
+	float latch_duration_result = _durationLatch(duration_tmp, gater[1]);
+
+	float windowIdx = (latch_duration_result * accumVal);
+	windowIdx = nvs::memoryless::clamp<float>(windowIdx, 0.f, 1.f);
 	
-	nvs::memoryless::clamp<float>(windowIdx, 0.f, 1.f);
-	float skew_tmp = _skewLatch(_skew, gater[1]);
-	float win = nvs::gen::triangle<float, false>(windowIdx, skew_tmp);
+	float skew_tmp = _skew + skewEffectiveRandomValue;
+	float latch_skew_result = _skewLatch(skew_tmp, gater[1]);
+	float win = nvs::gen::triangle<float, false>(windowIdx, latch_skew_result);
 	
 	win = nvs::gen::parzen(win);
 	sample *= win;
+	
+	float pan_tmp = _pan + panEffectiveRandomValue;
+	pan_tmp = pan_tmp;//nvs::memoryless::biuni<float>(pan_tmp);
+	float latch_pan_result = _panLatch(pan_tmp, gater[1]);	// overall panning trend
 	
 	latch_pan_result = nvs::memoryless::clamp<float>(latch_pan_result, 0.f, 1.f);
 	latch_pan_result *= 1.570796326794897f;
@@ -139,9 +148,9 @@ void genGranPoly1::setDuration(float dur_ms){
 	
 	dur_samps = nvs::memoryless::clamp_low<float>(dur_samps, 1.f);
 	float freq_samps = 1.f / dur_samps;
-	_slopeHisto(freq_samps);
+	_durationHisto(freq_samps);
 	for (auto &g : _grains)
-		g.setSlope(_slopeHisto.val);
+		g.setDuration(_durationHisto.val);
 }
 void genGranPoly1::setSkew(float skew){
 	skew = nvs::memoryless::clamp<float>(skew, 0.001, 0.999);

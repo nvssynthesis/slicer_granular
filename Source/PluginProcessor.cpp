@@ -156,6 +156,14 @@ void Slicer_granularAudioProcessor::loadAudioFile(juce::File const f){
 	
 	int newLength = static_cast<int>(reader->lengthInSamples);
 	
+	std::array<juce::Range<float> , 1> normalizationRange;
+	reader->readMaxLevels(0, reader->lengthInSamples, &normalizationRange[0], 1);
+	
+#pragma message ("make use of normalization")
+	auto min = normalizationRange[0].getStart();
+	auto max = normalizationRange[0].getEnd();
+	
+	
 	std::array<float * const, 2> ptrsToWriteTo = audioBuffersChannels.prepareForWrite(newLength, reader->numChannels);
 	
 	reader->read(&ptrsToWriteTo[0],	// float *const *destChannels
@@ -219,11 +227,17 @@ void Slicer_granularAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
 		lastDurationRand = tmp;
 		gen_granular.setDurationRandomness(lastDurationRand);
 	}
+	tmp = *apvts.getRawParameterValue(getParamElement<params_e::skew_randomness, param_elem_e::name>());
+	if (lastSkewRand != tmp){
+		lastSkewRand = tmp;
+		gen_granular.setSkewRandomness(lastSkewRand);
+	}
 	tmp = *apvts.getRawParameterValue(getParamElement<params_e::pan_randomness, param_elem_e::name>());
 	if (lastPanRand != tmp){
 		lastPanRand = tmp;
 		gen_granular.setPanRandomness(lastPanRand);
 	}
+	
 	float trigger = static_cast<float>(triggerValFromEditor);
 	for (const juce::MidiMessageMetadata metadata : midiMessages){
 		if (metadata.numBytes == 3){
