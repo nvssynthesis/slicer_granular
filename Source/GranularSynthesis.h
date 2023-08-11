@@ -112,6 +112,7 @@ public:
 	void setSkew(float skew);
 	void setPan(float pan);
 	void setSlopeRand(float slopeRand);
+	void setDurationRand(float durRand);
 	void setOffsetRand(float offsetRand);
 	void setSkewRand(float skewRand);
 	void setPanRand(float panRand);
@@ -153,7 +154,9 @@ public:
 	void setSkew(float skew);
 	void setPan(float pan);
 	void setPositionRandomness(float randomness);
+	void setDurationRandomness(float randomness);
 	void setSpeedRandomness(float randomness);
+	void setSkewRandomness(float randomness);
 	void setPanRandomness(float randomness);
 	std::array<float, 2> operator()(float triggerIn);
 };

@@ -88,8 +88,8 @@ genGrain1::outs genGrain1::operator()(float trig_in){
 	float windowIdx = (latch_slope_result * accumVal);
 	
 	nvs::memoryless::clamp<float>(windowIdx, 0.f, 1.f);
-	float skew_tmp = _skewLatch(skew_tmp, gater[1]);
-	float win = nvs::gen::triangle<float, false>(windowIdx, _skew);
+	float skew_tmp = _skewLatch(_skew, gater[1]);
+	float win = nvs::gen::triangle<float, false>(windowIdx, skew_tmp);
 	
 	win = nvs::gen::parzen(win);
 	sample *= win;
@@ -157,11 +157,21 @@ void genGranPoly1::setPositionRandomness(float randomness){
 	for (auto &g : _grains)
 		g.setOffsetRand(randomness);
 }
+void genGranPoly1::setDurationRandomness(float randomness){
+	for (auto &g : _grains)
+		g.setDurationRand(randomness);
+}
 void genGranPoly1::setSpeedRandomness(float randomness){
 	// because this value is added as multiplier of rate. we do not want rate to become 0, or it will freeze all grains.
 	randomness = nvs::memoryless::clamp_low(randomness, -0.99f);
 	_rateRandomness = randomness;
 }
+
+void genGranPoly1::setSkewRandomness(float randomness){
+	for (auto &g : _grains)
+		g.setSkewRand(randomness);
+}
+
 void genGranPoly1::setPanRandomness(float randomness){
 	for (auto &g : _grains)
 		g.setPanRand(randomness);

@@ -214,6 +214,11 @@ void Slicer_granularAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
 		lastSpeedRand = tmp;
 		gen_granular.setSpeedRandomness(lastSpeedRand);
 	}
+	tmp = *apvts.getRawParameterValue(getParamElement<params_e::dur_randomness, param_elem_e::name>());
+	if (lastDurationRand != tmp){
+		lastDurationRand = tmp;
+		gen_granular.setDurationRandomness(lastDurationRand);
+	}
 	tmp = *apvts.getRawParameterValue(getParamElement<params_e::pan_randomness, param_elem_e::name>());
 	if (lastPanRand != tmp){
 		lastPanRand = tmp;
