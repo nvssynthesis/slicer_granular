@@ -50,14 +50,14 @@ Slicer_granularAudioProcessorEditor::Slicer_granularAudioProcessorEditor (Slicer
 		
 		paramLabels[i].setText(getParamName(param), juce::dontSendNotification);
 		if (isMainParam(param)){
-			paramLabels[i].setFont(juce::Font("Graphik", 25, juce::Font::FontStyleFlags::plain));
+			paramLabels[i].setFont(juce::Font("Copperplate", 20, juce::Font::FontStyleFlags::plain));
 			addAndMakeVisible(paramLabels[i]);
 		}
 	}
 	
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
-    setSize (700, 500);
+    setSize (800, 500);
 }
 
 Slicer_granularAudioProcessorEditor::~Slicer_granularAudioProcessorEditor()

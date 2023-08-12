@@ -94,7 +94,7 @@ genGrain1::outs genGrain1::operator()(float trig_in){
 	
 	float skew_tmp = _skew + skewEffectiveRandomValue;
 	float latch_skew_result = _skewLatch(skew_tmp, gater[1]);
-	float win = nvs::gen::triangle<float, false>(windowIdx, latch_skew_result);
+	float win = nvs::gen::triangle<float, false>(windowIdx, latch_skew_result);	// calling fmod because does not assume bounded input
 	
 	win = nvs::gen::parzen(win);
 	sample *= win;
