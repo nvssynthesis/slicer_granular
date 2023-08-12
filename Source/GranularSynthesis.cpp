@@ -25,6 +25,9 @@ printer(800)
 void genGrain1::setId(int newId){
 	grainId = newId;
 }
+void genGrain1::setTranspose(float ratio){
+	_transpRat = ratio;
+}
 void genGrain1::setDuration(float duration){
 	_duration = duration;
 }
@@ -61,7 +64,7 @@ genGrain1::outs genGrain1::operator()(float trig_in){
 	std::array<float, 2> gater = gateSelect<float, 2>(switch2, trig_in);
 	
 	o.next = gater[0];
-	_accum(1.f, static_cast<bool>(gater[1]));
+	_accum(_transpRat * 1.f, static_cast<bool>(gater[1]));
 	auto accumVal = _accum.val;
 	
 	// offset, duration ('slope' in max patch), pan, skew
@@ -131,6 +134,11 @@ _rateRandomLatch(1.f)
 		_grains[i].setId(i);
 	}
 }
+
+void genGranPoly1::setTranspose(float transpositionRatio){
+	for (auto &g : _grains)
+		g.setTranspose(transpositionRatio);
+}
 void genGranPoly1::setPosition(float positionNormalized){
 	positionNormalized = nvs::memoryless::clamp<float>(positionNormalized, 0.f, 1.f);
 	auto pos = positionNormalized * static_cast<float>(_wavespan.size());
@@ -161,6 +169,7 @@ void genGranPoly1::setPan(float pan){
 	for (auto &g : _grains)
 		g.setPan(pan);
 }
+
 void genGranPoly1::setPositionRandomness(float randomness){
 	randomness = randomness * static_cast<float>(_wavespan.size());
 	for (auto &g : _grains)
@@ -175,12 +184,10 @@ void genGranPoly1::setSpeedRandomness(float randomness){
 	randomness = nvs::memoryless::clamp_low(randomness, -0.99f);
 	_rateRandomness = randomness;
 }
-
 void genGranPoly1::setSkewRandomness(float randomness){
 	for (auto &g : _grains)
 		g.setSkewRand(randomness);
 }
-
 void genGranPoly1::setPanRandomness(float randomness){
 	for (auto &g : _grains)
 		g.setPanRand(randomness);

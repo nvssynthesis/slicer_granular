@@ -141,13 +141,14 @@ private:
 	};
 	AudioBuffersChannels audioBuffersChannels;
 	
+	float lastTranspose {0.f};
 	float lastPosition {0.f};
 	float lastSpeed {0.1f};
 	float lastDuration {100.f};
 	float lastSkew {0.5f};
-	
 	float lastPan {0.5f};
 
+	float lastTransposeRand {0.f};
 	float lastPositionRand {0.f};
 	float lastSpeedRand {0.f};
 	float lastDurationRand {0.f};

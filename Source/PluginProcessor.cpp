@@ -159,7 +159,7 @@ void Slicer_granularAudioProcessor::loadAudioFile(juce::File const f){
 	std::array<juce::Range<float> , 1> normalizationRange;
 	reader->readMaxLevels(0, reader->lengthInSamples, &normalizationRange[0], 1);
 	
-#pragma message ("make use of normalization")
+//#pragma message ("make use of normalization")
 	auto min = normalizationRange[0].getStart();
 	auto max = normalizationRange[0].getEnd();
 	
@@ -186,6 +186,15 @@ void Slicer_granularAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
 
 	// normally we'd have the synth voice as a juce synth voice and have to dynamic cast before setting its params
 	float tmp;
+	tmp = *apvts.getRawParameterValue(getParamElement<params_e::transpose, param_elem_e::name>());
+	if (lastTranspose != tmp){
+		lastTranspose = tmp;
+		
+		constexpr float semitoneRatio = 1.059463094359295f;
+		tmp = pow(semitoneRatio, tmp);
+		
+		gen_granular.setTranspose(tmp);
+	}
 	tmp = *apvts.getRawParameterValue(getParamElement<params_e::position, param_elem_e::name>());
 	if (lastPosition != tmp){
 		lastPosition = tmp;

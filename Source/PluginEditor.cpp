@@ -161,7 +161,7 @@ void Slicer_granularAudioProcessorEditor::resized()
 		auto height = sliderHeight;
 
 		if (isParamOfCategory(static_cast<params_e>(i), param_category_e::random)){
-			auto const xOffset = (widthUnit * (numMainParams)) ;
+			auto const xOffset = widthUnit * numMainParams;
 			
 			y += sliderHeight;
 			y += sliderToKnobLowerPadding;

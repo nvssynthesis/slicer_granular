@@ -84,6 +84,7 @@ private:
 	
 	nvs::gen::latch<float> _panLatch;
 	
+	float _transpRat = 1.f;
 	float _duration = 1.f;
 	float _offset = 0.f;
 	float _skew = 0.5f;
@@ -107,6 +108,7 @@ public:
 	explicit genGrain1(std::span<float> const &waveSpan, numberGenerator<float> *const ng, size_t *const numGrains = nullptr, int newId = -1);
 
 	void setId(int newId);
+	void setTranspose(float ratio);
 	void setDuration(float duration);
 	void setOffset(float offset);
 	void setSkew(float skew);
@@ -147,6 +149,8 @@ private:
 	
 public:
 	explicit genGranPoly1(float const &sampleRate, std::span<float> const &wavespan, size_t nGrains = 16);
+	
+	void setTranspose(float transpositionRatio);
 	void setPosition(float positionNormalized);
 	void setRate(float newRate);
 	void setDuration(float dur_ms);
