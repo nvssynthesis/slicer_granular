@@ -175,6 +175,32 @@ void Slicer_granularAudioProcessor::loadAudioFile(juce::File const f){
 	delete reader;
 }
 
+
+using granMembrSetFunc = void(nvs::gran::genGranPoly1::*) (float);
+typedef StaticMap<params_e, granMembrSetFunc, static_cast<size_t>(params_e::count)>::iterator iter;
+typedef StaticMap<params_e, granMembrSetFunc, static_cast<size_t>(params_e::count)>::const_iterator citer;
+
+#if (STATIC_MAP | FROZEN_MAP)
+template <auto Start, auto End>
+constexpr void Slicer_granularAudioProcessor::paramSet(){
+	float tmp;
+
+	if constexpr (Start < End){
+		constexpr params_e p = static_cast<params_e>(Start);
+		granMembrSetFunc func = paramSetterMap.at(p);
+		tmp = *apvts.getRawParameterValue(getParamElement<p, param_elem_e::name>());
+		float *last = lastParamsMap.at(p);
+		if (tmp != *last){
+			*last = tmp;
+			granMembrSetFunc setFunc = paramSetterMap.at(p);
+			(gen_granular.*setFunc)(tmp);	// could replace with std::invoke
+		}
+		
+		paramSet<Start + 1, End>();
+	}
+}
+#endif
+
 void Slicer_granularAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
     juce::ScopedNoDenormals noDenormals;
@@ -183,15 +209,19 @@ void Slicer_granularAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
 
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
-
-	// normally we'd have the synth voice as a juce synth voice and have to dynamic cast before setting its params
+	
+	
+#if (STATIC_MAP | FROZEN_MAP)
+	paramSet<0, static_cast<int>(params_e::count)>();
+#else
 	float tmp;
+	// normally we'd have the synth voice as a juce synth voice and have to dynamic cast before setting its params
 	tmp = *apvts.getRawParameterValue(getParamElement<params_e::transpose, param_elem_e::name>());
 	if (lastTranspose != tmp){
 		lastTranspose = tmp;
 		
-		constexpr float semitoneRatio = 1.059463094359295f;
-		tmp = pow(semitoneRatio, tmp);
+//		constexpr float semitoneRatio = 1.059463094359295f;
+//		tmp = pow(semitoneRatio, tmp);
 		
 		gen_granular.setTranspose(tmp);
 	}
@@ -203,7 +233,7 @@ void Slicer_granularAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
 	tmp = *apvts.getRawParameterValue(getParamElement<params_e::speed, param_elem_e::name>());
 	if	(lastSpeed != tmp){
 		lastSpeed = tmp;
-		gen_granular.setRate(lastSpeed);
+		gen_granular.setSpeed(lastSpeed);
 	}
 	tmp = *apvts.getRawParameterValue(getParamElement<params_e::duration, param_elem_e::name>());
 	if (lastDuration != tmp){
@@ -246,7 +276,7 @@ void Slicer_granularAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
 		lastPanRand = tmp;
 		gen_granular.setPanRandomness(lastPanRand);
 	}
-	
+#endif
 	float trigger = static_cast<float>(triggerValFromEditor);
 	for (const juce::MidiMessageMetadata metadata : midiMessages){
 		if (metadata.numBytes == 3){
@@ -256,7 +286,6 @@ void Slicer_granularAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
 	}
 //	editorInformant.reset();
 	for (auto samp = 0; samp < buffer.getNumSamples(); ++samp){
-#if 1
 		std::array<float, 2> output = gen_granular(trigger);
 
 		rms.accumulate(output[0] + output[1]);
@@ -268,7 +297,6 @@ void Slicer_granularAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
 			auto* channelData = buffer.getWritePointer (channel);
 			*(channelData + samp) = output[channel];
 		}
-#endif
 	}
 	const auto rms_val = rms.query();
 	rmsInformant.val = rms_val;

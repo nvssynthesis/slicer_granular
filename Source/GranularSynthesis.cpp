@@ -64,7 +64,8 @@ genGrain1::outs genGrain1::operator()(float trig_in){
 	std::array<float, 2> gater = gateSelect<float, 2>(switch2, trig_in);
 	
 	o.next = gater[0];
-	_accum(_transpRat * 1.f, static_cast<bool>(gater[1]));
+	float latch_transpose_result = _transposeLatch(_transpRat, gater[1]);
+	_accum(latch_transpose_result * 1.f, static_cast<bool>(gater[1]));
 	auto accumVal = _accum.val;
 	
 	// offset, duration ('slope' in max patch), pan, skew
@@ -72,7 +73,7 @@ genGrain1::outs genGrain1::operator()(float trig_in){
 	float durationEffectiveRandomValue {0.f};
 	float panEffectiveRandomValue {0.5f};
 	float skewEffectiveRandomValue {0.f};
-	// this should just get all randoms
+	// get all randoms
 	if (_ng_ptr != nullptr){
 		offsetEffectiveRandomValue = (*_ng_ptr)() * _offsetRand;
 		durationEffectiveRandomValue = (*_ng_ptr)() * _durationRand;
@@ -128,7 +129,7 @@ _wavespan(wavespan),
 _numGrains(nGrains),
 _grains(_numGrains, genGrain1(wavespan, &_ng, &_numGrains) ),
 _phasorInternalTrig(sampleRate),
-_rateRandomLatch(1.f)
+_speedRandomLatch(1.f)
 {
 	for (int i = 0; i < _numGrains; ++i){
 		_grains[i].setId(i);
@@ -146,9 +147,9 @@ void genGranPoly1::setPosition(float positionNormalized){
 	for (auto &g : _grains)
 		g.setOffset(_offsetHisto.val);
 }
-void genGranPoly1::setRate(float newRate){
-	newRate = nvs::memoryless::clamp<float>(newRate, 0.f, _sampleRate/2.f);
-	_rateHisto(newRate);
+void genGranPoly1::setSpeed(float newSpeed){
+	newSpeed = nvs::memoryless::clamp<float>(newSpeed, 0.f, _sampleRate/2.f);
+	_speedHisto(newSpeed);
 }
 void genGranPoly1::setDuration(float dur_ms){
 	dur_ms = nvs::memoryless::clamp_low<float>(dur_ms, 0.f);
@@ -169,6 +170,8 @@ void genGranPoly1::setPan(float pan){
 	for (auto &g : _grains)
 		g.setPan(pan);
 }
+#pragma message("implement genGranPoly1::setTransposeRandomness")
+void genGranPoly1::setTransposeRandomness(float randomness){}
 
 void genGranPoly1::setPositionRandomness(float randomness){
 	randomness = randomness * static_cast<float>(_wavespan.size());
@@ -180,9 +183,9 @@ void genGranPoly1::setDurationRandomness(float randomness){
 		g.setDurationRand(randomness);
 }
 void genGranPoly1::setSpeedRandomness(float randomness){
-	// because this value is added as multiplier of rate. we do not want rate to become 0, or it will freeze all grains.
+	// because this value is added as multiplier of speed. we do not want speed to become 0, or it will freeze all grains.
 	randomness = nvs::memoryless::clamp_low(randomness, -0.99f);
-	_rateRandomness = randomness;
+	_speedRandomness = randomness;
 }
 void genGranPoly1::setSkewRandomness(float randomness){
 	for (auto &g : _grains)
@@ -195,8 +198,8 @@ void genGranPoly1::setPanRandomness(float randomness){
 std::array<float, 2> genGranPoly1::operator()(float triggerIn){
 	std::array<float, 2> output;
 	
-	float freq_tmp = _rateHisto.val;
-	float randFreq = _rateRandomLatch( _rateRandomness * _ng(), _triggerHisto.val );
+	float freq_tmp = _speedHisto.val;
+	float randFreq = _speedRandomLatch( _speedRandomness * _ng(), _triggerHisto.val );
 	randFreq *= freq_tmp;
 	freq_tmp += randFreq;
 	assert(freq_tmp > 0.f);

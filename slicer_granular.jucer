@@ -3,7 +3,7 @@
 <JUCERPROJECT id="AZwtct" name="slicer-granular" projectType="audioplug" useAppConfig="0"
               addUsingNamespaceToJuceHeader="0" displaySplashScreen="1" jucerFormatVersion="1"
               pluginCharacteristicsValue="pluginIsSynth" pluginManufacturer="nvssynthesis"
-              cppLanguageStandard="20" headerPath="/Users/nicholassolem/development/boost_1_80_0&#10;/Users/nicholassolem/development/eigen-3.4.0&#10;/Users/nicholassolem/development/nvs_maps&#10;/Users/nicholassolem/development/nvs_libraries&#10;/Users/nicholassolem/development/thirdparty/Signalsmith&#10;/Users/nicholassolem/development/TSARA/inc"
+              cppLanguageStandard="20" headerPath="/Users/nicholassolem/development/boost_1_80_0&#10;/Users/nicholassolem/development/eigen-3.4.0&#10;/Users/nicholassolem/development/nvs_maps&#10;/Users/nicholassolem/development/nvs_libraries&#10;/Users/nicholassolem/development/thirdparty/Signalsmith&#10;/Users/nicholassolem/development/thirdparty/frozen/include&#10;/Users/nicholassolem/development/TSARA/inc"
               companyName="nvssynthesis" companyWebsite="https://nvssynthesis.github.io/"
               version="0.1.0">
   <MAINGROUP id="QmNeTI" name="slicer-granular">
@@ -16,6 +16,8 @@
             file="Source/PluginEditor.cpp"/>
       <FILE id="mApci6" name="PluginEditor.h" compile="0" resource="0" file="Source/PluginEditor.h"/>
       <FILE id="OW557g" name="dsp_util.h" compile="0" resource="0" file="Source/dsp_util.h"/>
+      <FILE id="BN5JES" name="DataStructures.h" compile="0" resource="0"
+            file="Source/DataStructures.h"/>
       <FILE id="aExhKH" name="OnsetAnalysis.h" compile="0" resource="0" file="Source/OnsetAnalysis.h"/>
       <FILE id="uteSqY" name="OnsetAnalysis.cpp" compile="1" resource="0"
             file="Source/OnsetAnalysis.cpp"/>

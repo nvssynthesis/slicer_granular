@@ -11,6 +11,9 @@
 #include <JuceHeader.h>
 #include "GranularSynthesis.h"
 #include "dsp_util.h"
+#include "params.h"
+#include "DataStructures.h"
+#include "frozen/map.h"
 
 //==============================================================================
 /**
@@ -141,6 +144,7 @@ private:
 	};
 	AudioBuffersChannels audioBuffersChannels;
 	
+#pragma message("get these statically from default map in params.h")
 	float lastTranspose {0.f};
 	float lastPosition {0.f};
 	float lastSpeed {0.1f};
@@ -155,10 +159,54 @@ private:
 	float lastSkewRand {0.f};
 	float lastPanRand {0.f};
 	
+#define STATIC_MAP 0
+#define FROZEN_MAP 1
+	
+#if STATIC_MAP
+	#define MAP StaticMap
+#elif FROZEN_MAP
+	#define MAP frozen::map
+#endif
+	
+#if (STATIC_MAP | FROZEN_MAP)
+	using granMembrSetFunc = void(nvs::gran::genGranPoly1::*) (float);
+
+	static constexpr inline MAP<params_e, granMembrSetFunc, static_cast<size_t>(params_e::count)>
+	paramSetterMap {
+		std::make_pair<params_e, granMembrSetFunc>(params_e::transpose, 		&nvs::gran::genGranPoly1::setTranspose),
+		std::make_pair<params_e, granMembrSetFunc>(params_e::position, 			&nvs::gran::genGranPoly1::setPosition),
+		std::make_pair<params_e, granMembrSetFunc>(params_e::speed, 			&nvs::gran::genGranPoly1::setSpeed),
+		std::make_pair<params_e, granMembrSetFunc>(params_e::duration, 			&nvs::gran::genGranPoly1::setDuration),
+		std::make_pair<params_e, granMembrSetFunc>(params_e::skew, 				&nvs::gran::genGranPoly1::setSkew),
+		std::make_pair<params_e, granMembrSetFunc>(params_e::pan, 				&nvs::gran::genGranPoly1::setPan),
+		std::make_pair<params_e, granMembrSetFunc>(params_e::transp_randomness, &nvs::gran::genGranPoly1::setTransposeRandomness),
+		std::make_pair<params_e, granMembrSetFunc>(params_e::pos_randomness, 	&nvs::gran::genGranPoly1::setPositionRandomness),
+		std::make_pair<params_e, granMembrSetFunc>(params_e::speed_randomness, 	&nvs::gran::genGranPoly1::setSpeedRandomness),
+		std::make_pair<params_e, granMembrSetFunc>(params_e::dur_randomness, 	&nvs::gran::genGranPoly1::setDurationRandomness),
+		std::make_pair<params_e, granMembrSetFunc>(params_e::skew_randomness, 	&nvs::gran::genGranPoly1::setSkewRandomness),
+		std::make_pair<params_e, granMembrSetFunc>(params_e::pan_randomness, 	&nvs::gran::genGranPoly1::setPanRandomness)
+	};
+	template <auto Start, auto End>
+	constexpr void paramSet();
+	
+	MAP<params_e, float *, static_cast<size_t>(params_e::count)>
+	lastParamsMap{
+		std::make_pair<params_e, float *>(params_e::transpose, 	&lastTranspose),
+		std::make_pair<params_e, float *>(params_e::position, 	&lastPosition),
+		std::make_pair<params_e, float *>(params_e::speed, 		&lastSpeed),
+		std::make_pair<params_e, float *>(params_e::duration, 	&lastDuration),
+		std::make_pair<params_e, float *>(params_e::skew, 		&lastSkew),
+		std::make_pair<params_e, float *>(params_e::pan, 		&lastPan),
+		std::make_pair<params_e, float *>(params_e::transp_randomness, 	&lastTransposeRand),
+		std::make_pair<params_e, float *>(params_e::pos_randomness, 	&lastPositionRand),
+		std::make_pair<params_e, float *>(params_e::speed_randomness, 	&lastSpeedRand),
+		std::make_pair<params_e, float *>(params_e::dur_randomness, 	&lastDurationRand),
+		std::make_pair<params_e, float *>(params_e::skew_randomness, 	&lastSkewRand),
+		std::make_pair<params_e, float *>(params_e::pan_randomness, 	&lastPanRand)
+	};
+#endif
 	float lastSampleRate 	{ 0.f };
 	int lastSamplesPerBlock { 0 };
-	
-	// button to load audio file
 	
 	// loads into vector<Real> via func in OnsetAnalysis
 	nvs::ess::EssentiaInitializer ess_init;

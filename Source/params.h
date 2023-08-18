@@ -21,7 +21,7 @@ enum class params_e {
 	skew,
 	pan,
 	// these should appear as little dials below the main controls
-	transpose_randomness,
+	transp_randomness,
 	pos_randomness,
 	speed_randomness,
 	dur_randomness,
@@ -46,7 +46,7 @@ paramCategoryMap {
 	{params_e::duration, param_category_e::main},
 	{params_e::skew, param_category_e::main},
 	{params_e::pan, param_category_e::main},
-	{params_e::transpose_randomness, param_category_e::random},
+	{params_e::transp_randomness, param_category_e::random},
 	{params_e::pos_randomness, param_category_e::random},
 	{params_e::speed_randomness, param_category_e::random},
 	{params_e::dur_randomness, param_category_e::random},
@@ -86,7 +86,7 @@ static const inline  std::map<params_e, paramPropsTuple> paramMap {
 	{params_e::skew, 		{0.001f, 0.999f, 0.f, 	1.f, 	false, 	0.5f, 	"Skew"}},
 	{params_e::pan, 		{0.f, 	1.f, 	0.f, 	1.f, 	false, 	0.5f, 	"Pan Width"}},
 	
-	{params_e::transpose_randomness,{-60.f,60.f,0.f, randSkew, true, 0.f, "Transpose Randomness"}},
+	{params_e::transp_randomness,	{-60.f,60.f,0.f, randSkew, true, 0.f, "Transpose Randomness"}},
 	{params_e::pos_randomness,		{-1.f, 1.f, 0.f, randSkew, true, 0.f, "Position Randomness"}},
 	{params_e::speed_randomness,	{-1.f, 1.f, 0.f, randSkew, true, 0.f, "Speed Randomness"}},
 	{params_e::dur_randomness, 		{-1.f, 1.f, 0.f, randSkew, true, 0.f, "Duration Randomness"}},

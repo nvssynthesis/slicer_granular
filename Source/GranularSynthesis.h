@@ -11,6 +11,7 @@
 #pragma once
 #include "OnsetAnalysis.h"
 #include "nvs_libraries/include/nvs_gen.h"
+#pragma message("Using local xoshiro path")
 #include "/Users/nicholassolem/development/Xoshiro-cpp/XoshiroCpp.hpp"
 #include <span>
 
@@ -77,6 +78,7 @@ public:
 struct genGrain1 {
 private:
 	nvs::gen::history<float> _histo;// history of 'busy' boolean signal, goes to [switch 1 2]
+	nvs::gen::latch<float> _transposeLatch;	// latches transposition from gate on, goes toward dest windowing
 	nvs::gen::latch<float> _durationLatch;	// latches duration from gate on, goes toward dest windowing
 	nvs::gen::latch<float> _offsetLatch;// latches offset from gate on, goes toward dest windowing
 	nvs::gen::latch<float> _skewLatch;
@@ -134,14 +136,14 @@ private:
 	size_t _numGrains { 16 };
 	std::vector<genGrain1> _grains;
 	gen::phasor _phasorInternalTrig;
-	nvs::gen::history<float> _rateHisto;
+	nvs::gen::history<float> _speedHisto;
 	nvs::gen::history<float> _durationHisto;
 	nvs::gen::history<float> _offsetHisto;
 	nvs::gen::history<float> _triggerHisto;
 	nvs::gen::ramp2trig<float> _ramp2trig;
 	
-	nvs::gen::latch<float> _rateRandomLatch;
-	float _rateRandomness {0.f};
+	nvs::gen::latch<float> _speedRandomLatch;
+	float _speedRandomness {0.f};
 	
 	nvs::gen::change<float> change_test;
 	
@@ -152,10 +154,11 @@ public:
 	
 	void setTranspose(float transpositionRatio);
 	void setPosition(float positionNormalized);
-	void setRate(float newRate);
+	void setSpeed(float newSpeed);
 	void setDuration(float dur_ms);
 	void setSkew(float skew);
 	void setPan(float pan);
+	void setTransposeRandomness(float randomness);
 	void setPositionRandomness(float randomness);
 	void setDurationRandomness(float randomness);
 	void setSpeedRandomness(float randomness);
