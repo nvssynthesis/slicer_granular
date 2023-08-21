@@ -15,7 +15,8 @@
 #include "FileSelectorComponent.h"
 
 //==============================================================================
-/**
+/** TODO:
+	-center param names
 */
 
 class Slicer_granularAudioProcessorEditor  : public juce::AudioProcessorEditor
