@@ -8,12 +8,25 @@
 
 #pragma once
 
+#ifndef FROZEN_MAP
+#define FROZEN_MAP 1
+#endif
+
 #include <JuceHeader.h>
 #include "GranularSynthesis.h"
 #include "dsp_util.h"
 #include "params.h"
-#include "DataStructures.h"
-#include "frozen/map.h"
+
+#if FROZEN_MAP
+	#include "frozen/map.h"
+	#define STATIC_MAP 0
+	#define MAP frozen::map
+#endif
+
+#if STATIC_MAP
+	#include "DataStructures.h"
+	#define MAP StaticMap
+#endif
 
 //==============================================================================
 /**
@@ -158,16 +171,6 @@ private:
 	float lastDurationRand 	{0.f};
 	float lastSkewRand 		{0.f};
 	float lastPanRand 		{0.f};
-	
-#define STATIC_MAP 0
-#define FROZEN_MAP 1
-	static_assert(!(STATIC_MAP && FROZEN_MAP));	// one or the other, or neither, but not both
-	
-#if STATIC_MAP
-	#define MAP StaticMap
-#elif FROZEN_MAP
-	#define MAP frozen::map
-#endif
 	
 #if (STATIC_MAP | FROZEN_MAP)
 	using granMembrSetFunc = void(nvs::gran::genGranPoly1::*) (float);

@@ -177,11 +177,6 @@ void Slicer_granularAudioProcessor::loadAudioFile(juce::File const f){
 	delete reader;
 }
 
-
-using granMembrSetFunc = void(nvs::gran::genGranPoly1::*) (float);
-typedef StaticMap<params_e, granMembrSetFunc, static_cast<size_t>(params_e::count)>::iterator iter;
-typedef StaticMap<params_e, granMembrSetFunc, static_cast<size_t>(params_e::count)>::const_iterator citer;
-
 #if (STATIC_MAP | FROZEN_MAP)
 template <auto Start, auto End>
 constexpr void Slicer_granularAudioProcessor::paramSet(){
@@ -189,7 +184,6 @@ constexpr void Slicer_granularAudioProcessor::paramSet(){
 
 	if constexpr (Start < End){
 		constexpr params_e p = static_cast<params_e>(Start);
-		granMembrSetFunc func = paramSetterMap.at(p);
 		tmp = *apvts.getRawParameterValue(getParamElement<p, param_elem_e::name>());
 		float *last = lastParamsMap.at(p);
 		if (tmp != *last){
