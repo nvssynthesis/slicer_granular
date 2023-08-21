@@ -12,6 +12,7 @@
 #include "PluginProcessor.h"
 #include "params.h"
 #include "dsp_util.h"
+#include "FileSelectorComponent.h"
 
 //==============================================================================
 /**
@@ -44,8 +45,12 @@ public:
 private:
 	std::array<juce::Slider, static_cast<size_t>(params_e::count)> paramSliders;
 	std::array<juce::Label, static_cast<size_t>(params_e::count)> paramLabels;
+	FileSelectorComponent fileComp;
+/*
     std::unique_ptr<juce::FilenameComponent> fileComp;
-
+	juce::StringArray recentFiles;
+	juce::File recentFilesListFile;
+*/
 	juce::ToggleButton triggeringButton;
 	std::array<juce::Colour, 5> gradientColors {
 		juce::Colours::transparentBlack,
@@ -55,32 +60,7 @@ private:
 		juce::Colours::black
 	};
 	size_t colourOffsetIndex {0};
-	/*template<typename ExternalStateType>
-	struct UpdateState{
-		UpdateState(ExternalStateType &s, ExternalStateType externalBound)
-		:	ext(s),
-			extUpperBound(externalBound)
-		{}
-		size_t counter {0};
-		static constexpr size_t upperBound {20};
-		ExternalStateType &ext;
-		ExternalStateType extUpperBound;
-		bool operator()(){
-			++counter;
-			if (counter >= upperBound){
-				++ext;
-				if (ext >= extUpperBound){
-					ext = 0;
-				}
-				counter = 0;
-				return true;
-			}
-			return false;
-		}
-	};
 
-	UpdateState<size_t> updateState;
-	*/
 	void update()
 	{
 //		const auto needsToRepaint = updateState();

@@ -12,20 +12,14 @@
 
 Slicer_granularAudioProcessorEditor::Slicer_granularAudioProcessorEditor (Slicer_granularAudioProcessor& p)
     : AudioProcessorEditor (&p)
-, triggeringButton("hi")
-//, updateState(colourOffsetIndex, gradientColors.size())
-, audioProcessor (p)
+,	fileComp(juce::File(), "*.wav;*.aif;*.aiff", "", "Select file to open")
+,	triggeringButton("hi")
+,	audioProcessor (p)
 {
-	fileComp = std::make_unique<juce::FilenameComponent> ("fileComp",
-												juce::File(), 			 // current file
-												 false,                    // can edit file name,
-												 false,                    // is directory,
-												 false,                    // is for saving,
-												 "*.wav;*.aif;*.aiff",   // browser wildcard suffix,
-												 "",                       // enforced suffix,
-												 "Select file to open");  // text when nothing selected
-	addAndMakeVisible (fileComp.get());
-	fileComp->addListener (this);
+
+	addAndMakeVisible (fileComp);
+	fileComp.addListener (this);
+	fileComp.getRecentFilesFromUserApplicationDataDirectory();
 	
 	addAndMakeVisible(triggeringButton);
 	triggeringButton.onClick = [this, &p]{ updateToggleState(&triggeringButton, "Trigger", p.triggerValFromEditor);	};
@@ -62,6 +56,7 @@ Slicer_granularAudioProcessorEditor::Slicer_granularAudioProcessorEditor (Slicer
 
 Slicer_granularAudioProcessorEditor::~Slicer_granularAudioProcessorEditor()
 {
+	fileComp.pushRecentFilesToFile();
 	for (auto &a : paramSliderAttachments)
 		a = nullptr;
 }
@@ -114,7 +109,7 @@ void Slicer_granularAudioProcessorEditor::resized()
 	int fileCompTopPad = 10;
 	int fileCompWidth = getWidth() - (fileCompLeftPad * 2);
 	int fileCompHeight = 20;
-	fileComp->setBounds    (fileCompLeftPad, fileCompTopPad, fileCompWidth, fileCompHeight);
+	fileComp.setBounds    (fileCompLeftPad, fileCompTopPad, fileCompWidth, fileCompHeight);
 	
 	triggeringButton.setBounds(fileCompLeftPad, fileCompTopPad + fileCompHeight + fileCompTopPad, 25, 25);
 
@@ -191,7 +186,7 @@ void Slicer_granularAudioProcessorEditor::sliderValueChanged(juce::Slider* slide
 }
 void Slicer_granularAudioProcessorEditor::readFile (const juce::File& fileToRead)
 {
-	if (! fileToRead.existsAsFile()) // [1]
+	if (! fileToRead.existsAsFile())
 		return;
 
 	juce::String fn = fileToRead.getFullPathName();
@@ -199,10 +194,13 @@ void Slicer_granularAudioProcessorEditor::readFile (const juce::File& fileToRead
 	
 	audioProcessor.writeToLog(st_str);
 	audioProcessor.loadAudioFile(fileToRead);
+	
+	fileComp.setCurrentFile(fileToRead, true);
 }
 
 void Slicer_granularAudioProcessorEditor::filenameComponentChanged (juce::FilenameComponent* fileComponentThatHasChanged)
 {
-	if (fileComponentThatHasChanged == fileComp.get())
-		readFile (fileComp->getCurrentFile());
+	if (fileComponentThatHasChanged == &fileComp){
+		readFile (fileComp.getCurrentFile());
+	}
 }

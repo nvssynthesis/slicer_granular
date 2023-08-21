@@ -11,8 +11,7 @@
 #pragma once
 #include "OnsetAnalysis.h"
 #include "nvs_libraries/include/nvs_gen.h"
-#pragma message("Using local xoshiro path")
-#include "/Users/nicholassolem/development/Xoshiro-cpp/XoshiroCpp.hpp"
+#include "XoshiroCpp.hpp"
 #include <span>
 
 namespace nvs {

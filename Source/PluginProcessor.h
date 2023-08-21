@@ -145,22 +145,23 @@ private:
 	AudioBuffersChannels audioBuffersChannels;
 	
 #pragma message("get these statically from default map in params.h")
-	float lastTranspose {0.f};
-	float lastPosition {0.f};
-	float lastSpeed {0.1f};
-	float lastDuration {100.f};
-	float lastSkew {0.5f};
-	float lastPan {0.5f};
+	float lastTranspose 	{getParamDefault(params_e::transpose)};
+	float lastPosition 		{0.f};
+	float lastSpeed 		{getParamDefault(params_e::speed)};
+	float lastDuration 		{100.f};
+	float lastSkew 			{0.5f};
+	float lastPan 			{0.5f};
 
 	float lastTransposeRand {0.f};
-	float lastPositionRand {0.f};
-	float lastSpeedRand {0.f};
-	float lastDurationRand {0.f};
-	float lastSkewRand {0.f};
-	float lastPanRand {0.f};
+	float lastPositionRand 	{0.f};
+	float lastSpeedRand 	{0.f};
+	float lastDurationRand 	{0.f};
+	float lastSkewRand 		{0.f};
+	float lastPanRand 		{0.f};
 	
 #define STATIC_MAP 0
 #define FROZEN_MAP 1
+	static_assert(!(STATIC_MAP && FROZEN_MAP));	// one or the other, or neither, but not both
 	
 #if STATIC_MAP
 	#define MAP StaticMap

@@ -342,7 +342,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout Slicer_granularAudioProcesso
 		auto name = std::get<static_cast<size_t>(param_elem_e::name)>(tup);
 		// (ValueType rangeStart, ValueType rangeEnd, ValueType intervalValue, ValueType skewFactor, bool useSymmetricSkew=false)
 		juce::NormalisableRange<float> range = getNormalizableRange<float>(p);
-		auto defaultVal = std::get<static_cast<size_t>(param_elem_e::defaultVal)>(tup);
+		auto defaultVal = getParamDefault(p);
 		
 		return std::make_unique<juce::AudioParameterFloat>(juce::ParameterID(name,  1),	//	parameterID
 												   name,		// parameterName
