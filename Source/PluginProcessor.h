@@ -5,7 +5,9 @@
 
   ==============================================================================
 */
-
+/** TODO:
+	-output gain
+*/
 #pragma once
 
 #ifndef FROZEN_MAP
@@ -29,8 +31,7 @@
 #endif
 
 //==============================================================================
-/**
-*/
+
 class Slicer_granularAudioProcessor  : public juce::AudioProcessor
                             #if JucePlugin_Enable_ARA
                              , public juce::AudioProcessorARAExtension

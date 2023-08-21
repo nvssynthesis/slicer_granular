@@ -5,14 +5,6 @@
 
   ==============================================================================
 */
-/// TODO:
-//		organize files so that gen only copy is in proper folder, this project refs that file
-//		button for file load
-//		pan main control should be overall pan tendency; pan rand should be what current pan knob does
-// 		implement other randomess
-//		output gain
-//		THEN THE BIG TSARA STUFF
-
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 

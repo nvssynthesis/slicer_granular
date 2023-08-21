@@ -11,7 +11,7 @@
 #include "GranularSynthesis.h"
 namespace nvs {
 namespace gran {
-genGrain1::genGrain1(std::span<float> const &waveSpan, numberGenerator<float> *const ng, size_t *const numGrains, int newId)
+genGrain1::genGrain1(std::span<float> const &waveSpan, RandomNumberGenerator<float> *const ng, size_t *const numGrains, int newId)
 :	_waveSpan(waveSpan)
 ,	grainId(newId)
 ,	_numGrains_ptr(numGrains)
@@ -36,10 +36,12 @@ void genGrain1::setSkew(float skew){
 void genGrain1::setPan(float pan){
 	_pan = pan;
 }
+void genGrain1::setTransposeRand(float transposeRand){
+	_transposeRand = transposeRand;
+}
 void genGrain1::setDurationRand(float durationRand){
 	_durationRand = durationRand;
 }
-
 void genGrain1::setOffsetRand(float offsetRand){
 	_offsetRand = offsetRand;
 }
@@ -59,18 +61,18 @@ genGrain1::outs genGrain1::operator()(float trig_in){
 	
 	std::array<float, 2> gater = gateSelect<float, 2>(switch2, trig_in);
 	
-	o.next = gater[0];
-	float latch_transpose_result = _transposeLatch(_transpRat, gater[1]);
-	_accum(latch_transpose_result * 1.f, static_cast<bool>(gater[1]));
-	auto accumVal = _accum.val;
-	
 	// offset, duration ('slope' in max patch), pan, skew
+	float transposeEffectiveRandomValue {0.f};
 	float offsetEffectiveRandomValue {0.f};
 	float durationEffectiveRandomValue {0.f};
 	float panEffectiveRandomValue {0.5f};
 	float skewEffectiveRandomValue {0.f};
 	// get all randoms
 	if (_ng_ptr != nullptr){
+		transposeEffectiveRandomValue = (*_ng_ptr)() * _transposeRand;
+		transposeEffectiveRandomValue = pow(2, transposeEffectiveRandomValue);
+		assert(transposeEffectiveRandomValue > 0);
+		assert(transposeEffectiveRandomValue == transposeEffectiveRandomValue);
 		offsetEffectiveRandomValue = (*_ng_ptr)() * _offsetRand;
 		durationEffectiveRandomValue = (*_ng_ptr)() * _durationRand;
 		panEffectiveRandomValue = nvs::memoryless::unibi<float>((*_ng_ptr)()) * _panRand;
@@ -80,6 +82,13 @@ genGrain1::outs genGrain1::operator()(float trig_in){
 		skewEffectiveRandomValue = (*_ng_ptr)() * _skewRand;
 		skewEffectiveRandomValue *= 0.5f;
 	}
+	
+	o.next = gater[0];
+	float transposeEffectiveTotalMultiplier = _transpRat * transposeEffectiveRandomValue;
+	float latch_transpose_result = _transposeLatch(transposeEffectiveTotalMultiplier, gater[1]);
+	_accum(latch_transpose_result * 1.f, static_cast<bool>(gater[1]));
+	auto accumVal = _accum.val;
+	
 	float offset_tmp = _offset + offsetEffectiveRandomValue;
 	float latch_offset_result = _offsetLatch(offset_tmp, gater[1]);
 
@@ -89,7 +98,8 @@ genGrain1::outs genGrain1::operator()(float trig_in){
 	float duration_tmp = _duration + durationEffectiveRandomValue;
 	float latch_duration_result = _durationLatch(duration_tmp, gater[1]);
 
-	float windowIdx = (latch_duration_result * accumVal);
+	assert(latch_transpose_result > 0.f);
+	float windowIdx = (latch_duration_result * accumVal / latch_transpose_result);
 	windowIdx = nvs::memoryless::clamp<float>(windowIdx, 0.f, 1.f);
 	
 	float skew_tmp = _skew + skewEffectiveRandomValue;
@@ -169,7 +179,10 @@ void genGranPoly1::setPan(float pan){
 		g.setPan(pan);
 }
 #pragma message("implement genGranPoly1::setTransposeRandomness")
-void genGranPoly1::setTransposeRandomness(float randomness){}
+void genGranPoly1::setTransposeRandomness(float randomness){
+	for (auto &g : _grains)
+		g.setTransposeRand(randomness);
+}
 
 void genGranPoly1::setPositionRandomness(float randomness){
 	randomness = randomness * static_cast<float>(_wavespan.size());

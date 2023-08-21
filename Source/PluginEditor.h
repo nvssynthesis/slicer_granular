@@ -22,7 +22,6 @@
 class Slicer_granularAudioProcessorEditor  : public juce::AudioProcessorEditor
 ,			                                 public juce::Slider::Listener
 ,											 public juce::FilenameComponentListener
-//,											 public juce::Timer
 {
 public:
     Slicer_granularAudioProcessorEditor (Slicer_granularAudioProcessor&);

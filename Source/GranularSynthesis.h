@@ -15,7 +15,6 @@
 
 /*** TODO:
  -interpolation!
- -transpose needs randomness implemented
  -duration randomness must be improved (so sensitive)
  -duration should extend with position as a centrepoint, not startpoint
  -make duration independent of transpose
@@ -27,30 +26,22 @@ namespace nvs {
 namespace gran {
 
 template<typename T>
-struct numberGenerator {
+struct RandomNumberGenerator {
 private:
-	T state = 0.25f;
 	XoshiroCpp::Xoshiro128Plus xosh;
 public:
-	numberGenerator()	:	xosh(1234567890UL){}
+	RandomNumberGenerator()	:	xosh(1234567890UL){}
 	T operator()(){
-		// next random float
-		state += 0.91f;
-		if ((state > 0.5) && (state > 0.6)){
-			state -= 0.123f;
-		}
-		state = fmod(state, 1.0);
-		
 		std::uint32_t randomBits = xosh();
 		float randomFloat = XoshiroCpp::FloatFromBits(randomBits);
-		return (state * 0.f) + (randomFloat * 1.f);
+		return randomFloat;
 	}
 };
 
 struct genGrain1 {
 private:
 	nvs::gen::history<float> _histo;// history of 'busy' boolean signal, goes to [switch 1 2]
-	nvs::gen::latch<float> _transposeLatch;	// latches transposition from gate on, goes toward dest windowing
+	nvs::gen::latch<float> _transposeLatch {1};	// latches transposition from gate on, goes toward dest windowing
 	nvs::gen::latch<float> _durationLatch;	// latches duration from gate on, goes toward dest windowing
 	nvs::gen::latch<float> _offsetLatch;// latches offset from gate on, goes toward dest windowing
 	nvs::gen::latch<float> _skewLatch;
@@ -64,6 +55,7 @@ private:
 	float _skew = 0.5f;
 	float _pan = 0.5f;
 	
+	float _transposeRand = 0.f;
 	float _durationRand = 0.f;
 	float _offsetRand = 0.f;
 	float _skewRand = 0.f;
@@ -75,10 +67,10 @@ private:
 	int grainId;
 	// these pointers are set by containing granular synth
 	size_t *const _numGrains_ptr;
-	numberGenerator<float> *const _ng_ptr;
+	RandomNumberGenerator<float> *const _ng_ptr;
 	
 public:
-	explicit genGrain1(std::span<float> const &waveSpan, numberGenerator<float> *const ng, size_t *const numGrains = nullptr, int newId = -1);
+	explicit genGrain1(std::span<float> const &waveSpan, RandomNumberGenerator<float> *const ng, size_t *const numGrains = nullptr, int newId = -1);
 
 	void setId(int newId);
 	void setTranspose(float semitones);
@@ -86,6 +78,7 @@ public:
 	void setOffset(float offset);
 	void setSkew(float skew);
 	void setPan(float pan);
+	void setTransposeRand(float transposeRand);
 	void setDurationRand(float durationRand); //('slope' in max patch)
 	void setOffsetRand(float offsetRand);
 	void setSkewRand(float skewRand);
@@ -116,7 +109,7 @@ private:
 	nvs::gen::latch<float> _speedRandomLatch;
 	float _speedRandomness {0.f};
 		
-	numberGenerator<float> _ng;
+	RandomNumberGenerator<float> _ng;
 public:
 	explicit genGranPoly1(float const &sampleRate, std::span<float> const &wavespan, size_t nGrains);
 	
