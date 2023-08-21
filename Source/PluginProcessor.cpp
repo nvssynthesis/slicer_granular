@@ -161,10 +161,17 @@ void Slicer_granularAudioProcessor::loadAudioFile(juce::File const f){
 	std::array<juce::Range<float> , 1> normalizationRange;
 	reader->readMaxLevels(0, reader->lengthInSamples, &normalizationRange[0], 1);
 	
-//#pragma message ("make use of normalization")
+	//#pragma message ("make use of normalization")
 	auto min = normalizationRange[0].getStart();
 	auto max = normalizationRange[0].getEnd();
 	
+	auto normVal = std::max(std::abs(min), std::abs(max));
+	if (normVal > 0.f){
+		normalizationValue = 1.f / normVal;
+	} else {
+		std::cerr << "either the sample is digital silence, or something's gone wrong\n";
+		normalizationValue = 1.f;
+	}
 	
 	std::array<float * const, 2> ptrsToWriteTo = audioBuffersChannels.prepareForWrite(newLength, reader->numChannels);
 	
@@ -288,7 +295,7 @@ void Slicer_granularAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
 //		trigger = 0.f;
 		for (int channel = 0; channel < totalNumOutputChannels; ++channel)
 		{
-			output[channel] = juce::jlimit(-1.f, 1.f, output[channel]);
+			output[channel] = juce::jlimit(-1.f, 1.f, output[channel] * normalizationValue);
 
 			auto* channelData = buffer.getWritePointer (channel);
 			*(channelData + samp) = output[channel];

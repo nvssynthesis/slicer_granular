@@ -108,6 +108,7 @@ public:
 	editorInformant<float> rmsWAinformant;
 	
 private:
+	float normalizationValue {1.f};	// a MULTIPLIER for the overall output, based on the inverse of the absolute max value for the current sample
 	juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
 	juce::AudioFormatManager formatManager;
 	
@@ -157,20 +158,19 @@ private:
 	};
 	AudioBuffersChannels audioBuffersChannels;
 	
-#pragma message("get these statically from default map in params.h")
 	float lastTranspose 	{getParamDefault(params_e::transpose)};
-	float lastPosition 		{0.f};
+	float lastPosition 		{getParamDefault(params_e::position)};
 	float lastSpeed 		{getParamDefault(params_e::speed)};
-	float lastDuration 		{100.f};
-	float lastSkew 			{0.5f};
-	float lastPan 			{0.5f};
+	float lastDuration 		{getParamDefault(params_e::duration)};
+	float lastSkew 			{getParamDefault(params_e::skew)};
+	float lastPan 			{getParamDefault(params_e::pan)};
 
-	float lastTransposeRand {0.f};
-	float lastPositionRand 	{0.f};
-	float lastSpeedRand 	{0.f};
-	float lastDurationRand 	{0.f};
-	float lastSkewRand 		{0.f};
-	float lastPanRand 		{0.f};
+	float lastTransposeRand {getParamDefault(params_e::transp_randomness)};
+	float lastPositionRand 	{getParamDefault(params_e::pos_randomness)};
+	float lastSpeedRand 	{getParamDefault(params_e::speed_randomness)};
+	float lastDurationRand 	{getParamDefault(params_e::dur_randomness)};
+	float lastSkewRand 		{getParamDefault(params_e::skew_randomness)};
+	float lastPanRand 		{getParamDefault(params_e::pan_randomness)};
 	
 #if (STATIC_MAP | FROZEN_MAP)
 	using granMembrSetFunc = void(nvs::gran::genGranPoly1::*) (float);
