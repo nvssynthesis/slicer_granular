@@ -132,7 +132,9 @@ _speedRandomLatch(1.f)
 	}
 }
 
-void genGranPoly1::setTranspose(float transpositionRatio){
+void genGranPoly1::setTranspose(float transpositionSemitones){
+	constexpr float semitoneRatio = 1.059463094359295f;
+	auto transpositionRatio = pow(semitoneRatio, transpositionSemitones);
 	for (auto &g : _grains)
 		g.setTranspose(transpositionRatio);
 }

@@ -14,6 +14,7 @@
 #include <JuceHeader.h>
 
 /*** TODO:
+ -fine tuning
  -add parameter plateau, which clips the window before parzen
  -add automatic traversal
  -master volume

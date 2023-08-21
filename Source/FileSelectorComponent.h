@@ -11,6 +11,10 @@
 #pragma once
 #include <JuceHeader.h>
 
+/*** TODO:
+ -limit recent files history length
+ */
+
 class FileSelectorComponent	:	public juce::FilenameComponent
 {
 public:

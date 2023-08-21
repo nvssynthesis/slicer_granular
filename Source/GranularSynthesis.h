@@ -14,7 +14,7 @@
 #include <span>
 
 /*** TODO:
- -transpose should convert to semitones
+ -interpolation!
  -transpose needs randomness implemented
  -duration randomness must be improved (so sensitive)
  -duration should extend with position as a centrepoint, not startpoint
@@ -80,7 +80,7 @@ public:
 	explicit genGrain1(std::span<float> const &waveSpan, numberGenerator<float> *const ng, size_t *const numGrains = nullptr, int newId = -1);
 
 	void setId(int newId);
-	void setTranspose(float ratio);
+	void setTranspose(float semitones);
 	void setDuration(float duration);
 	void setOffset(float offset);
 	void setSkew(float skew);
