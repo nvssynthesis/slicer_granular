@@ -13,6 +13,12 @@
 #include <tuple>
 #include <JuceHeader.h>
 
+/*** TODO:
+ -add parameter plateau, which clips the window before parzen
+ -add automatic traversal
+ -master volume
+ */
+
 enum class params_e {
 	transpose,
 	position,

@@ -13,6 +13,15 @@
 #include "XoshiroCpp.hpp"
 #include <span>
 
+/*** TODO:
+ -transpose should convert to semitones
+ -transpose needs randomness implemented
+ -duration randomness must be improved (so sensitive)
+ -duration should extend with position as a centrepoint, not startpoint
+ -envelopes shall have secondary parameter, plateau, which clips the window before parzen
+ -add automatic traversal
+ */
+
 namespace nvs {
 namespace gran {
 

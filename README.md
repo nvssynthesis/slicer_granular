@@ -1,6 +1,24 @@
 slicer-granular is a granular synthesizer. this is a work in progress. it is intended as the ground of a granular synth that will incorporate TSARA (timbre space analysis-resynthesis) capabilities. this version does not possess these abilities; they will be added later once the basic features are in top shape.
+
 the design here is optimized for maintainability and extendability. for instance, it will be simple to add many new parameters without altering lots of areas of the code.
+
 for now, i recommend trying the standalone application rather than any plugin version, as this is the most tested. not to mention, the instrument is not yet incorporating MIDI in a meaningful way; it's droning as soon as you load an audio file in. however, it can of course be recorded by using a virtual audio interface such as blackhole.
+
+features:
+<ul>
+<li>granulation of lossless audio files</li>
+<li>simple audio file importing, with stored history of recent files</li>
+<li>crude visual reaction to transient audio events</li>
+</ul>
+parameters:
+<ul>
+<li>transpose + randomness amount</li>
+<li>position + randomness amount</li>
+<li>speed + randomness amount</li>
+<li>duration + randomness amount</li>
+<li>skew + randomness amount</li>
+<li>pan + randomness amount</li>
+</ul>
 
 dependencies:
 
