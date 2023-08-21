@@ -29,8 +29,10 @@ Slicer_granularAudioProcessor::Slicer_granularAudioProcessor()
                        ),
 #endif
 apvts(*this, nullptr, "PARAMETERS", createParameterLayout())
+#if USING_ESSENTIA
 , ess_hold(ess_init)
-, gen_granular(lastSampleRate, audioBuffersChannels.getActiveSpanRef())
+#endif
+, gen_granular(lastSampleRate, audioBuffersChannels.getActiveSpanRef(), 30)
 , logFile("/Users/nicholassolem/development/slicer_granular/Builds/MacOSX/build/Debug/log.txt")
 , fileLogger(logFile, "hello")
 {

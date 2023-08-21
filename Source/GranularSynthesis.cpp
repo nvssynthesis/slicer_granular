@@ -12,15 +12,11 @@
 namespace nvs {
 namespace gran {
 genGrain1::genGrain1(std::span<float> const &waveSpan, numberGenerator<float> *const ng, size_t *const numGrains, int newId)
-:
-_waveSpan(waveSpan),
-grainId(newId),
-_numGrains_ptr(numGrains),
-_ng_ptr(ng),
-printer(800)
-{
-	printer(0.f, "hi");
-}
+:	_waveSpan(waveSpan)
+,	grainId(newId)
+,	_numGrains_ptr(numGrains)
+,	_ng_ptr(ng)
+{}
 
 void genGrain1::setId(int newId){
 	grainId = newId;

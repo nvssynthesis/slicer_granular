@@ -209,10 +209,11 @@ private:
 	float lastSampleRate 	{ 0.f };
 	int lastSamplesPerBlock { 0 };
 	
+#if USING_ESSENTIA
 	// loads into vector<Real> via func in OnsetAnalysis
 	nvs::ess::EssentiaInitializer ess_init;
 	nvs::ess::EssentiaHolder ess_hold;
-	
+#endif
 	nvs::gran::genGranPoly1 gen_granular;
 
 	// button to recompute analysis

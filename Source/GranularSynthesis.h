@@ -9,49 +9,12 @@
 */
 
 #pragma once
-#include "OnsetAnalysis.h"
 #include "nvs_libraries/include/nvs_gen.h"
 #include "XoshiroCpp.hpp"
 #include <span>
 
 namespace nvs {
 namespace gran {
-
-using namespace nvs::analysis;
-
-#if 0
-inline void loadOnsetsSamples(waveHolder &wh, std::vector<size_t> onsetsSamples){
-	assert(onsetsSamples.back() <= (wh.waveform.size()));
-	wh.onsets = onsetsSamples;
-}
-inline void loadOnsetsSeconds(waveHolder &wh, vecReal onsetsSeconds, float sampleRate){
-	size_t N = onsetsSeconds.size();
-	std::vector<size_t> onsetsSamples(N);
-	for (auto i = 0; i < N; ++i){
-		onsetsSamples[i] = onsetsSeconds[i] * sampleRate;
-		size_t prev = std::max(0, i - 1);
-		assert(onsetsSamples[i] >= onsetsSamples[prev]);
-	}
-	loadOnsetsSamples(wh, onsetsSamples);
-}
-#endif
-
-template<typename T, typename string_t = char>
-struct occasionalPrinter {
-	size_t count { 10 };
-	size_t current {0};
-	occasionalPrinter(size_t c){
-		count = c;
-	}
-	void operator()(T x, string_t s = '\n'){
-		if (current == 0)
-			std::cout << x << s;
-		++current;
-		if (current >= count){
-			current = 0;
-		}
-	}
-};
 
 template<typename T>
 struct numberGenerator {
@@ -104,7 +67,6 @@ private:
 	size_t *const _numGrains_ptr;
 	numberGenerator<float> *const _ng_ptr;
 	
-	occasionalPrinter<float, std::string> printer;
 public:
 	explicit genGrain1(std::span<float> const &waveSpan, numberGenerator<float> *const ng, size_t *const numGrains = nullptr, int newId = -1);
 
@@ -132,7 +94,7 @@ struct genGranPoly1 {
 private:
 	float const &_sampleRate;				// dependent on owning instantiator, subject to change value from above
 	std::span<float> const &_wavespan;	// dependent on owning instantiator, subject to change address from above
-	size_t _numGrains { 16 };
+	size_t _numGrains { 100 };
 	std::vector<genGrain1> _grains;
 	gen::phasor _phasorInternalTrig;
 	nvs::gen::history<float> _speedHisto;
@@ -143,13 +105,10 @@ private:
 	
 	nvs::gen::latch<float> _speedRandomLatch;
 	float _speedRandomness {0.f};
-	
-	nvs::gen::change<float> change_test;
-	
+		
 	numberGenerator<float> _ng;
-	
 public:
-	explicit genGranPoly1(float const &sampleRate, std::span<float> const &wavespan, size_t nGrains = 16);
+	explicit genGranPoly1(float const &sampleRate, std::span<float> const &wavespan, size_t nGrains);
 	
 	void setTranspose(float transpositionRatio);
 	void setPosition(float positionNormalized);

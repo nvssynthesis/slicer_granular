@@ -97,7 +97,7 @@ void Slicer_granularAudioProcessorEditor::paint (juce::Graphics& g)
 
     g.setColour (juce::Colours::white);
     g.setFont (15.0f);
-    g.drawFittedText ("grrrraaaanuuuulaaaate", getLocalBounds(), juce::Justification::centred, 1);
+    g.drawFittedText ("grrrraaaaaanuuuuuulaaaaaate", getLocalBounds(), juce::Justification::centred, 1);
 }
 
 void Slicer_granularAudioProcessorEditor::resized()
