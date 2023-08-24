@@ -218,6 +218,7 @@ private:
 	nvs::ess::EssentiaInitializer ess_init;
 	nvs::ess::EssentiaHolder ess_hold;
 #endif
+//	NoteHolder currentNotes;
 	nvs::gran::genGranPoly1 gen_granular;
 
 	// button to recompute analysis

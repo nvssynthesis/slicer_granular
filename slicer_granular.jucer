@@ -34,7 +34,7 @@
   <JUCEOPTIONS JUCE_STRICT_REFCOUNTEDPOINTER="1" JUCE_VST3_CAN_REPLACE_VST2="0"/>
   <EXPORTFORMATS>
     <XCODE_MAC targetFolder="Builds/MacOSX" applicationCategory="public.app-category.music"
-               appSandbox="1" appSandboxInheritance="1">
+               appSandbox="0" appSandboxInheritance="0" appSandboxOptions="com.apple.security.files.user-selected.read-only">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug" targetName="slicer_granular" macOSDeploymentTarget="13.1"
                        osxCompatibility="13.1 SDK"/>

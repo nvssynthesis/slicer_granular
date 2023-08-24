@@ -24,7 +24,7 @@ apvts(*this, nullptr, "PARAMETERS", createParameterLayout())
 #if USING_ESSENTIA
 , ess_hold(ess_init)
 #endif
-, gen_granular(lastSampleRate, audioBuffersChannels.getActiveSpanRef(), 30)
+, gen_granular(lastSampleRate, audioBuffersChannels.getActiveSpanRef(), 50)
 , logFile("/Users/nicholassolem/development/slicer_granular/Builds/MacOSX/build/Debug/log.txt")
 , fileLogger(logFile, "hello")
 {
@@ -148,6 +148,14 @@ void Slicer_granularAudioProcessor::writeToLog(std::string const s){
 void Slicer_granularAudioProcessor::loadAudioFile(juce::File const f){
 	juce::AudioFormatReader *reader = formatManager.createReaderFor(f);
 	
+	std::cerr << "has read access? " << f.hasReadAccess() << "\n";
+	std::cerr << "has write access? " << f.hasWriteAccess() << "\n";
+	
+	if (!reader){
+		std::cerr << "null reader for file: " << f.getFileName() << "\n";
+		std::cerr << "exists? " << f.existsAsFile() << "\n";
+		return;
+	}
 	int newLength = static_cast<int>(reader->lengthInSamples);
 	
 	std::array<juce::Range<float> , 1> normalizationRange;
@@ -205,86 +213,30 @@ void Slicer_granularAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 	
-	
-#if (STATIC_MAP | FROZEN_MAP)
-	paramSet<0, static_cast<int>(params_e::count)>();
-#else
-	float tmp;
 	// normally we'd have the synth voice as a juce synth voice and have to dynamic cast before setting its params
-	tmp = *apvts.getRawParameterValue(getParamElement<params_e::transpose, param_elem_e::name>());
-	if (lastTranspose != tmp){
-		lastTranspose = tmp;
-		
-//		constexpr float semitoneRatio = 1.059463094359295f;
-//		tmp = pow(semitoneRatio, tmp);
-		
-		gen_granular.setTranspose(tmp);
-	}
-	tmp = *apvts.getRawParameterValue(getParamElement<params_e::position, param_elem_e::name>());
-	if (lastPosition != tmp){
-		lastPosition = tmp;
-		gen_granular.setPosition(lastPosition);
-	}
-	tmp = *apvts.getRawParameterValue(getParamElement<params_e::speed, param_elem_e::name>());
-	if	(lastSpeed != tmp){
-		lastSpeed = tmp;
-		gen_granular.setSpeed(lastSpeed);
-	}
-	tmp = *apvts.getRawParameterValue(getParamElement<params_e::duration, param_elem_e::name>());
-	if (lastDuration != tmp){
-		lastDuration = tmp;
-		gen_granular.setDuration(lastDuration);
-	}
-	tmp = *apvts.getRawParameterValue(getParamElement<params_e::skew, param_elem_e::name>());
-	if (lastSkew != tmp){
-		lastSkew = tmp;
-		gen_granular.setSkew(lastSkew);
-	}
-	tmp = *apvts.getRawParameterValue(getParamElement<params_e::pan, param_elem_e::name>());
-	if (lastPan != tmp){
-		lastPan = tmp;
-		gen_granular.setPan(lastPan);
-	}
-	tmp = *apvts.getRawParameterValue(getParamElement<params_e::pos_randomness, param_elem_e::name>());
-	if (lastPositionRand != tmp){
-		lastPositionRand = tmp;
-		gen_granular.setPositionRandomness(lastPositionRand);
-	}
-	// lastSpeedRand
-	tmp = *apvts.getRawParameterValue(getParamElement<params_e::speed_randomness, param_elem_e::name>());
-	if (lastSpeedRand != tmp){
-		lastSpeedRand = tmp;
-		gen_granular.setSpeedRandomness(lastSpeedRand);
-	}
-	tmp = *apvts.getRawParameterValue(getParamElement<params_e::dur_randomness, param_elem_e::name>());
-	if (lastDurationRand != tmp){
-		lastDurationRand = tmp;
-		gen_granular.setDurationRandomness(lastDurationRand);
-	}
-	tmp = *apvts.getRawParameterValue(getParamElement<params_e::skew_randomness, param_elem_e::name>());
-	if (lastSkewRand != tmp){
-		lastSkewRand = tmp;
-		gen_granular.setSkewRandomness(lastSkewRand);
-	}
-	tmp = *apvts.getRawParameterValue(getParamElement<params_e::pan_randomness, param_elem_e::name>());
-	if (lastPanRand != tmp){
-		lastPanRand = tmp;
-		gen_granular.setPanRandomness(lastPanRand);
-	}
-#endif
+
+	paramSet<0, static_cast<int>(params_e::count)>();
+	gen_granular.updateNotes();
+
 	float trigger = static_cast<float>(triggerValFromEditor);
 	for (const juce::MidiMessageMetadata metadata : midiMessages){
 		if (metadata.numBytes == 3){
             fileLogger.writeToLog (metadata.getMessage().getDescription());
-			//trigger = 1.f;
+			juce::MidiMessage message = metadata.getMessage();
+			if (message.isNoteOn()){}
+			if (message.isNoteOff()){std::cerr << "nothing\n";}
+			message.isNoteOnOrOff();
+			message.isAftertouch();
+			message.getAfterTouchValue();
+			message.isPitchWheel();
+			message.getPitchWheelValue();
+			message.getNoteNumber();
 		}
 	}
-//	editorInformant.reset();
 	for (auto samp = 0; samp < buffer.getNumSamples(); ++samp){
 		std::array<float, 2> output = gen_granular(trigger);
 
 		rms.accumulate(output[0] + output[1]);
-//		trigger = 0.f;
 		for (int channel = 0; channel < totalNumOutputChannels; ++channel)
 		{
 			output[channel] = juce::jlimit(-1.f, 1.f, output[channel] * normalizationValue);
@@ -335,7 +287,6 @@ juce::AudioProcessorValueTreeState::ParameterLayout Slicer_granularAudioProcesso
 	auto a = [&](params_e p){
 		auto tup = paramMap.at(p);
 		auto name = std::get<static_cast<size_t>(param_elem_e::name)>(tup);
-		// (ValueType rangeStart, ValueType rangeEnd, ValueType intervalValue, ValueType skewFactor, bool useSymmetricSkew=false)
 		juce::NormalisableRange<float> range = getNormalizableRange<float>(p);
 		auto defaultVal = getParamDefault(p);
 		
@@ -351,10 +302,6 @@ juce::AudioProcessorValueTreeState::ParameterLayout Slicer_granularAudioProcesso
 	
 	for (size_t i = 0; i < static_cast<size_t>(params_e::count); ++i){
 		params_e param = static_cast<params_e>(i);
-		/*if (!isMainParam(param)){
-			std::cout << getParamName(param) << " skipped \n";
-			break;
-		}*/
 		layout.add(a(param));
 	}
 	

@@ -11,13 +11,184 @@
 #include "GranularSynthesis.h"
 namespace nvs {
 namespace gran {
+genGranPoly1::genGranPoly1(float const &sampleRate, std::span<float> const &wavespan, size_t nGrains)
+:
+_sampleRate(sampleRate),
+_wavespan(wavespan),
+_numGrains(nGrains),
+_normalizer(1.f / std::sqrt(static_cast<float>(std::clamp(nGrains, 1UL, 10000UL)))),
+_grains(_numGrains, genGrain1(wavespan, &_rng, &_numGrains) ),
+_grainIndices(_numGrains),
+_phasorInternalTrig(sampleRate),
+_speedRandomLatch(1.f)
+{
+	for (int i = 0; i < _numGrains; ++i){
+		_grains[i].setId(i);
+	}
+	std::iota(_grainIndices.begin(), _grainIndices.end(), 0);
+}
+
+void genGranPoly1::noteOn(noteNumber_t note, velocity_t velocity){	// reassign to noteHolder
+	
+}
+void genGranPoly1::noteOff(noteNumber_t note){			// remove from noteHolder
+
+}
+#define TEST_FOR_50_GRAINS false
+void genGranPoly1::updateNotes(/*enum noteDistribution_t?*/){
+	size_t numNotes = noteHolder.size();				// 3
+	size_t grainsPerNoteFloor = _numGrains / numNotes;	// 50 / 3 = 16.66 = 16
+
+	auto beg = noteHolder.begin();
+	auto end = noteHolder.end();
+	size_t grainIdx = 0;
+	size_t finalGrainIdxForNote = 0;
+	std::pair<noteNumber_t, velocity_t> lastPair;
+	for (; beg != end; ++beg){
+		std::pair<noteNumber_t, velocity_t> p = *beg;	// 1, 2, 3
+		finalGrainIdxForNote += grainsPerNoteFloor;		// 16, 32, 48
+#if TEST_FOR_50_GRAINS
+		assert(finalGrainIdxForNote <= 48);	// for this contrived example
+		assert((grainIdx == 0) | (grainIdx == 16) | (grainIdx == 32));
+#endif
+		for (; grainIdx < finalGrainIdxForNote; ++grainIdx){	// {for 0..16}, {16..32}, {32..48}
+			_grains[grainIdx].setRatioBasedOnNote(static_cast<float>(p.first));
+		}
+		lastPair = p;
+	}
+	size_t grainsRemaining = _numGrains - grainIdx;
+	noteNumber_t lastNote = lastPair.first;
+#if TEST_FOR_50_GRAINS
+	assert(grainsRemaining == 2);	// for this contrived example
+	assert(lastNote == 3);
+#endif
+	for (auto i = _numGrains - grainsRemaining; i < _numGrains; ++i){
+#if TEST_FOR_50_GRAINS
+		assert((i >= 48) & (i < 50));
+#endif
+		_grains[i].setRatioBasedOnNote(static_cast<float>(lastNote));
+	}
+	std::shuffle(_grainIndices.begin(), _grainIndices.end(), _rng.getGenerator());
+}
+
+void genGranPoly1::setTranspose(float transpositionSemitones){
+	constexpr float semitoneRatio = 1.059463094359295f;
+	auto transpositionRatio = pow(semitoneRatio, transpositionSemitones);
+	for (auto &g : _grains)
+		g.setTranspose(transpositionRatio);
+}
+void genGranPoly1::setPosition(float positionNormalized){
+	positionNormalized = nvs::memoryless::clamp<float>(positionNormalized, 0.f, 1.f);
+	auto pos = positionNormalized * static_cast<float>(_wavespan.size());
+	_offsetHisto(pos);
+	for (auto &g : _grains)
+		g.setOffset(_offsetHisto.val);
+}
+void genGranPoly1::setSpeed(float newSpeed){
+	newSpeed = nvs::memoryless::clamp<float>(newSpeed, 0.f, _sampleRate/2.f);
+	_speedHisto(newSpeed);
+}
+void genGranPoly1::setDuration(float dur_ms){
+	dur_ms = nvs::memoryless::clamp_low<float>(dur_ms, 0.f);
+	auto dur_samps = (dur_ms / 1000.f) * _sampleRate;
+	
+	dur_samps = nvs::memoryless::clamp_low<float>(dur_samps, 1.f);
+	float freq_samps = 1.f / dur_samps;
+	_durationHisto(freq_samps);
+	for (auto &g : _grains)
+		g.setDuration(_durationHisto.val);
+}
+void genGranPoly1::setSkew(float skew){
+	skew = nvs::memoryless::clamp<float>(skew, 0.001, 0.999);
+	for (auto &g : _grains)
+		g.setSkew(skew);
+}
+void genGranPoly1::setPan(float pan){
+	for (auto &g : _grains)
+		g.setPan(pan);
+}
+
+void genGranPoly1::setTransposeRandomness(float randomness){
+	for (auto &g : _grains)
+		g.setTransposeRand(randomness);
+}
+void genGranPoly1::setPositionRandomness(float randomness){
+	randomness = randomness * static_cast<float>(_wavespan.size());
+	for (auto &g : _grains)
+		g.setOffsetRand(randomness);
+}
+void genGranPoly1::setDurationRandomness(float randomness){
+	for (auto &g : _grains)
+		g.setDurationRand(randomness);
+}
+void genGranPoly1::setSpeedRandomness(float randomness){
+	// because this value is added as multiplier of speed. we do not want speed to become 0, or it will freeze all grains.
+	randomness = nvs::memoryless::clamp_low(randomness, -0.99f);
+	_speedRandomness = randomness;
+}
+void genGranPoly1::setSkewRandomness(float randomness){
+	for (auto &g : _grains)
+		g.setSkewRand(randomness);
+}
+void genGranPoly1::setPanRandomness(float randomness){
+	for (auto &g : _grains)
+		g.setPanRand(randomness);
+}
+std::array<float, 2> genGranPoly1::operator()(float triggerIn){
+	std::array<float, 2> output;
+	
+	float freq_tmp = _speedHisto.val;
+	float randFreq = _speedRandomLatch( _speedRandomness * _rng(), _triggerHisto.val );
+	randFreq *= freq_tmp;
+	freq_tmp += randFreq;
+	assert(freq_tmp > 0.f);
+	
+	_phasorInternalTrig.setFrequency(freq_tmp);
+	++_phasorInternalTrig;
+	
+	float trig = _ramp2trig(_phasorInternalTrig.getPhase());
+	_triggerHisto(trig);
+	
+	if ((trig == 0.f) && (triggerIn == 0.f)){
+		trig = 0.f;
+	} else {
+		trig = 1.f;
+	}
+	
+	std::vector<genGrain1::outs> _outs(_numGrains);
+	size_t idx = _grainIndices[0];
+	_outs[idx] = _grains[idx](trig);
+	float audioOut = _outs[idx].audio;
+	float audioOut_R = _outs[idx].audio_R;
+	float voicesActive = _outs[idx].busy;
+	
+	for (size_t i = 1; i < _numGrains; ++i){
+		idx = _grainIndices.data()[i];
+		size_t prevIdx = _grainIndices.data()[i - 1];
+		
+		float currentTrig = _outs[prevIdx].next;
+		_outs[idx] = _grains[idx](currentTrig);
+		audioOut += _outs[idx].audio;
+		audioOut_R += _outs[idx].audio_R;
+		voicesActive += _outs[idx].busy;
+	}
+	float samp = audioOut * _normalizer;
+	float samp_R = audioOut_R * _normalizer;
+	output[0] = samp;
+	output[1] = samp_R;
+	return output;
+}
+
 genGrain1::genGrain1(std::span<float> const &waveSpan, RandomNumberGenerator<float> *const ng, size_t *const numGrains, int newId)
 :	_waveSpan(waveSpan)
 ,	grainId(newId)
 ,	_numGrains_ptr(numGrains)
-,	_ng_ptr(ng)
+,	_rng_ptr(ng)
 {}
 
+void genGrain1::setRatioBasedOnNote(float ratioForNote){
+	ratioBasedOnNote = ratioForNote;
+}
 void genGrain1::setId(int newId){
 	grainId = newId;
 }
@@ -68,23 +239,23 @@ genGrain1::outs genGrain1::operator()(float trig_in){
 	float panEffectiveRandomValue {0.5f};
 	float skewEffectiveRandomValue {0.f};
 	// get all randoms
-	if (_ng_ptr != nullptr){
-		transposeEffectiveRandomValue = (*_ng_ptr)() * _transposeRand;
+	if (_rng_ptr != nullptr){
+		transposeEffectiveRandomValue = (*_rng_ptr)() * _transposeRand;
 		transposeEffectiveRandomValue = pow(2, transposeEffectiveRandomValue);
 		assert(transposeEffectiveRandomValue > 0);
 		assert(transposeEffectiveRandomValue == transposeEffectiveRandomValue);
-		offsetEffectiveRandomValue = (*_ng_ptr)() * _offsetRand;
-		durationEffectiveRandomValue = (*_ng_ptr)() * _durationRand;
-		panEffectiveRandomValue = nvs::memoryless::unibi<float>((*_ng_ptr)()) * _panRand;
+		offsetEffectiveRandomValue = (*_rng_ptr)() * _offsetRand;
+		durationEffectiveRandomValue = (*_rng_ptr)() * _durationRand;
+		panEffectiveRandomValue = nvs::memoryless::unibi<float>((*_rng_ptr)()) * _panRand;
 		panEffectiveRandomValue *= 0.5f; 	// range between [-0.5 .. 0.5]
 		assert(panEffectiveRandomValue >= -0.5f);
 		assert(panEffectiveRandomValue <= 0.5f);
-		skewEffectiveRandomValue = (*_ng_ptr)() * _skewRand;
+		skewEffectiveRandomValue = (*_rng_ptr)() * _skewRand;
 		skewEffectiveRandomValue *= 0.5f;
 	}
 	
 	o.next = gater[0];
-	float transposeEffectiveTotalMultiplier = _transpRat * transposeEffectiveRandomValue;
+	float transposeEffectiveTotalMultiplier = _transpRat * ratioBasedOnNote * transposeEffectiveRandomValue;
 	float latch_transpose_result = _transposeLatch(transposeEffectiveTotalMultiplier, gater[1]);
 	_accum(latch_transpose_result * 1.f, static_cast<bool>(gater[1]));
 	auto accumVal = _accum.val;
@@ -125,126 +296,6 @@ genGrain1::outs genGrain1::operator()(float trig_in){
 	// original first takes care of denorm...
 	_histo(busy_tmp);
 	return o;
-}
-
-
-genGranPoly1::genGranPoly1(float const &sampleRate, std::span<float> const &wavespan, size_t nGrains)
-:
-_sampleRate(sampleRate),
-_wavespan(wavespan),
-_numGrains(nGrains),
-_grains(_numGrains, genGrain1(wavespan, &_ng, &_numGrains) ),
-_phasorInternalTrig(sampleRate),
-_speedRandomLatch(1.f)
-{
-	for (int i = 0; i < _numGrains; ++i){
-		_grains[i].setId(i);
-	}
-}
-
-void genGranPoly1::setTranspose(float transpositionSemitones){
-	constexpr float semitoneRatio = 1.059463094359295f;
-	auto transpositionRatio = pow(semitoneRatio, transpositionSemitones);
-	for (auto &g : _grains)
-		g.setTranspose(transpositionRatio);
-}
-void genGranPoly1::setPosition(float positionNormalized){
-	positionNormalized = nvs::memoryless::clamp<float>(positionNormalized, 0.f, 1.f);
-	auto pos = positionNormalized * static_cast<float>(_wavespan.size());
-	_offsetHisto(pos);
-	for (auto &g : _grains)
-		g.setOffset(_offsetHisto.val);
-}
-void genGranPoly1::setSpeed(float newSpeed){
-	newSpeed = nvs::memoryless::clamp<float>(newSpeed, 0.f, _sampleRate/2.f);
-	_speedHisto(newSpeed);
-}
-void genGranPoly1::setDuration(float dur_ms){
-	dur_ms = nvs::memoryless::clamp_low<float>(dur_ms, 0.f);
-	auto dur_samps = (dur_ms / 1000.f) * _sampleRate;
-	
-	dur_samps = nvs::memoryless::clamp_low<float>(dur_samps, 1.f);
-	float freq_samps = 1.f / dur_samps;
-	_durationHisto(freq_samps);
-	for (auto &g : _grains)
-		g.setDuration(_durationHisto.val);
-}
-void genGranPoly1::setSkew(float skew){
-	skew = nvs::memoryless::clamp<float>(skew, 0.001, 0.999);
-	for (auto &g : _grains)
-		g.setSkew(skew);
-}
-void genGranPoly1::setPan(float pan){
-	for (auto &g : _grains)
-		g.setPan(pan);
-}
-#pragma message("implement genGranPoly1::setTransposeRandomness")
-void genGranPoly1::setTransposeRandomness(float randomness){
-	for (auto &g : _grains)
-		g.setTransposeRand(randomness);
-}
-
-void genGranPoly1::setPositionRandomness(float randomness){
-	randomness = randomness * static_cast<float>(_wavespan.size());
-	for (auto &g : _grains)
-		g.setOffsetRand(randomness);
-}
-void genGranPoly1::setDurationRandomness(float randomness){
-	for (auto &g : _grains)
-		g.setDurationRand(randomness);
-}
-void genGranPoly1::setSpeedRandomness(float randomness){
-	// because this value is added as multiplier of speed. we do not want speed to become 0, or it will freeze all grains.
-	randomness = nvs::memoryless::clamp_low(randomness, -0.99f);
-	_speedRandomness = randomness;
-}
-void genGranPoly1::setSkewRandomness(float randomness){
-	for (auto &g : _grains)
-		g.setSkewRand(randomness);
-}
-void genGranPoly1::setPanRandomness(float randomness){
-	for (auto &g : _grains)
-		g.setPanRand(randomness);
-}
-std::array<float, 2> genGranPoly1::operator()(float triggerIn){
-	std::array<float, 2> output;
-	
-	float freq_tmp = _speedHisto.val;
-	float randFreq = _speedRandomLatch( _speedRandomness * _ng(), _triggerHisto.val );
-	randFreq *= freq_tmp;
-	freq_tmp += randFreq;
-	assert(freq_tmp > 0.f);
-	
-	_phasorInternalTrig.setFrequency(freq_tmp);
-	++_phasorInternalTrig;
-	
-	float trig = _ramp2trig(_phasorInternalTrig.getPhase());
-	_triggerHisto(trig);
-	
-	if ((trig == 0.f) && (triggerIn == 0.f)){
-		trig = 0.f;
-	} else {
-		trig = 1.f;
-	}
-	
-	std::vector<genGrain1::outs> _outs(_numGrains);
-	_outs[0] = _grains[0](trig);
-	float audioOut = _outs[0].audio;
-	float audioOut_R = _outs[0].audio_R;
-	float voicesActive = _outs[0].busy;
-	
-	for (size_t i = 1; i < _numGrains; ++i){
-		float currentTrig = _outs[i-1].next;
-		_outs[i] = _grains[i](currentTrig);
-		audioOut += _outs[i].audio;
-		audioOut_R += _outs[i].audio_R;
-		voicesActive += _outs[i].busy;
-	}
-	float samp = audioOut / _numGrains;
-	float samp_R = audioOut_R / _numGrains;
-	output[0] = samp;
-	output[1] = samp_R;
-	return output;
 }
 
 }	// namespace gran
