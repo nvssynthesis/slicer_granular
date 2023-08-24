@@ -263,12 +263,12 @@ genGrain1::outs genGrain1::operator()(float trig_in){
 	float offset_tmp = _offset + offsetEffectiveRandomValue;
 	float latch_offset_result = _offsetLatch(offset_tmp, gater[1]);
 
-	float sampleIndex = accumVal + latch_offset_result;
-	float sample = nvs::gen::peekBuff<float>(_waveSpan.data(), static_cast<size_t>(sampleIndex), _waveSpan.size());
-	
 	float duration_tmp = _duration + durationEffectiveRandomValue;
 	float latch_duration_result = _durationLatch(duration_tmp, gater[1]);
-
+	
+	float sampleIndex = accumVal + latch_offset_result - (0.5 * latch_duration_result);
+	float sample = nvs::gen::peekBuff<float>(_waveSpan.data(), static_cast<size_t>(sampleIndex), _waveSpan.size());
+	
 	assert(latch_transpose_result > 0.f);
 	float windowIdx = (latch_duration_result * accumVal / latch_transpose_result);
 	windowIdx = nvs::memoryless::clamp<float>(windowIdx, 0.f, 1.f);

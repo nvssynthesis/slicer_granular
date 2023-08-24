@@ -15,7 +15,6 @@
 #include <numeric>
 #include "XoshiroCpp.hpp"
 #include "nvs_libraries/include/nvs_gen.h"
-#include "NoteHolder.h"
 
 /*** TODO:
  -interpolation!
