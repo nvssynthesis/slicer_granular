@@ -28,45 +28,32 @@ _speedRandomLatch(1.f)
 	std::iota(_grainIndices.begin(), _grainIndices.end(), 0);
 }
 
-void genGranPoly1::noteOn(noteNumber_t note, velocity_t velocity){	// reassign to noteHolder
-	
-}
-void genGranPoly1::noteOff(noteNumber_t note){			// remove from noteHolder
+void genGranPoly1::noteOn(noteNumber_t note, velocity_t velocity){
+	// reassign to noteHolder
+	auto p = std::make_pair<noteNumber_t, velocity_t> (std::move(note), std::move(velocity));
 
+	noteHolder.insert(p);
+	updateNotes();
 }
-#define TEST_FOR_50_GRAINS false
-void genGranPoly1::updateNotes(/*enum noteDistribution_t?*/){
+void genGranPoly1::noteOff(noteNumber_t note){
+	// remove from noteHolder
+	noteHolder.erase(note);
+}
+void genGranPoly1::updateNotes(){
 	size_t numNotes = noteHolder.size();				// 3
-	size_t grainsPerNoteFloor = _numGrains / numNotes;	// 50 / 3 = 16.66 = 16
+	float grainsPerNoteFloor = _numGrains / static_cast<float>(numNotes);	// 50 / 3 = 16.66
 
-	auto beg = noteHolder.begin();
-	auto end = noteHolder.end();
-	size_t grainIdx = 0;
-	size_t finalGrainIdxForNote = 0;
-	std::pair<noteNumber_t, velocity_t> lastPair;
-	for (; beg != end; ++beg){
-		std::pair<noteNumber_t, velocity_t> p = *beg;	// 1, 2, 3
-		finalGrainIdxForNote += grainsPerNoteFloor;		// 16, 32, 48
-#if TEST_FOR_50_GRAINS
-		assert(finalGrainIdxForNote <= 48);	// for this contrived example
-		assert((grainIdx == 0) | (grainIdx == 16) | (grainIdx == 32));
-#endif
-		for (; grainIdx < finalGrainIdxForNote; ++grainIdx){	// {for 0..16}, {16..32}, {32..48}
-			_grains[grainIdx].setRatioBasedOnNote(static_cast<float>(p.first));
+	auto begin = _grains.begin();
+	float fractionalRightSide = 0.f;
+	for (auto e : noteHolder){
+		auto left = begin + static_cast<size_t>(fractionalRightSide);
+		fractionalRightSide += grainsPerNoteFloor;
+		auto right = begin + static_cast<size_t>(fractionalRightSide);
+		for (; left != right; ++left){
+			float note = e.first;
+			float vel = e.second;
+			(*left).setRatioBasedOnNote(note);
 		}
-		lastPair = p;
-	}
-	size_t grainsRemaining = _numGrains - grainIdx;
-	noteNumber_t lastNote = lastPair.first;
-#if TEST_FOR_50_GRAINS
-	assert(grainsRemaining == 2);	// for this contrived example
-	assert(lastNote == 3);
-#endif
-	for (auto i = _numGrains - grainsRemaining; i < _numGrains; ++i){
-#if TEST_FOR_50_GRAINS
-		assert((i >= 48) & (i < 50));
-#endif
-		_grains[i].setRatioBasedOnNote(static_cast<float>(lastNote));
 	}
 	std::shuffle(_grainIndices.begin(), _grainIndices.end(), _rng.getGenerator());
 }
@@ -187,7 +174,7 @@ genGrain1::genGrain1(std::span<float> const &waveSpan, RandomNumberGenerator<flo
 {}
 
 void genGrain1::setRatioBasedOnNote(float ratioForNote){
-	ratioBasedOnNote = ratioForNote;
+	_ratioBasedOnNote = ratioForNote;
 }
 void genGrain1::setId(int newId){
 	grainId = newId;
@@ -255,6 +242,7 @@ genGrain1::outs genGrain1::operator()(float trig_in){
 	}
 	
 	o.next = gater[0];
+	float ratioBasedOnNote = _ratioForNoteLatch(_ratioBasedOnNote, gater[1]);
 	float transposeEffectiveTotalMultiplier = _transpRat * ratioBasedOnNote * transposeEffectiveRandomValue;
 	float latch_transpose_result = _transposeLatch(transposeEffectiveTotalMultiplier, gater[1]);
 	_accum(latch_transpose_result * 1.f, static_cast<bool>(gater[1]));

@@ -24,7 +24,7 @@ apvts(*this, nullptr, "PARAMETERS", createParameterLayout())
 #if USING_ESSENTIA
 , ess_hold(ess_init)
 #endif
-, gen_granular(lastSampleRate, audioBuffersChannels.getActiveSpanRef(), 50)
+, gen_granular(lastSampleRate, audioBuffersChannels.getActiveSpanRef(), 30)
 , logFile("/Users/nicholassolem/development/slicer_granular/Builds/MacOSX/build/Debug/log.txt")
 , fileLogger(logFile, "hello")
 {
@@ -147,13 +147,8 @@ void Slicer_granularAudioProcessor::writeToLog(std::string const s){
 }
 void Slicer_granularAudioProcessor::loadAudioFile(juce::File const f){
 	juce::AudioFormatReader *reader = formatManager.createReaderFor(f);
-	
-	std::cerr << "has read access? " << f.hasReadAccess() << "\n";
-	std::cerr << "has write access? " << f.hasWriteAccess() << "\n";
-	
 	if (!reader){
-		std::cerr << "null reader for file: " << f.getFileName() << "\n";
-		std::cerr << "exists? " << f.existsAsFile() << "\n";
+		std::cerr << "could not read file: " << f.getFileName() << "\n";
 		return;
 	}
 	int newLength = static_cast<int>(reader->lengthInSamples);
@@ -216,15 +211,18 @@ void Slicer_granularAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
 	// normally we'd have the synth voice as a juce synth voice and have to dynamic cast before setting its params
 
 	paramSet<0, static_cast<int>(params_e::count)>();
-	gen_granular.updateNotes();
 
 	float trigger = static_cast<float>(triggerValFromEditor);
 	for (const juce::MidiMessageMetadata metadata : midiMessages){
 		if (metadata.numBytes == 3){
             fileLogger.writeToLog (metadata.getMessage().getDescription());
 			juce::MidiMessage message = metadata.getMessage();
-			if (message.isNoteOn()){}
-			if (message.isNoteOff()){std::cerr << "nothing\n";}
+			if (message.isNoteOn()){
+				gen_granular.noteOn(message.getNoteNumber(), message.getVelocity());
+			}
+			if (message.isNoteOff()){
+				gen_granular.noteOff(message.getNoteNumber());
+			}
 			message.isNoteOnOrOff();
 			message.isAftertouch();
 			message.getAfterTouchValue();

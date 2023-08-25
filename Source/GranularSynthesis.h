@@ -21,7 +21,7 @@
  -duration randomness must be improved (so sensitive)
  -envelopes shall have secondary parameter, plateau, which clips the window before parzen
  -add automatic traversal
- */
+*/
 
 namespace nvs {
 namespace gran {
@@ -88,10 +88,11 @@ private:
 	float _speedRandomness {0.f};
 		
 	RandomNumberGenerator<float> _rng;
-	NoteHolder noteHolder {
+	NoteHolder noteHolder {/*
 		std::make_pair<noteNumber_t, velocity_t> (1, 100),
 		std::make_pair<noteNumber_t, velocity_t> (2, 70),
-		std::make_pair<noteNumber_t, velocity_t> (3, 20),
+		std::make_pair<noteNumber_t, velocity_t> (3, 20)
+		*/
 	};
 };
 
@@ -121,7 +122,8 @@ public:
 	outs operator()(float trig_in);
 private:
 	nvs::gen::history<float> _histo;// history of 'busy' boolean signal, goes to [switch 1 2]
-	nvs::gen::latch<float> _transposeLatch {1};	// latches transposition from gate on, goes toward dest windowing
+	nvs::gen::latch<float> _ratioForNoteLatch {1.f};
+	nvs::gen::latch<float> _transposeLatch {1.f};	// latches transposition from gate on, goes toward dest windowing
 	nvs::gen::latch<float> _durationLatch;	// latches duration from gate on, goes toward dest windowing
 	nvs::gen::latch<float> _offsetLatch;// latches offset from gate on, goes toward dest windowing
 	nvs::gen::latch<float> _skewLatch;
@@ -129,7 +131,7 @@ private:
 	
 	nvs::gen::latch<float> _panLatch;
 	
-	float ratioBasedOnNote {440.f / 440.f};	// =1.f. later this may change according to a settable concert pitch
+	float _ratioBasedOnNote {1.f};	// =1.f. later this may change according to a settable concert pitch
 	
 	float _transpRat = 1.f;
 	float _duration = 1.f;
