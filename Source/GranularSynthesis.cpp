@@ -11,6 +11,14 @@
 #include "GranularSynthesis.h"
 namespace nvs {
 namespace gran {
+
+template <typename float_t>
+float semitonesToRatio(float_t semitones){
+	constexpr float_t semitoneRatio = static_cast<float_t>(1.059463094359295);
+	float_t transpositionRatio = pow(semitoneRatio, semitones);
+	return transpositionRatio;
+}
+
 genGranPoly1::genGranPoly1(float const &sampleRate, std::span<float> const &wavespan, size_t nGrains)
 :
 _sampleRate(sampleRate),
@@ -38,10 +46,11 @@ void genGranPoly1::noteOn(noteNumber_t note, velocity_t velocity){
 void genGranPoly1::noteOff(noteNumber_t note){
 	// remove from noteHolder
 	noteHolder.erase(note);
+	updateNotes();
 }
 void genGranPoly1::updateNotes(){
-	size_t numNotes = noteHolder.size();				// 3
-	float grainsPerNoteFloor = _numGrains / static_cast<float>(numNotes);	// 50 / 3 = 16.66
+	size_t numNotes = noteHolder.size();
+	float grainsPerNoteFloor = _numGrains / static_cast<float>(numNotes);
 
 	auto begin = _grains.begin();
 	float fractionalRightSide = 0.f;
@@ -51,18 +60,18 @@ void genGranPoly1::updateNotes(){
 		auto right = begin + static_cast<size_t>(fractionalRightSide);
 		for (; left != right; ++left){
 			float note = e.first;
+			float rat = semitonesToRatio(note - 69);
 			float vel = e.second;
-			(*left).setRatioBasedOnNote(note);
+			(*left).setRatioBasedOnNote(rat);
 		}
 	}
 	std::shuffle(_grainIndices.begin(), _grainIndices.end(), _rng.getGenerator());
 }
 
 void genGranPoly1::setTranspose(float transpositionSemitones){
-	constexpr float semitoneRatio = 1.059463094359295f;
-	auto transpositionRatio = pow(semitoneRatio, transpositionSemitones);
+	float rat = semitonesToRatio(transpositionSemitones);
 	for (auto &g : _grains)
-		g.setTranspose(transpositionRatio);
+		g.setTranspose(rat);
 }
 void genGranPoly1::setPosition(float positionNormalized){
 	positionNormalized = nvs::memoryless::clamp<float>(positionNormalized, 0.f, 1.f);

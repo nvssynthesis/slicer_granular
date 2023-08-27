@@ -25,7 +25,7 @@ apvts(*this, nullptr, "PARAMETERS", createParameterLayout())
 , ess_hold(ess_init)
 #endif
 , gen_granular(lastSampleRate, audioBuffersChannels.getActiveSpanRef(), 30)
-, logFile("/Users/nicholassolem/development/slicer_granular/Builds/MacOSX/build/Debug/log.txt")
+, logFile(juce::File::getSpecialLocation(juce::File::SpecialLocationType::currentApplicationFile).getSiblingFile("log.txt"))
 , fileLogger(logFile, "hello")
 {
 	juce::Logger::setCurrentLogger (&fileLogger);
@@ -34,8 +34,8 @@ apvts(*this, nullptr, "PARAMETERS", createParameterLayout())
 
 Slicer_granularAudioProcessor::~Slicer_granularAudioProcessor()
 {
+	fileLogger.trimFileSize(logFile , 64 * 1024);
 	juce::Logger::setCurrentLogger (nullptr);
-	
 	formatManager.clearFormats();
 }
 
