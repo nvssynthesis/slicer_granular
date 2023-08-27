@@ -88,12 +88,7 @@ private:
 	float _speedRandomness {0.f};
 		
 	RandomNumberGenerator<float> _rng;
-	NoteHolder noteHolder {/*
-		std::make_pair<noteNumber_t, velocity_t> (1, 100),
-		std::make_pair<noteNumber_t, velocity_t> (2, 70),
-		std::make_pair<noteNumber_t, velocity_t> (3, 20)
-		*/
-	};
+	NoteHolder noteHolder {};
 };
 
 struct genGrain1 {
@@ -102,6 +97,7 @@ public:
 
 	void setId(int newId);
 	void setRatioBasedOnNote(float ratioForNote);
+	void setAmplitudeBasedOnNote(float velocity);
 	void setTranspose(float semitones);
 	void setDuration(float duration);
 	void setOffset(float offset);
@@ -123,6 +119,7 @@ public:
 private:
 	nvs::gen::history<float> _histo;// history of 'busy' boolean signal, goes to [switch 1 2]
 	nvs::gen::latch<float> _ratioForNoteLatch {1.f};
+	nvs::gen::latch<float> _amplitudeForNoteLatch {1.f};
 	nvs::gen::latch<float> _transposeLatch {1.f};	// latches transposition from gate on, goes toward dest windowing
 	nvs::gen::latch<float> _durationLatch;	// latches duration from gate on, goes toward dest windowing
 	nvs::gen::latch<float> _offsetLatch;// latches offset from gate on, goes toward dest windowing
@@ -132,6 +129,7 @@ private:
 	nvs::gen::latch<float> _panLatch;
 	
 	float _ratioBasedOnNote {1.f};	// =1.f. later this may change according to a settable concert pitch
+	float _amplitudeBasedOnNote {1.f};
 	
 	float _transpRat = 1.f;
 	float _duration = 1.f;

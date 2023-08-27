@@ -38,7 +38,7 @@ _speedRandomLatch(1.f)
 
 void genGranPoly1::noteOn(noteNumber_t note, velocity_t velocity){
 	// reassign to noteHolder
-	auto p = std::make_pair<noteNumber_t, velocity_t> (std::move(note), std::move(velocity));
+	auto p = std::make_pair(note, velocity);
 
 	noteHolder.insert(p);
 	updateNotes();
@@ -61,8 +61,10 @@ void genGranPoly1::updateNotes(){
 		for (; left != right; ++left){
 			float note = e.first;
 			float rat = semitonesToRatio(note - 69);
-			float vel = e.second;
 			(*left).setRatioBasedOnNote(rat);
+			float vel = e.second;
+			float amp = vel / static_cast<float>(100);
+			(*left).setAmplitudeBasedOnNote(amp);
 		}
 	}
 	std::shuffle(_grainIndices.begin(), _grainIndices.end(), _rng.getGenerator());
@@ -185,6 +187,11 @@ genGrain1::genGrain1(std::span<float> const &waveSpan, RandomNumberGenerator<flo
 void genGrain1::setRatioBasedOnNote(float ratioForNote){
 	_ratioBasedOnNote = ratioForNote;
 }
+void genGrain1::setAmplitudeBasedOnNote(float velocity){
+	assert(velocity <= 2.f);
+	assert(velocity >= 0.f);
+	_amplitudeBasedOnNote = velocity;
+}
 void genGrain1::setId(int newId){
 	grainId = newId;
 }
@@ -276,6 +283,9 @@ genGrain1::outs genGrain1::operator()(float trig_in){
 	
 	win = nvs::gen::parzen(win);
 	sample *= win;
+	
+	float velAmplitude = _amplitudeForNoteLatch(_amplitudeBasedOnNote, gater[1]);
+	sample *= velAmplitude;
 	
 	float pan_tmp = _pan + panEffectiveRandomValue;
 	pan_tmp = pan_tmp;//nvs::memoryless::biuni<float>(pan_tmp);

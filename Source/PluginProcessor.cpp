@@ -215,20 +215,22 @@ void Slicer_granularAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
 	float trigger = static_cast<float>(triggerValFromEditor);
 	for (const juce::MidiMessageMetadata metadata : midiMessages){
 		if (metadata.numBytes == 3){
-            fileLogger.writeToLog (metadata.getMessage().getDescription());
+			fileLogger.writeToLog (metadata.getMessage().getDescription());
 			juce::MidiMessage message = metadata.getMessage();
 			if (message.isNoteOn()){
 				gen_granular.noteOn(message.getNoteNumber(), message.getVelocity());
 			}
-			if (message.isNoteOff()){
+			else if (message.isNoteOff()){
 				gen_granular.noteOff(message.getNoteNumber());
 			}
-			message.isNoteOnOrOff();
-			message.isAftertouch();
-			message.getAfterTouchValue();
-			message.isPitchWheel();
-			message.getPitchWheelValue();
-			message.getNoteNumber();
+			else if (message.isAftertouch()){
+				// do something with it...
+				message.getAfterTouchValue();
+			}
+			else if (message.isPitchWheel()){
+				// do something with it...
+				message.getPitchWheelValue();
+			}
 		}
 	}
 	for (auto samp = 0; samp < buffer.getNumSamples(); ++samp){
