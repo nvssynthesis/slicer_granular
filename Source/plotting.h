@@ -11,7 +11,8 @@
 #ifndef NVS_PLOTTING
 #define NVS_PLOTTING
 
-#include "/Users/nicholassolem/development/thirdparty/Signalsmith/plot.h"
+#include "Signalsmith/plot.h"
+
 namespace nvs{
 	class plotter{
 	public:

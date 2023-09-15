@@ -45,6 +45,9 @@ void genGranPoly1::noteOn(noteNumber_t note, velocity_t velocity){
 }
 void genGranPoly1::noteOff(noteNumber_t note){
 	// remove from noteHolder
+//	auto p = std::make_pair(note, 0);
+	noteHolder[note] = 0;
+	updateNotes();
 	noteHolder.erase(note);
 	updateNotes();
 }
@@ -67,6 +70,8 @@ void genGranPoly1::updateNotes(){
 			(*left).setAmplitudeBasedOnNote(amp);
 		}
 	}
+}
+void genGranPoly1::shuffleIndices(){
 	std::shuffle(_grainIndices.begin(), _grainIndices.end(), _rng.getGenerator());
 }
 

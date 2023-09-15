@@ -50,11 +50,12 @@ struct genGrain1;
 
 struct genGranPoly1 {
 public:
-	explicit genGranPoly1(float const &sampleRate, std::span<float> const &wavespan, size_t nGrains);
+	genGranPoly1(float const &sampleRate, std::span<float> const &wavespan, size_t nGrains);
 	
 	void noteOn(noteNumber_t note, velocity_t velocity);	// reassign to noteHolder
 	void noteOff(noteNumber_t note);						// remove from noteHolder
 	void updateNotes(/*enum noteDistribution_t?*/);
+	void shuffleIndices();
 	
 	void setTranspose(float transpositionRatio);
 	void setPosition(float positionNormalized);
@@ -70,10 +71,11 @@ public:
 	void setPanRandomness(float randomness);
 	std::array<float, 2> operator()(float triggerIn);
 	
-private:
+protected:
 	float const &_sampleRate;				// dependent on owning instantiator, subject to change value from above
 	std::span<float> const &_wavespan;	// dependent on owning instantiator, subject to change address from above
 	size_t _numGrains;
+private:
 	float _normalizer {1.f};
 	std::vector<genGrain1> _grains;
 	std::vector<size_t> _grainIndices;	// used to index grains in random order
@@ -119,7 +121,7 @@ public:
 private:
 	nvs::gen::history<float> _histo;// history of 'busy' boolean signal, goes to [switch 1 2]
 	nvs::gen::latch<float> _ratioForNoteLatch {1.f};
-	nvs::gen::latch<float> _amplitudeForNoteLatch {1.f};
+	nvs::gen::latch<float> _amplitudeForNoteLatch {0.f};
 	nvs::gen::latch<float> _transposeLatch {1.f};	// latches transposition from gate on, goes toward dest windowing
 	nvs::gen::latch<float> _durationLatch;	// latches duration from gate on, goes toward dest windowing
 	nvs::gen::latch<float> _offsetLatch;// latches offset from gate on, goes toward dest windowing
@@ -129,7 +131,7 @@ private:
 	nvs::gen::latch<float> _panLatch;
 	
 	float _ratioBasedOnNote {1.f};	// =1.f. later this may change according to a settable concert pitch
-	float _amplitudeBasedOnNote {1.f};
+	float _amplitudeBasedOnNote {0.f};
 	
 	float _transpRat = 1.f;
 	float _duration = 1.f;

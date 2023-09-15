@@ -1,10 +1,3 @@
-/*
-  ==============================================================================
-
-    This file contains the basic framework code for a JUCE plugin processor.
-
-  ==============================================================================
-*/
 /** TODO:
 	-output gain
 */
@@ -81,26 +74,7 @@ public:
 	void loadAudioFile(juce::File const f);
 	
 	bool triggerValFromEditor {false};
-#if 0
-	class EditorInformant{
-		float loudness {0.f};
-		float loudnessThreshold {0.f};
-	public:
-		void reset(){
-			loudness = 0.f;
-		}
-		void accumulate(float v){
-			loudness += v*v;
-		}
-		void updateEndOfBlock(){
-			//sharableValue = loudness;
-		}
-		float query(){
-			return 0;//sharableLoudness;
-		}
-	};
-//	EditorInformant editorInformant;
-#endif
+
 	template<typename T>
 	struct editorInformant{
 		T val;

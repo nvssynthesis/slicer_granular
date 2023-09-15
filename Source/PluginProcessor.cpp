@@ -1,10 +1,3 @@
-/*
-  ==============================================================================
-
-    This file contains the basic framework code for a JUCE plugin processor.
-
-  ==============================================================================
-*/
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
@@ -106,7 +99,6 @@ void Slicer_granularAudioProcessor::prepareToPlay (double sampleRate, int sample
     // initialisation that you need..
 	lastSampleRate = static_cast<float>(sampleRate);
 	lastSamplesPerBlock = samplesPerBlock;
-//	nvs::gran::loadFileIntoWaveHolder(wave_holder, "/Users/nicholassolem/development/audio for analysis/CBF_bamboo_flute_mono.wav", ess_hold.factory, lastSampleRate);
 //	gran_synth.loadOnsets();
 }
 
@@ -213,6 +205,7 @@ void Slicer_granularAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
 	paramSet<0, static_cast<int>(params_e::count)>();
 
 	float trigger = static_cast<float>(triggerValFromEditor);
+	
 	for (const juce::MidiMessageMetadata metadata : midiMessages){
 		if (metadata.numBytes == 3){
 			fileLogger.writeToLog (metadata.getMessage().getDescription());
@@ -233,6 +226,7 @@ void Slicer_granularAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
 			}
 		}
 	}
+	gen_granular.shuffleIndices();
 	for (auto samp = 0; samp < buffer.getNumSamples(); ++samp){
 		std::array<float, 2> output = gen_granular(trigger);
 
