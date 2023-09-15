@@ -21,6 +21,13 @@
  -duration randomness must be improved (so sensitive)
  -envelopes shall have secondary parameter, plateau, which clips the window before parzen
  -add automatic traversal
+ 
+ -simplify some aspects by making RandomizableParameter class
+ -instead of having randomness act positively or negatively in a linear fashion, it shall be a PDF
+	-gaussian, white, cauchy, inverse gaussian perhaps
+ 
+ 
+ 
 */
 
 namespace nvs {

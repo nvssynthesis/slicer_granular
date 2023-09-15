@@ -68,6 +68,14 @@ inline bool isParamOfCategory(params_e p, param_category_e c){
 	return paramCategoryMap.at(p) == c;
 }
 
+inline params_e mainToRandom(params_e mainParam){
+	int mainInt = static_cast<int>(mainParam);
+	constexpr int firstRandomInt = static_cast<int>(params_e::transp_randomness);
+	assert(mainInt < firstRandomInt);
+	constexpr int diff = firstRandomInt - static_cast<int>(params_e::transpose);
+	return static_cast<params_e>(mainInt + firstRandomInt);
+}
+
 enum class param_elem_e {
 	min = 0,
 	max,
