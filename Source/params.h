@@ -112,7 +112,7 @@ static const inline  std::map<params_e, paramPropsTuple> paramMap {
 	{params_e::dur_randomness, 		{-1.f, 1.f, 0.f, randSkew, 	true, 0.f, "Duration Randomness"}},
 	{params_e::skew_randomness, 	{-1.f, 1.f, 0.f, randSkew, 	true, 0.f, "Skew Randomness"}},
 	{params_e::plat_randomness, 	{-1.f, 1.f, 0.f, randSkew, 	true, 0.f, "Plateau Randomness"}},
-	{params_e::pan_randomness, 		{0.f, 1.f, 0.f,	 1.5f, 		false, 0.6f, "Pan Randomness"}}
+	{params_e::pan_randomness, 		{0.f, 1.f, 0.f,	 1.5f, 		false, 1.f, "Pan Randomness"}}
 };
 
 
