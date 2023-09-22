@@ -257,9 +257,9 @@ genGrain1::outs genGrain1::operator()(float trig_in){
 	
 	using namespace nvs::gen;
 	// return 1 if histo = TRUE, 2 if histo = FALSE
-	float switch2 = switcher(_histo.val, 1.f, 2.f);
+	const float switch2 = switcher(_histo.val, 1.f, 2.f);
 	
-	std::array<float, 2> gater = gateSelect<float, 2>(switch2, trig_in);
+	const std::array<float, 2> gater = gateSelect<float, 2>(switch2, trig_in);
 	
 	// offset, duration ('slope' in max patch), pan, skew
 	float transposeEffectiveRandomValue {0.f};
@@ -286,32 +286,32 @@ genGrain1::outs genGrain1::operator()(float trig_in){
 	}
 	
 	o.next = gater[0];
-	float ratioBasedOnNote = _ratioForNoteLatch(_ratioBasedOnNote, gater[1]);
-	float transposeEffectiveTotalMultiplier = _transpRat * ratioBasedOnNote * transposeEffectiveRandomValue;
-	float latch_transpose_result = _transposeLatch(transposeEffectiveTotalMultiplier, gater[1]);
-	_accum(latch_transpose_result * 1.f, static_cast<bool>(gater[1]));
-	double accumVal = _accum.val;
+	const float ratioBasedOnNote = _ratioForNoteLatch(_ratioBasedOnNote, gater[1]);
+	const float transposeEffectiveTotalMultiplier = _transpRat * ratioBasedOnNote * transposeEffectiveRandomValue;
+	const float latch_transpose_result = _transposeLatch(transposeEffectiveTotalMultiplier, gater[1]);
+	_accum(latch_transpose_result, static_cast<bool>(gater[1]));
+	const double accumVal = _accum.val;
 	
-	double offset_tmp = _offset + offsetEffectiveRandomValue;
-	double latch_offset_result = _offsetLatch(offset_tmp, gater[1]);
+	const double offset_tmp = _offset + offsetEffectiveRandomValue;
+	const double latch_offset_result = _offsetLatch(offset_tmp, gater[1]);
 
-	double duration_tmp = _duration + durationEffectiveRandomValue*_duration;
-	double latch_duration_result = _durationLatch(duration_tmp, gater[1]);
+	const double duration_tmp = _duration + durationEffectiveRandomValue*_duration;
+	const double latch_duration_result = _durationLatch(duration_tmp, gater[1]);
 	
-	double sampleIndex = accumVal + latch_offset_result - (0.5 * latch_duration_result);
+	const double sampleIndex = accumVal + latch_offset_result - (0.5 * latch_duration_result);
 	float sample = nvs::gen::peek<float, interpolationModes_e::hermite, boundsModes_e::wrap>(
 																 _waveSpan.data(), sampleIndex, _waveSpan.size());
 	
 	assert(latch_transpose_result > 0.f);
-	float windowIdx = (latch_duration_result * accumVal / latch_transpose_result);
-	windowIdx = nvs::memoryless::clamp<float>(windowIdx, 0.f, 1.f);
+	const float windowIdx_unbounded = (latch_duration_result * accumVal / latch_transpose_result);
+	const float windowIdx = nvs::memoryless::clamp<float>(windowIdx_unbounded, 0.f, 1.f);
 	
-	float skew_tmp = _skew + skewEffectiveRandomValue;
-	float latch_skew_result = _skewLatch(skew_tmp, gater[1]);
+	const float skew_tmp = _skew + skewEffectiveRandomValue;
+	const float latch_skew_result = _skewLatch(skew_tmp, gater[1]);
 	float win = nvs::gen::triangle<float, false>(windowIdx, latch_skew_result);	// calling fmod because does not assume bounded input
 	
-	float plateau_tmp = _plateau + plateauEffectiveRandomValue;
-	float plateau_latch_result = _plateauLatch(plateau_tmp, gater[1]);
+	const float plateau_tmp = _plateau + plateauEffectiveRandomValue;
+	const float plateau_latch_result = _plateauLatch(plateau_tmp, gater[1]);
 	win *= plateau_latch_result;
 	win = nvs::memoryless::clamp_high(win, 1.f);
 	
@@ -319,20 +319,20 @@ genGrain1::outs genGrain1::operator()(float trig_in){
 	win /= plateau_latch_result;
 	sample *= win;
 	
-	float velAmplitude = _amplitudeForNoteLatch(_amplitudeBasedOnNote, gater[1]);
+	const float velAmplitude = _amplitudeForNoteLatch(_amplitudeBasedOnNote, gater[1]);
 	sample *= velAmplitude;
 	
 	float pan_tmp = _pan + panEffectiveRandomValue;
-	pan_tmp = pan_tmp;//nvs::memoryless::biuni<float>(pan_tmp);
-	float latch_pan_result = _panLatch(pan_tmp, gater[1]);	// overall panning trend
+	pan_tmp = pan_tmp;
+	float latch_pan_result = _panLatch(pan_tmp, gater[1]);
 	
 	latch_pan_result = nvs::memoryless::clamp<float>(latch_pan_result, 0.f, 1.f);
 	latch_pan_result *= 1.570796326794897f;
-	std::array<float, 2> lr = nvs::gen::pol2car<float>(sample, latch_pan_result);
+	const std::array<float, 2> lr = nvs::gen::pol2car<float>(sample, latch_pan_result);
 	o.audio = 	lr[0];
 	o.audio_R = lr[1];
 	
-	float busy_tmp = (win > 0.f);
+	const float busy_tmp = (win > 0.f);
 	o.busy = busy_tmp;
 	
 	// original first takes care of denorm...
