@@ -18,6 +18,7 @@
       <FILE id="mApci6" name="PluginEditor.h" compile="0" resource="0" file="Source/PluginEditor.h"/>
       <FILE id="h18YqT" name="FileSelectorComponent.h" compile="0" resource="0"
             file="Source/FileSelectorComponent.h"/>
+      <FILE id="YfM458" name="SliderColumn.h" compile="0" resource="0" file="Source/SliderColumn.h"/>
       <FILE id="OW557g" name="dsp_util.h" compile="0" resource="0" file="Source/dsp_util.h"/>
       <FILE id="BN5JES" name="DataStructures.h" compile="0" resource="0"
             file="Source/DataStructures.h"/>
@@ -25,7 +26,6 @@
             file="Source/GranularSynthesis.cpp"/>
       <FILE id="Rf1ssv" name="GranularSynthesis.h" compile="0" resource="0"
             file="Source/GranularSynthesis.h"/>
-      <FILE id="X2xDrG" name="EssentiaSetup.h" compile="0" resource="0" file="Source/EssentiaSetup.h"/>
       <FILE id="wKk0Fn" name="params.h" compile="0" resource="0" file="Source/params.h"/>
       <FILE id="zJ02d0" name="nvs_gen.h" compile="0" resource="0" file="../nvs_libraries/nvs_libraries/include/nvs_gen.h"/>
       <FILE id="DcXofS" name="plotting.h" compile="0" resource="0" file="Source/plotting.h"/>

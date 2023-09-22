@@ -14,11 +14,9 @@ Slicer_granularAudioProcessor::Slicer_granularAudioProcessor()
                        ),
 #endif
 apvts(*this, nullptr, "PARAMETERS", createParameterLayout())
-#if USING_ESSENTIA
-, ess_hold(ess_init)
-#endif
-, gen_granular(lastSampleRate, audioBuffersChannels.getActiveSpanRef(), 30)
-, logFile(juce::File::getSpecialLocation(juce::File::SpecialLocationType::currentApplicationFile).getSiblingFile("log.txt"))
+, gen_granular(lastSampleRate, audioBuffersChannels.getActiveSpanRef(), 50)
+, logFile(juce::File::getSpecialLocation(juce::File::SpecialLocationType::currentApplicationFile).
+		  getSiblingFile("log.txt"))
 , fileLogger(logFile, "hello")
 {
 	juce::Logger::setCurrentLogger (&fileLogger);
@@ -171,26 +169,6 @@ void Slicer_granularAudioProcessor::loadAudioFile(juce::File const f){
 	delete reader;
 }
 
-#if (STATIC_MAP | FROZEN_MAP)
-template <auto Start, auto End>
-constexpr void Slicer_granularAudioProcessor::paramSet(){
-	float tmp;
-
-	if constexpr (Start < End){
-		constexpr params_e p = static_cast<params_e>(Start);
-		tmp = *apvts.getRawParameterValue(getParamElement<p, param_elem_e::name>());
-		float *last = lastParamsMap.at(p);
-		if (tmp != *last){
-			*last = tmp;
-			granMembrSetFunc setFunc = paramSetterMap.at(p);
-			(gen_granular.*setFunc)(tmp);	// could replace with std::invoke
-		}
-		
-		paramSet<Start + 1, End>();
-	}
-}
-#endif
-
 void Slicer_granularAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
     juce::ScopedNoDenormals noDenormals;
@@ -226,6 +204,9 @@ void Slicer_granularAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
 			}
 		}
 	}
+	if ( !(audioBuffersChannels.getActiveSpanRef().size()) )
+		return;
+	
 	gen_granular.shuffleIndices();
 	for (auto samp = 0; samp < buffer.getNumSamples(); ++samp){
 		std::array<float, 2> output = gen_granular(trigger);

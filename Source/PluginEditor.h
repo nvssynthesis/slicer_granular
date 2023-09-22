@@ -13,11 +13,46 @@
 #include "params.h"
 #include "dsp_util.h"
 #include "FileSelectorComponent.h"
+#include "SliderColumn.h"
 
 //==============================================================================
 /** TODO:
-	-center param names
 */
+
+struct MainParamsComponent	:	public juce::Component
+{
+	MainParamsComponent(Slicer_granularAudioProcessor& p)
+	:
+	attachedSliderColumnArray
+	{
+		SliderColumn(p.apvts, params_e::transpose),
+		SliderColumn(p.apvts, params_e::position),
+		SliderColumn(p.apvts, params_e::speed),
+		SliderColumn(p.apvts, params_e::duration),
+		SliderColumn(p.apvts, params_e::skew),
+		SliderColumn(p.apvts, params_e::plateau),
+		SliderColumn(p.apvts, params_e::pan)
+	}
+	{
+		for (auto &s : attachedSliderColumnArray){
+			addAndMakeVisible( s );
+		}
+	}
+	void resized() override
+	{
+		auto localBounds = getLocalBounds();
+		int const alottedCompHeight = localBounds.getHeight();// - y + smallPad;
+		int const alottedCompWidth = localBounds.getWidth() / attachedSliderColumnArray.size();
+		
+		for (int i = 0; i < attachedSliderColumnArray.size(); ++i){
+			int left = i * alottedCompWidth + localBounds.getX();
+			attachedSliderColumnArray[i].setBounds(left, 0, alottedCompWidth, alottedCompHeight);
+		}
+	}
+	
+private:
+	std::array<SliderColumn, static_cast<size_t>(params_e::count) / 2> attachedSliderColumnArray;
+};
 
 class Slicer_granularAudioProcessorEditor  : public juce::AudioProcessorEditor
 ,			                                 public juce::Slider::Listener
@@ -40,12 +75,12 @@ public:
 	
 	//===============================================================================
 
-	std::array<std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment>, static_cast<size_t>(params_e::count)> paramSliderAttachments;
-
 private:
-	std::array<juce::Slider, static_cast<size_t>(params_e::count)> paramSliders;
-	std::array<juce::Label, static_cast<size_t>(params_e::count)> paramLabels;
+	juce::ComponentBoundsConstrainer constrainer;
+
 	FileSelectorComponent fileComp;
+	MainParamsComponent mainParamsComp;
+
 /*
     std::unique_ptr<juce::FilenameComponent> fileComp;
 	juce::StringArray recentFiles;

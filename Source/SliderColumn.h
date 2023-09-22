@@ -23,8 +23,8 @@ struct AttachedSlider {
 		_slider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 25);
 		_slider.setValue(getParamDefault(param));
 
-		_slider.setColour(juce::Slider::ColourIds::thumbColourId, juce::Colours::palevioletred);
-		_slider.setColour(juce::Slider::ColourIds::textBoxTextColourId, juce::Colours::black);
+		_slider.setColour(Slider::ColourIds::thumbColourId, juce::Colours::palevioletred);
+		_slider.setColour(Slider::ColourIds::textBoxTextColourId, juce::Colours::lightgrey);
 	}
 	
 	Slider _slider;
@@ -37,9 +37,6 @@ struct AttachedSlider {
 class SliderColumn	:	public juce::Component
 {
 public:
-	using Slider = juce::Slider;
-	using SliderAttachment = juce::SliderParameterAttachment;
-	
 	SliderColumn(juce::AudioProcessorValueTreeState &apvts, params_e nonRandomParam)
 	:
 	_slider(apvts, nonRandomParam, juce::Slider::LinearVertical),
@@ -61,13 +58,13 @@ public:
 	}
 	
 	void paint(juce::Graphics& g) override {
-		_label.setFont( juce::Font("Copperplate", "Regular", proportionOfWidth(0.14f)) );
+		_label.setFont( juce::Font("Copperplate", "Regular", proportionOfWidth(0.16f)) );
 	}
 	void resized() override {
 		float sliderProportion {0.75f};
 		float labelProportion {0.08f};
 		float knobProportion {0.17f};
-		float proportionSum = sliderProportion + labelProportion + knobProportion;
+		[[maybe_unused]] float proportionSum = sliderProportion + labelProportion + knobProportion;
 		// would compare with 1 but floating point imprecision
 		jassert (proportionSum > 0.999f);
 		jassert (proportionSum < 1.001f);
@@ -76,7 +73,6 @@ public:
 		localBounds.reduce(5, 5);
 		
 		int const sliderToLabelPadding = 10;
-//		int const labelToKnobPadding = 15;
 		
 		int x(localBounds.getX()), y(localBounds.getY());
 
@@ -90,7 +86,6 @@ public:
 		_label.setBounds(x, y, localBounds.getWidth(), labelHeight);
 		y += labelHeight;
 		
-//		y += labelToKnobPadding;
 		
 		int const knobHeight = localBounds.getHeight() * knobProportion;
 		_knob._slider.setBounds(x, y, localBounds.getWidth(), knobHeight);

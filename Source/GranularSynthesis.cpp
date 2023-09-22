@@ -7,6 +7,16 @@
 
   ==============================================================================
 */
+/**
+ TODO:
+ -optimize:
+	-remove std::pow in semitonesToRatio, getting transposeEffectiveRandomValue
+	-it's not necessary to use some of the gen-translated functions, like switch,  gateSelect, or latch
+	-really i only need to call rng() when there is a new grain trigger...
+	-polToCar calls std::sin and std::cos
+ -CONSOLIDATE params into a struct that builds in gaussian randomizer
+ -CONSOLIDATE params into a struct that builds in gaussian randomizer
+ */
 
 #include "GranularSynthesis.h"
 namespace nvs {
@@ -80,9 +90,9 @@ void genGranPoly1::setTranspose(float transpositionSemitones){
 	for (auto &g : _grains)
 		g.setTranspose(rat);
 }
-void genGranPoly1::setPosition(float positionNormalized){
-	positionNormalized = nvs::memoryless::clamp<float>(positionNormalized, 0.f, 1.f);
-	auto pos = positionNormalized * static_cast<float>(_wavespan.size());
+void genGranPoly1::setPosition(double positionNormalized){
+//	positionNormalized = nvs::memoryless::clamp<double>(positionNormalized, 0.0, 1.0);
+	auto pos = positionNormalized * static_cast<double>(_wavespan.size());
 	_offsetHisto(pos);
 	for (auto &g : _grains)
 		g.setOffset(_offsetHisto.val);
@@ -91,12 +101,9 @@ void genGranPoly1::setSpeed(float newSpeed){
 	newSpeed = nvs::memoryless::clamp<float>(newSpeed, 0.f, _sampleRate/2.f);
 	_speedHisto(newSpeed);
 }
-void genGranPoly1::setDuration(float dur_ms){
-	dur_ms = nvs::memoryless::clamp_low<float>(dur_ms, 0.f);
-	auto dur_samps = (dur_ms / 1000.f) * _sampleRate;
-	
-	dur_samps = nvs::memoryless::clamp_low<float>(dur_samps, 1.f);
-	float freq_samps = 1.f / dur_samps;
+
+void genGranPoly1::setDuration(double dur_ms){
+	auto freq_samps = durationMsToFreqSamps(dur_ms);
 	_durationHisto(freq_samps);
 	for (auto &g : _grains)
 		g.setDuration(_durationHisto.val);
@@ -105,6 +112,10 @@ void genGranPoly1::setSkew(float skew){
 	skew = nvs::memoryless::clamp<float>(skew, 0.001, 0.999);
 	for (auto &g : _grains)
 		g.setSkew(skew);
+}
+void genGranPoly1::setPlateau(float plateau){
+	for (auto &g : _grains)
+		g.setPlateau(plateau);
 }
 void genGranPoly1::setPan(float pan){
 	for (auto &g : _grains)
@@ -115,12 +126,12 @@ void genGranPoly1::setTransposeRandomness(float randomness){
 	for (auto &g : _grains)
 		g.setTransposeRand(randomness);
 }
-void genGranPoly1::setPositionRandomness(float randomness){
-	randomness = randomness * static_cast<float>(_wavespan.size());
+void genGranPoly1::setPositionRandomness(double randomness){
+	randomness = randomness * static_cast<double>(_wavespan.size());
 	for (auto &g : _grains)
 		g.setOffsetRand(randomness);
 }
-void genGranPoly1::setDurationRandomness(float randomness){
+void genGranPoly1::setDurationRandomness(double randomness){
 	for (auto &g : _grains)
 		g.setDurationRand(randomness);
 }
@@ -132,6 +143,10 @@ void genGranPoly1::setSpeedRandomness(float randomness){
 void genGranPoly1::setSkewRandomness(float randomness){
 	for (auto &g : _grains)
 		g.setSkewRand(randomness);
+}
+void genGranPoly1::setPlateauRandomness(float randomness){
+	for (auto &g : _grains)
+		g.setPlateauRand(randomness);
 }
 void genGranPoly1::setPanRandomness(float randomness){
 	for (auto &g : _grains)
@@ -203,14 +218,17 @@ void genGrain1::setId(int newId){
 void genGrain1::setTranspose(float ratio){
 	_transpRat = ratio;
 }
-void genGrain1::setDuration(float duration){
+void genGrain1::setDuration(double duration){
 	_duration = duration;
 }
-void genGrain1::setOffset(float offset){
+void genGrain1::setOffset(double offset){
 	_offset = offset;
 }
 void genGrain1::setSkew(float skew){
 	_skew = skew;
+}
+void genGrain1::setPlateau(float plateau){
+	_plateau = plateau;
 }
 void genGrain1::setPan(float pan){
 	_pan = pan;
@@ -218,14 +236,17 @@ void genGrain1::setPan(float pan){
 void genGrain1::setTransposeRand(float transposeRand){
 	_transposeRand = transposeRand;
 }
-void genGrain1::setDurationRand(float durationRand){
+void genGrain1::setDurationRand(double durationRand){
 	_durationRand = durationRand;
 }
-void genGrain1::setOffsetRand(float offsetRand){
+void genGrain1::setOffsetRand(double offsetRand){
 	_offsetRand = offsetRand;
 }
 void genGrain1::setSkewRand(float skewRand){
 	_skewRand = skewRand;
+}
+void genGrain1::setPlateauRand(float plateauRand){
+	_platRand = plateauRand;
 }
 void genGrain1::setPanRand(float panRand){
 	_panRand = panRand;
@@ -242,24 +263,26 @@ genGrain1::outs genGrain1::operator()(float trig_in){
 	
 	// offset, duration ('slope' in max patch), pan, skew
 	float transposeEffectiveRandomValue {0.f};
-	float offsetEffectiveRandomValue {0.f};
-	float durationEffectiveRandomValue {0.f};
+	double offsetEffectiveRandomValue {0.0};
+	double durationEffectiveRandomValue {0.0};
 	float panEffectiveRandomValue {0.5f};
 	float skewEffectiveRandomValue {0.f};
+	float plateauEffectiveRandomValue {0.f};
 	// get all randoms
 	if (_rng_ptr != nullptr){
 		transposeEffectiveRandomValue = (*_rng_ptr)() * _transposeRand;
-		transposeEffectiveRandomValue = pow(2, transposeEffectiveRandomValue);
+		transposeEffectiveRandomValue = semitonesToRatio(transposeEffectiveRandomValue);
 		assert(transposeEffectiveRandomValue > 0);
 		assert(transposeEffectiveRandomValue == transposeEffectiveRandomValue);
-		offsetEffectiveRandomValue = (*_rng_ptr)() * _offsetRand;
-		durationEffectiveRandomValue = (*_rng_ptr)() * _durationRand;
+		offsetEffectiveRandomValue = static_cast<double>((*_rng_ptr)()) * _offsetRand;
+		durationEffectiveRandomValue = static_cast<double>((*_rng_ptr)()) * _durationRand;
 		panEffectiveRandomValue = nvs::memoryless::unibi<float>((*_rng_ptr)()) * _panRand;
 		panEffectiveRandomValue *= 0.5f; 	// range between [-0.5 .. 0.5]
 		assert(panEffectiveRandomValue >= -0.5f);
 		assert(panEffectiveRandomValue <= 0.5f);
 		skewEffectiveRandomValue = (*_rng_ptr)() * _skewRand;
 		skewEffectiveRandomValue *= 0.5f;
+		plateauEffectiveRandomValue = (*_rng_ptr)() * 5.f * _platRand;
 	}
 	
 	o.next = gater[0];
@@ -267,16 +290,17 @@ genGrain1::outs genGrain1::operator()(float trig_in){
 	float transposeEffectiveTotalMultiplier = _transpRat * ratioBasedOnNote * transposeEffectiveRandomValue;
 	float latch_transpose_result = _transposeLatch(transposeEffectiveTotalMultiplier, gater[1]);
 	_accum(latch_transpose_result * 1.f, static_cast<bool>(gater[1]));
-	auto accumVal = _accum.val;
+	double accumVal = _accum.val;
 	
-	float offset_tmp = _offset + offsetEffectiveRandomValue;
-	float latch_offset_result = _offsetLatch(offset_tmp, gater[1]);
+	double offset_tmp = _offset + offsetEffectiveRandomValue;
+	double latch_offset_result = _offsetLatch(offset_tmp, gater[1]);
 
-	float duration_tmp = _duration + durationEffectiveRandomValue;
-	float latch_duration_result = _durationLatch(duration_tmp, gater[1]);
+	double duration_tmp = _duration + durationEffectiveRandomValue*_duration;
+	double latch_duration_result = _durationLatch(duration_tmp, gater[1]);
 	
-	float sampleIndex = accumVal + latch_offset_result - (0.5 * latch_duration_result);
-	float sample = nvs::gen::peekBuff<float>(_waveSpan.data(), static_cast<size_t>(sampleIndex), _waveSpan.size());
+	double sampleIndex = accumVal + latch_offset_result - (0.5 * latch_duration_result);
+	float sample = nvs::gen::peek<float, interpolationModes_e::hermite, boundsModes_e::wrap>(
+																 _waveSpan.data(), sampleIndex, _waveSpan.size());
 	
 	assert(latch_transpose_result > 0.f);
 	float windowIdx = (latch_duration_result * accumVal / latch_transpose_result);
@@ -286,7 +310,13 @@ genGrain1::outs genGrain1::operator()(float trig_in){
 	float latch_skew_result = _skewLatch(skew_tmp, gater[1]);
 	float win = nvs::gen::triangle<float, false>(windowIdx, latch_skew_result);	// calling fmod because does not assume bounded input
 	
+	float plateau_tmp = _plateau + plateauEffectiveRandomValue;
+	float plateau_latch_result = _plateauLatch(plateau_tmp, gater[1]);
+	win *= plateau_latch_result;
+	win = nvs::memoryless::clamp_high(win, 1.f);
+	
 	win = nvs::gen::parzen(win);
+	win /= plateau_latch_result;
 	sample *= win;
 	
 	float velAmplitude = _amplitudeForNoteLatch(_amplitudeBasedOnNote, gater[1]);

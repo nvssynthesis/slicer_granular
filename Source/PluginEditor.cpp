@@ -13,6 +13,7 @@
 Slicer_granularAudioProcessorEditor::Slicer_granularAudioProcessorEditor (Slicer_granularAudioProcessor& p)
     : AudioProcessorEditor (&p)
 ,	fileComp(juce::File(), "*.wav;*.aif;*.aiff", "", "Select file to open")
+,	mainParamsComp(p)
 ,	triggeringButton("hi")
 ,	audioProcessor (p)
 {
@@ -25,32 +26,12 @@ Slicer_granularAudioProcessorEditor::Slicer_granularAudioProcessorEditor (Slicer
 	triggeringButton.onClick = [this, &p]{ updateToggleState(&triggeringButton, "Trigger", p.triggerValFromEditor);	};
 	triggeringButton.setClickingTogglesState(true);
 	
-	for (size_t i = 0; i < static_cast<size_t>(params_e::count); ++i){
-		params_e param = static_cast<params_e>(i);
-		paramSliderAttachments[i] = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (audioProcessor.apvts, getParamName(param), paramSliders[i]);
-		
-		// if main param!
-		if (isMainParam(param)){
-			paramSliders[i].setSliderStyle(juce::Slider::SliderStyle::LinearVertical);
-		} else if (isParamOfCategory(param, param_category_e::random)){
-			// else rotary?
-			paramSliders[i].setSliderStyle(juce::Slider::SliderStyle::RotaryHorizontalVerticalDrag);
-		}
-		paramSliders[i].setNormalisableRange(getNormalizableRange<double>(param));
-		paramSliders[i].setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 25);
-		
-		paramSliders[i].setValue(getParamDefault(param));
-		addAndMakeVisible(paramSliders[i]);
-		
-		paramLabels[i].setText(getParamName(param), juce::dontSendNotification);
-		if (isMainParam(param)){
-			paramLabels[i].setFont(juce::Font("Copperplate", 20, juce::Font::FontStyleFlags::plain));
-			addAndMakeVisible(paramLabels[i]);
-		}
-	}
+	addAndMakeVisible(mainParamsComp);
 	
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
+	constrainer.setMinimumSize(600, 400);
+
     setSize (800, 500);
 	setResizable(true, true);
 }
@@ -58,8 +39,6 @@ Slicer_granularAudioProcessorEditor::Slicer_granularAudioProcessorEditor (Slicer
 Slicer_granularAudioProcessorEditor::~Slicer_granularAudioProcessorEditor()
 {
 	fileComp.pushRecentFilesToFile();
-	for (auto &a : paramSliderAttachments)
-		a = nullptr;
 }
 //==============================================================================
 void Slicer_granularAudioProcessorEditor::updateToggleState (juce::Button* button, juce::String name, bool &valToAffect)
@@ -73,15 +52,11 @@ void Slicer_granularAudioProcessorEditor::updateToggleState (juce::Button* butto
 //==============================================================================
 void Slicer_granularAudioProcessorEditor::paint (juce::Graphics& g)
 {
-#define way1 1
-	
-#if way1
 	juce::Image image(juce::Image::ARGB, getWidth(), getHeight(), true);
     juce::Graphics tg(image);
 
 	juce::Colour upperLeftColour  = gradientColors[(colourOffsetIndex + 0) % gradientColors.size()];
 	juce::Colour lowerRightColour = gradientColors[(colourOffsetIndex + 4) % gradientColors.size()];
-//    juce::ColourGradient cg = juce::ColourGradient::horizontal(red.darker(1.0), 0.0, red.darker(20.0), getWidth());
 	juce::ColourGradient cg(upperLeftColour, 0, 0, lowerRightColour, getWidth(), getHeight(), true);
 	cg.addColour(0.3, gradientColors[(colourOffsetIndex + 1) % gradientColors.size()]);
 	cg.addColour(0.5, gradientColors[(colourOffsetIndex + 2) % gradientColors.size()]);
@@ -90,94 +65,47 @@ void Slicer_granularAudioProcessorEditor::paint (juce::Graphics& g)
     tg.fillAll();
 
     g.drawImage(image, getLocalBounds().toFloat());
-#else
-	auto gradient = juce::ColourGradient(juce::Colours::red, 0, 0, juce::Colours::black, getWidth(), getHeight(), false);
-	g.setGradientFill(gradient);
-#endif
-//    g.fillAll (juce::Colours::black);
 
     g.setColour (juce::Colours::white);
     g.setFont (15.0f);
-    g.drawFittedText ("grrrraaaaaanuuuuuulaaaaaate", getLocalBounds(), juce::Justification::centred, 1);
+//    g.drawFittedText ("grrrraaaaaanuuuuuulaaaaaate", getLocalBounds(), juce::Justification::centred, 1);
 }
 
 void Slicer_granularAudioProcessorEditor::resized()
 {
-	std::cout << "resized\n";
-
+	constrainer.checkComponentBounds(this);
+	juce::Rectangle<int> localBounds = getLocalBounds();
+//	std::cout << "x: " << localBounds.getX() << " y: " << localBounds.getY() <<
+//			" w: " << localBounds.getWidth() << " h: " << localBounds.getHeight() << '\n';
+	int const smallPad = 10;
+	localBounds.reduce(smallPad, smallPad);
 	
-	int fileCompLeftPad = 10;
-	int fileCompTopPad = 10;
-	int fileCompWidth = getWidth() - (fileCompLeftPad * 2);
-	int fileCompHeight = 20;
-	fileComp.setBounds    (fileCompLeftPad, fileCompTopPad, fileCompWidth, fileCompHeight);
-	
-	triggeringButton.setBounds(fileCompLeftPad, fileCompTopPad + fileCompHeight + fileCompTopPad, 25, 25);
-
-	
-	int const numParams = static_cast<size_t>(params_e::count);
-	
-	int numMainParams = 0;
-	int numRandomParams = 0;
-	for (int i = 0; i < numParams; ++i){
-		params_e param = static_cast<params_e>(i);
-		if (isParamOfCategory(param, param_category_e::main)){
-			numMainParams++;
-		} else if (isParamOfCategory(param, param_category_e::random)){
-			numRandomParams++;
-		}
+	int x(0), y(0);
+	{	// just some scopes for temporaries
+		int fileCompWidth = localBounds.getWidth();
+		int fileCompHeight = 20;
+		x = localBounds.getX();
+		y = localBounds.getY();
+		fileComp.setBounds(x, y, fileCompWidth, fileCompHeight);
+		y += fileCompHeight;
+		y += smallPad;
 	}
-	
-	assert((numRandomParams + numMainParams) == numParams);
-	
-	int top = 0 + (fileCompTopPad) + fileCompHeight;
-	int heightAfterFileComp = getHeight() - top;
-	
-	int const padHorizontal = 25;
-	int const padVertical = 25;
-	int const widthAfterPadding = getWidth() - (2 * padHorizontal);
-	int const heightAfterPadding = heightAfterFileComp - (2 * padVertical);
-	
-	float sliderHeightToKnobHeightRatio = 5.f;
-	
-	int const sliderToKnobLowerPadding = 12;
-	int const knobHeight = (heightAfterPadding - sliderToKnobLowerPadding) / sliderHeightToKnobHeightRatio;
-	
-	int const sliderWidth = (widthAfterPadding / numMainParams) / 1.1;
-	int const sliderHeight = heightAfterPadding - knobHeight;
-	
-	int const effectiveWidth = widthAfterPadding - sliderWidth;
-	
-	int const widthUnit = effectiveWidth / (numMainParams - 1);
-	
-	for (int i = 0; i < numParams; ++i){
-		auto x = widthUnit * i + padHorizontal;
-		auto y = padVertical + top;
-		auto width = sliderWidth;
-		auto height = sliderHeight;
+	if constexpr (false)
+	{
+		int buttonWidth = 50;
+		int buttonHeight = buttonWidth;
+		triggeringButton.setBounds(x, y, buttonWidth, buttonHeight);
+		y += buttonHeight;
+		y += smallPad;
+	}
+	{
+		auto const mainParamsRemainingHeightRatio = localBounds.getHeight();
 
-		if (isParamOfCategory(static_cast<params_e>(i), param_category_e::random)){
-			auto const xOffset = widthUnit * numMainParams;
-			
-			y += sliderHeight;
-			y += sliderToKnobLowerPadding;
-			
-			height = knobHeight;
-			x -= xOffset;
-			width = height;
-			
-			auto const extraOffset = (sliderWidth - width);
-			width += extraOffset;
-		}
+		int const alottedMainParamsHeight = mainParamsRemainingHeightRatio - y + smallPad;
+		int const alottedMainParamsWidth = localBounds.getWidth();
 		
-		paramSliders[i].setBounds(x,		// x
-								  y,		// y
-								  width,	// width
-								  height);	// height
-		
-		
-		auto const labelY = height + y ;
-		paramLabels[i].setBounds(x, labelY, width, 24);
+		mainParamsComp.setBounds(localBounds.getX(), y, alottedMainParamsWidth, alottedMainParamsHeight);
+		y += mainParamsComp.getHeight();
 	}
 }
 
