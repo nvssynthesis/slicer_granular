@@ -174,7 +174,7 @@ private:
 	double _offsetRand = 0.0;
 	float _skewRand = 0.f;
 	float _platRand = 0.f;
-	float _panRand = 0.f;
+	float _panRand = 1.f;
 	
 //	vecReal const *_waveVec;
 	std::span<float> const &_waveSpan;

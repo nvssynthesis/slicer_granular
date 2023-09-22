@@ -10,25 +10,27 @@
 /**
  TODO:
  -optimize:
-	-remove std::pow in semitonesToRatio, getting transposeEffectiveRandomValue
 	-it's not necessary to use some of the gen-translated functions, like switch,  gateSelect, or latch
-	-really i only need to call rng() when there is a new grain trigger...
 	-polToCar calls std::sin and std::cos
  -CONSOLIDATE params into a struct that builds in gaussian randomizer
  -CONSOLIDATE params into a struct that builds in gaussian randomizer
  */
 
 #include "GranularSynthesis.h"
+#include "dsp_util.h"
+
 namespace nvs {
 namespace gran {
 
 template <typename float_t>
 float semitonesToRatio(float_t semitones){
 	constexpr float_t semitoneRatio = static_cast<float_t>(1.059463094359295);
-	float_t transpositionRatio = pow(semitoneRatio, semitones);
+	float_t transpositionRatio = std::pow(semitoneRatio, semitones);
 	return transpositionRatio;
 }
-
+inline float fastSemitonesToRatio(float semitones){
+	return semitonesRatioTable(semitones);
+}
 genGranPoly1::genGranPoly1(float const &sampleRate, std::span<float> const &wavespan, size_t nGrains)
 :
 _sampleRate(sampleRate),
@@ -73,7 +75,7 @@ void genGranPoly1::updateNotes(){
 		auto right = begin + static_cast<size_t>(fractionalRightSide);
 		for (; left != right; ++left){
 			float note = e.first;
-			float rat = semitonesToRatio(note - 69);
+			float rat = fastSemitonesToRatio(note - 69);
 			(*left).setRatioBasedOnNote(rat);
 			float vel = e.second;
 			float amp = vel / static_cast<float>(100);
@@ -86,7 +88,7 @@ void genGranPoly1::shuffleIndices(){
 }
 
 void genGranPoly1::setTranspose(float transpositionSemitones){
-	float rat = semitonesToRatio(transpositionSemitones);
+	float rat = fastSemitonesToRatio(transpositionSemitones);
 	for (auto &g : _grains)
 		g.setTranspose(rat);
 }
@@ -262,16 +264,16 @@ genGrain1::outs genGrain1::operator()(float trig_in){
 	const std::array<float, 2> gater = gateSelect<float, 2>(switch2, trig_in);
 	
 	// offset, duration ('slope' in max patch), pan, skew
-	float transposeEffectiveRandomValue {0.f};
+	float transposeEffectiveRandomValue {1.f};
 	double offsetEffectiveRandomValue {0.0};
 	double durationEffectiveRandomValue {0.0};
 	float panEffectiveRandomValue {0.5f};
 	float skewEffectiveRandomValue {0.f};
 	float plateauEffectiveRandomValue {0.f};
 	// get all randoms
-	if (_rng_ptr != nullptr){
+	if ((gater[1]) && (_rng_ptr != nullptr)){
 		transposeEffectiveRandomValue = (*_rng_ptr)() * _transposeRand;
-		transposeEffectiveRandomValue = semitonesToRatio(transposeEffectiveRandomValue);
+		transposeEffectiveRandomValue = fastSemitonesToRatio(transposeEffectiveRandomValue);
 		assert(transposeEffectiveRandomValue > 0);
 		assert(transposeEffectiveRandomValue == transposeEffectiveRandomValue);
 		offsetEffectiveRandomValue = static_cast<double>((*_rng_ptr)()) * _offsetRand;

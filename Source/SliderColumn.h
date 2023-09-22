@@ -25,6 +25,8 @@ struct AttachedSlider {
 
 		_slider.setColour(Slider::ColourIds::thumbColourId, juce::Colours::palevioletred);
 		_slider.setColour(Slider::ColourIds::textBoxTextColourId, juce::Colours::lightgrey);
+		
+//		_slider.getLookAndFeel();
 	}
 	
 	Slider _slider;

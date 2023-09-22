@@ -9,6 +9,45 @@
 */
 
 #pragma once
+#include "sprout/math.hpp"
+#include "sprout/math/constants.hpp"
+
+inline float scale(float val, float min, float range){
+	return (val - min) / range;
+}
+
+template<int minSemitones, int maxSemitones, int reso>
+struct SemitonesRatioTable {
+	constexpr static float semitoneRatio = static_cast<float>(1.059463094359295);
+
+	constexpr SemitonesRatioTable()	:	values()
+	{
+		double incr = range() / static_cast<double>(reso);
+		int i = 0;
+		for (double x = static_cast<double>(minSemitones); x < static_cast<double>(maxSemitones);
+			 x += incr)
+		{
+			values[i] = sprout::pow(semitoneRatio, static_cast<float>(x));
+			++i;
+		}
+	}
+	static constexpr double range(){
+		return static_cast<double>(maxSemitones) - static_cast<double>(minSemitones);
+	}
+	std::array<float, reso> values;
+
+	constexpr float operator()(float x){
+		x = scale(x, minSemitones, range());
+		float fidx = x * static_cast<float>(reso);
+		int iidx = static_cast<int>(fidx);
+		iidx = iidx >= 0 ? iidx : 0;
+		iidx = iidx < reso ? iidx : reso-1;
+		return values[iidx];
+	}
+};
+
+static SemitonesRatioTable<-60, 60, 240> semitonesRatioTable;
+
 
 template<typename T>
 class RMS {
