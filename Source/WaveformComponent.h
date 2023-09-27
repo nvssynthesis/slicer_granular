@@ -28,8 +28,29 @@ public:
 	:	thumbnailCache(5), thumbnail(sourceSamplesPerThumbnailSample, formatManagerToUse, thumbnailCache)
 	{
 		thumbnail.addChangeListener(this);	// thumbnail is a ChangeBroadcaster
+	}
+	
+	int getNumMarkers(){
+		return markerList.getNumMarkers();
+	}
+	void addMarker(double pos){
+		juce::String name(pos);
+		markerList.setMarker(name, juce::RelativeCoordinate(pos));
+	}
+	void removeMarkers(){
+		auto numMarkers = markerList.getNumMarkers();
+		for (auto i = numMarkers - 1; i >= 0 ; --i){
+			markerList.removeMarker(i);
+		}
+	}
+	
+	void drawMarker(juce::Graphics& g, juce::Rectangle<int> bounds, double pos){
 		
-//		markerList.addListener(*this);
+		g.setColour(juce::Colours::blue);
+		
+		int xPos = (bounds.getWidth() * pos) + bounds.getX();
+		
+		g.drawLine(xPos, bounds.getY(), xPos, bounds.getBottom(), 2.f);
 	}
 	
 	void paint(juce::Graphics& g) override
@@ -40,6 +61,11 @@ public:
 			paintIfNoFileLoaded (g, thumbnailBounds);
 		else
 			paintIfFileLoaded (g, thumbnailBounds);
+		
+		for (auto i = 0; i < markerList.getNumMarkers(); ++i){
+			double pos = markerList.getMarkerPosition(*markerList.getMarker(i), this);
+			drawMarker(g, thumbnailBounds, pos);
+		}
 	}
 	void resized() override
 	{
@@ -72,17 +98,12 @@ private:
 	}
 	void paintIfNoFileLoaded (juce::Graphics& g, const juce::Rectangle<int>& thumbnailBounds)
 	{
-//		g.setColour (juce::Colours::darkgrey);
-//		g.fillRect (thumbnailBounds);
 		g.setColour (juce::Colours::darkgrey);
 		g.drawRect(thumbnailBounds);
 		g.drawFittedText ("No File Loaded", thumbnailBounds, juce::Justification::centred, 1);
 	}
 	void paintIfFileLoaded (juce::Graphics& g, const juce::Rectangle<int>& thumbnailBounds)
 	{
-//		g.setColour (juce::Colours::white);
-//		g.fillRect (thumbnailBounds);
-
 		g.setColour (juce::Colours::darkgrey);
 		g.drawRect(thumbnailBounds);
 		

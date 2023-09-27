@@ -10,7 +10,7 @@
 
 #pragma once
 #include "sprout/math.hpp"
-#include "sprout/math/constants.hpp"
+//#include "sprout/math/constants.hpp"
 
 inline float scale(float val, float min, float range){
 	return (val - min) / range;

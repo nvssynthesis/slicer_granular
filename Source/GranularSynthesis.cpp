@@ -13,7 +13,6 @@
 	-it's not necessary to use some of the gen-translated functions, like switch,  gateSelect, or latch
 	-polToCar calls std::sin and std::cos
  -CONSOLIDATE params into a struct that builds in gaussian randomizer
- -CONSOLIDATE params into a struct that builds in gaussian randomizer
  */
 
 #include "GranularSynthesis.h"
@@ -305,18 +304,17 @@ genGrain1::outs genGrain1::operator()(float trig_in){
 																 _waveSpan.data(), sampleIndex, _waveSpan.size());
 	
 	assert(latch_transpose_result > 0.f);
-	const float windowIdx_unbounded = (latch_duration_result * accumVal / latch_transpose_result);
-	const float windowIdx = nvs::memoryless::clamp<float>(windowIdx_unbounded, 0.f, 1.f);
+	double windowIdx = (latch_duration_result * accumVal / latch_transpose_result);
+	windowIdx = nvs::memoryless::clamp<double>(windowIdx, 0.0, 1.0);
 	
 	const float skew_tmp = _skew + skewEffectiveRandomValue;
 	const float latch_skew_result = _skewLatch(skew_tmp, gater[1]);
-	float win = nvs::gen::triangle<float, false>(windowIdx, latch_skew_result);	// calling fmod because does not assume bounded input
+	float win = nvs::gen::triangle<float, false>(static_cast<float>(windowIdx), latch_skew_result);	
 	
 	const float plateau_tmp = _plateau + plateauEffectiveRandomValue;
 	const float plateau_latch_result = _plateauLatch(plateau_tmp, gater[1]);
 	win *= plateau_latch_result;
 	win = nvs::memoryless::clamp_high(win, 1.f);
-	
 	win = nvs::gen::parzen(win);
 	win /= plateau_latch_result;
 	sample *= win;
