@@ -84,7 +84,7 @@ public:
 	
 private:
 	
-	float lastSampleRate 	{ 0.f };
+	double lastSampleRate 	{ 0.0 };
 	int lastSamplesPerBlock { 0 };
 	
 	class AudioBuffersChannels{

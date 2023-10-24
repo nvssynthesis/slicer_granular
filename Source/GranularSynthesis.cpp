@@ -30,7 +30,7 @@ float semitonesToRatio(float_t semitones){
 inline float fastSemitonesToRatio(float semitones){
 	return semitonesRatioTable(semitones);
 }
-genGranPoly1::genGranPoly1(float const &sampleRate, std::span<float> const &wavespan, size_t nGrains)
+genGranPoly1::genGranPoly1(double const &sampleRate, std::span<float> const &wavespan, size_t nGrains)
 :
 _sampleRate(sampleRate),
 _wavespan(wavespan),
@@ -38,7 +38,7 @@ _numGrains(nGrains),
 _normalizer(1.f / std::sqrt(static_cast<float>(std::clamp(nGrains, 1UL, 10000UL)))),
 _grains(_numGrains, genGrain1(wavespan, &_gaussian_rng, &_numGrains) ),
 _grainIndices(_numGrains),
-_phasorInternalTrig(sampleRate)
+_phasorInternalTrig(_sampleRate)
 {
 	for (int i = 0; i < _numGrains; ++i){
 		_grains[i].setId(i);
@@ -150,12 +150,6 @@ void genGranPoly1::setPanRandomness(float randomness){
 std::array<float, 2> genGranPoly1::operator()(float triggerIn){
 	std::array<float, 2> output;
 	
-//	float freq_tmp = _speedHisto.val;
-//	float randFreq = _speedRandomLatch(_gaussian_rng(, _speedRandomness), _triggerHisto.val );
-//	randFreq *= freq_tmp;
-//	freq_tmp += randFreq;
-	
-	
 	// update phasor's frequency only if _triggerHisto.val is true
 	float freq_tmp = speed_lgr(static_cast<bool>(_triggerHisto.val));
 	freq_tmp = nvs::memoryless::clamp_low(freq_tmp, 0.1f);	// once every 10 seconds
@@ -205,7 +199,7 @@ genGrain1::genGrain1(std::span<float> const &waveSpan, nvs::rand::BoxMuller *con
 ,	duration_lgr(*_gaussian_rng_ptr, {durationMsToFreqSamps(500.0, 44100.0), 0.f})
 ,	skew_lgr(*_gaussian_rng_ptr, {0.5f, 0.f})
 ,	plateau_lgr(*_gaussian_rng_ptr, {1.f, 0.f})
-,	pan_lgr(*_gaussian_rng_ptr, {0.5f, 0.f})
+,	pan_lgr(*_gaussian_rng_ptr, {0.5f, 1.f})
 {
 	transpose_lgr._rng.setNext(0.0);
 	position_lgr._rng.setNext(0.0);
@@ -306,7 +300,7 @@ genGrain1::outs genGrain1::operator()(float trig_in){
 	
 	double constexpr leastDuration = 1.0 / (192000.0 * 4.0);
 	
-	double const  latch_duration_result = memoryless::clamp(duration_lgr(gater[1]),
+	double const  latch_duration_result = memoryless::clamp( duration_lgr(gater[1]),
 													leastDuration, static_cast<double>(waveSize));
 	
 	double const  sampleIndex = accumVal + latch_position_result - (0.5 * latch_duration_result);

@@ -95,7 +95,7 @@ void Slicer_granularAudioProcessor::prepareToPlay (double sampleRate, int sample
 {
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
-	lastSampleRate = static_cast<float>(sampleRate);
+	lastSampleRate = sampleRate;
 	lastSamplesPerBlock = samplesPerBlock;
 //	gran_synth.loadOnsets();
 }

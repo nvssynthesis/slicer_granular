@@ -78,7 +78,7 @@ inline double durationMsToFreqSamps(double dur_ms, double sampleRate) {
 
 struct genGranPoly1 {
 public:
-	genGranPoly1(float const &sampleRate, std::span<float> const &wavespan, size_t nGrains);
+	genGranPoly1(double const &sampleRate, std::span<float> const &wavespan, size_t nGrains);
 	
 	void noteOn(noteNumber_t note, velocity_t velocity);	// reassign to noteHolder
 	void noteOff(noteNumber_t note);						// remove from noteHolder
@@ -114,7 +114,7 @@ public:
 	std::array<float, 2> operator()(float triggerIn);
 	
 protected:
-	float const &_sampleRate;				// dependent on owning instantiator, subject to change value from above
+	double const &_sampleRate;				// dependent on owning instantiator, subject to change value from above
 	std::span<float> const &_wavespan;	// dependent on owning instantiator, subject to change address from above
 	size_t _numGrains;
 private:
@@ -123,7 +123,7 @@ private:
 	float _normalizer {1.f};
 	std::vector<genGrain1> _grains;
 	std::vector<size_t> _grainIndices;	// used to index grains in random order
-	gen::phasor _phasorInternalTrig;
+	gen::phasor<double> _phasorInternalTrig;
 
 	LatchedGaussianRandom<float> speed_lgr {_gaussian_rng, {1.f, 0.f}};
 	
@@ -167,6 +167,7 @@ public:
 	outs operator()(float trig_in);
 private:
 	std::span<float> const &_waveSpan;
+	
 	nvs::rand::BoxMuller *const _gaussian_rng_ptr;
 	int grainId;
 	// these pointers are set by containing granular synth
