@@ -175,7 +175,6 @@ private:
 	nvs::gen::history<float> _busyHisto;// history of 'busy' boolean signal, goes to [switch 1 2]
 	nvs::gen::latch<float> _ratioForNoteLatch {1.f};
 	nvs::gen::latch<float> _amplitudeForNoteLatch {0.f};
-//	nvs::gen::latch<float> _transposeLatch {1.f};	// latches transposition from gate on, goes toward dest windowing
 	
 	LatchedGaussianRandom<float> transpose_lgr;
 	LatchedGaussianRandom<double> position_lgr;		// latches position from gate on, goes toward dest windowing
