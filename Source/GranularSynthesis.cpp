@@ -103,7 +103,7 @@ void genGranPoly1::setSpeed(float newSpeed){
 }
 
 void genGranPoly1::setDuration(double dur_ms){
-	auto freq_samps = durationMsToFreqSamps(dur_ms);
+	auto freq_samps = durationMsToFreqSamps(dur_ms, _sampleRate);
 	_durationHisto(freq_samps);
 	for (auto &g : _grains)
 		g.setDuration(_durationHisto.val);
@@ -205,11 +205,18 @@ genGrain1::genGrain1(std::span<float> const &waveSpan, nvs::rand::BoxMuller *con
 ,	_numGrains_ptr(numGrains)
 ,	transpose_lgr(*_gaussian_rng_ptr, {0.f, 0.f})
 ,	position_lgr(*_gaussian_rng_ptr, {0.0, 0.0})
-,	duration_lgr(*_gaussian_rng_ptr, {500.f, 0.f})
+,	duration_lgr(*_gaussian_rng_ptr, {durationMsToFreqSamps(500.0, 44100.0), 0.f})
 ,	skew_lgr(*_gaussian_rng_ptr, {0.5f, 0.f})
 ,	plateau_lgr(*_gaussian_rng_ptr, {1.f, 0.f})
 ,	pan_lgr(*_gaussian_rng_ptr, {0.5f, 0.f})
-{}
+{
+	transpose_lgr._rng.setNext(0.0);
+	position_lgr._rng.setNext(0.0);
+	duration_lgr._rng.setNext(durationMsToFreqSamps(500.0, 44100.0));
+	skew_lgr._rng.setNext(0.5);
+	plateau_lgr._rng.setNext(1.0);
+	pan_lgr._rng.setNext(0.5);
+}
 
 void genGrain1::setRatioBasedOnNote(float ratioForNote){
 	_ratioBasedOnNote = ratioForNote;
@@ -266,29 +273,43 @@ genGrain1::outs genGrain1::operator()(float trig_in){
 		return o;
 	}
 	
-	using namespace nvs::gen;
+	using namespace nvs;
 	// return 1 if histo = TRUE, 2 if histo = FALSE
-	const float switch2 = switcher(_busyHisto.val, 1.f, 2.f);
+	int switch2;
+	if (_busyHisto.val){
+		switch2 = 1;
+	}
+	else {
+		switch2 = 2;
+	}
+	std::array<float, 2> gater;
 	
-	const std::array<float, 2> gater = gateSelect<float, 2>(switch2, trig_in);
+	if (switch2 == 1){
+		gater = {trig_in, 0.f};
+	}
+	else if (switch2 == 2) {
+		gater = {0.f, trig_in};
+	}
 	
 	o.next = gater[0];
 	const float ratioBasedOnNote = _ratioForNoteLatch(_ratioBasedOnNote, gater[1]);
 	const float transpose_tmp = transpose_lgr(gater[1]);
 	const float ratioBasedOnTranspose = fastSemitonesToRatio(transpose_tmp);
 	
-	const float latch_result_transposeEffectiveTotalMultiplier = ratioBasedOnNote * ratioBasedOnTranspose;
-	assert(latch_result_transposeEffectiveTotalMultiplier > 0.f);
+	const float latch_result_transposeEffectiveTotalMultiplier = memoryless::clamp(
+													ratioBasedOnNote * ratioBasedOnTranspose,
+															0.001f, 1000.f);
 
 	_accum(latch_result_transposeEffectiveTotalMultiplier, static_cast<bool>(gater[1]));
 	const double accumVal = _accum.val;
 	
-	const double latch_position_result = position_lgr(gater[1]);
-	assert(latch_position_result >= 0.f);
-	const double latch_duration_result = duration_lgr(gater[1]);
+	const double latch_position_result = memoryless::clamp(position_lgr(gater[1]),
+													0.0, static_cast<double>(_waveSpan.size()));
+	const double latch_duration_result = memoryless::clamp(duration_lgr(gater[1]),
+													0.01, static_cast<double>(_waveSpan.size()));
 	
 	const double sampleIndex = accumVal + latch_position_result - (0.5 * latch_duration_result);
-	float sample = nvs::gen::peek<float, interpolationModes_e::hermite, boundsModes_e::wrap>(
+	float sample = gen::peek<float, gen::interpolationModes_e::hermite, gen::boundsModes_e::wrap>(
 																 _waveSpan.data(), sampleIndex, _waveSpan.size());
 	
 	assert(latch_result_transposeEffectiveTotalMultiplier > 0.f);
@@ -298,17 +319,19 @@ genGrain1::outs genGrain1::operator()(float trig_in){
 			int i = 0;
 		}
 	}
-	windowIdx = nvs::memoryless::clamp<double>(windowIdx, 0.0, 1.0);
+	windowIdx = memoryless::clamp<double>(windowIdx, 0.0, 1.0);
 	
 
-	
+	if (gater[1]){
+		int i = 0;
+	}
 	const float latch_skew_result = skew_lgr(gater[1]);
 	float win = nvs::gen::triangle<float, false>(static_cast<float>(windowIdx), latch_skew_result);
 	
 	const float plateau_latch_result = plateau_lgr(gater[1]);
 	win *= plateau_latch_result;
-	win = nvs::memoryless::clamp_high(win, 1.f);
-	win = nvs::gen::parzen(win);
+	win = memoryless::clamp_high(win, 1.f);
+	win = gen::parzen(win);
 	win /= plateau_latch_result;
 	if (win > 0.f){
 		int i = 0;
@@ -322,9 +345,9 @@ genGrain1::outs genGrain1::operator()(float trig_in){
 //	pan_tmp = pan_tmp;
 	float latch_pan_result = pan_lgr(gater[1]);
 	
-	latch_pan_result = nvs::memoryless::clamp<float>(latch_pan_result, 0.f, 1.f);
+	latch_pan_result = memoryless::clamp<float>(latch_pan_result, 0.f, 1.f);
 	latch_pan_result *= 1.570796326794897f;
-	const std::array<float, 2> lr = nvs::gen::pol2car<float>(sample, latch_pan_result);
+	const std::array<float, 2> lr = gen::pol2car<float>(sample, latch_pan_result);
 	o.audio = 	win;//lr[0];
 	o.audio_R = lr[1];
 	

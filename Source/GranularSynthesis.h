@@ -67,6 +67,15 @@ private:
 	MuSigmaPair<float_t> _msp;
 };
 
+inline double durationMsToFreqSamps(double dur_ms, double sampleRate) {
+	dur_ms = nvs::memoryless::clamp_low<double>(dur_ms, 0.0);
+	auto dur_samps = (dur_ms / 1000.0) * sampleRate;
+	
+	dur_samps = nvs::memoryless::clamp_low<double>(dur_samps, 1.0);
+	double freq_samps = 1.0 / dur_samps;
+	return freq_samps;
+}
+
 struct genGranPoly1 {
 public:
 	genGranPoly1(float const &sampleRate, std::span<float> const &wavespan, size_t nGrains);
@@ -127,15 +136,6 @@ private:
 		
 //	RandomNumberGenerator _rng;
 	NoteHolder noteHolder {};
-	
-	inline double durationMsToFreqSamps(double dur_ms) const {
-		dur_ms = nvs::memoryless::clamp_low<double>(dur_ms, 0.0);
-		auto dur_samps = (dur_ms / 1000.0) * static_cast<double>(_sampleRate);
-		
-		dur_samps = nvs::memoryless::clamp_low<double>(dur_samps, 1.0);
-		double freq_samps = 1.0 / dur_samps;
-		return freq_samps;
-	}
 };
 
 struct genGrain1 {

@@ -29,7 +29,8 @@ private:
 };
 struct BoxMuller {
 	double operator()(double mu, double sigma){
-		return nowaste_pol(mu, sigma);
+		return polar(mu, sigma).first;
+//		return nowaste_pol(mu, sigma);
 	}
 	XoshiroCpp::Xoshiro256Plus &getGenerator(){
 		return rng.getGenerator();
@@ -59,6 +60,10 @@ struct BoxMuller {
 			count = 0;
 			return next;
 		}
+	}
+	// may be useful e.g. for setting to mu
+	void setNext(double d){
+		next = d;
 	}
 private:
 	RandomNumberGenerator rng;
