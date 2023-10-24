@@ -284,6 +284,7 @@ genGrain1::outs genGrain1::operator()(float trig_in){
 	const double accumVal = _accum.val;
 	
 	const double latch_position_result = position_lgr(gater[1]);
+	assert(latch_position_result >= 0.f);
 	const double latch_duration_result = duration_lgr(gater[1]);
 	
 	const double sampleIndex = accumVal + latch_position_result - (0.5 * latch_duration_result);
@@ -292,11 +293,14 @@ genGrain1::outs genGrain1::operator()(float trig_in){
 	
 	assert(latch_result_transposeEffectiveTotalMultiplier > 0.f);
 	double windowIdx = (latch_duration_result * accumVal / latch_result_transposeEffectiveTotalMultiplier);
+	if (windowIdx > 0.0){
+		if (windowIdx < 1.0){
+			int i = 0;
+		}
+	}
 	windowIdx = nvs::memoryless::clamp<double>(windowIdx, 0.0, 1.0);
 	
-	if ((windowIdx > 0.f) && (windowIdx < 1.f)){
-		std::cout << "happened\n";
-	}
+
 	
 	const float latch_skew_result = skew_lgr(gater[1]);
 	float win = nvs::gen::triangle<float, false>(static_cast<float>(windowIdx), latch_skew_result);
@@ -306,6 +310,9 @@ genGrain1::outs genGrain1::operator()(float trig_in){
 	win = nvs::memoryless::clamp_high(win, 1.f);
 	win = nvs::gen::parzen(win);
 	win /= plateau_latch_result;
+	if (win > 0.f){
+		int i = 0;
+	}
 	sample *= win;
 	
 	const float velAmplitude = _amplitudeForNoteLatch(_amplitudeBasedOnNote, gater[1]);
