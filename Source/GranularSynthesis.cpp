@@ -36,7 +36,7 @@ _sampleRate(sampleRate),
 _wavespan(wavespan),
 _numGrains(nGrains),
 _normalizer(1.f / std::sqrt(static_cast<float>(std::clamp(nGrains, 1UL, 10000UL)))),
-_grains(_numGrains, genGrain1(wavespan, &_gaussian_rng, &_numGrains) ),
+_grains(_numGrains, genGrain1(wavespan, _sampleRate, &_gaussian_rng, &_numGrains) ),
 _grainIndices(_numGrains),
 _phasorInternalTrig(_sampleRate)
 {
@@ -189,21 +189,24 @@ std::array<float, 2> genGranPoly1::operator()(float triggerIn){
 	return output;
 }
 
-genGrain1::genGrain1(std::span<float> const &waveSpan, nvs::rand::BoxMuller *const gaussian_rng, size_t *const numGrains, int newId)
+genGrain1::genGrain1(std::span<float> const &waveSpan, double const &sampleRate,
+					 nvs::rand::BoxMuller *const gaussian_rng, size_t *const numGrains,
+					 int newId)
 :	_waveSpan(waveSpan)
+,	_sampleRate(sampleRate)
 ,	_gaussian_rng_ptr(gaussian_rng)
 ,	grainId(newId)
 ,	_numGrains_ptr(numGrains)
 ,	transpose_lgr(*_gaussian_rng_ptr, {0.f, 0.f})
 ,	position_lgr(*_gaussian_rng_ptr, {0.0, 0.0})
-,	duration_lgr(*_gaussian_rng_ptr, {durationMsToFreqSamps(500.0, 44100.0), 0.f})
+,	duration_lgr(*_gaussian_rng_ptr, {durationMsToGaussianSpace(500.0, 44100.0), 0.f})
 ,	skew_lgr(*_gaussian_rng_ptr, {0.5f, 0.f})
 ,	plateau_lgr(*_gaussian_rng_ptr, {1.f, 0.f})
 ,	pan_lgr(*_gaussian_rng_ptr, {0.5f, 1.f})
 {
 	transpose_lgr._rng.setNext(0.0);
 	position_lgr._rng.setNext(0.0);
-	duration_lgr._rng.setNext(durationMsToFreqSamps(500.0, 44100.0));
+	duration_lgr._rng.setNext(durationMsToGaussianSpace(500.0, 44100.0));
 	skew_lgr._rng.setNext(0.5);
 	plateau_lgr._rng.setNext(1.0);
 	pan_lgr._rng.setNext(0.5);
@@ -224,6 +227,7 @@ void genGrain1::setTranspose(float ratio){
 	transpose_lgr.setMu(ratio);
 }
 void genGrain1::setDuration(double duration){
+//	durationMsToGaussianSpace(duration, )
 	duration_lgr.setMu(duration);
 }
 void genGrain1::setPosition(double position){
@@ -298,10 +302,10 @@ genGrain1::outs genGrain1::operator()(float trig_in){
 	double const  latch_position_result = memoryless::clamp(position_lgr(gater[1]),
 													0.0, static_cast<double>(waveSize));
 	
-	double constexpr leastDuration = 1.0 / (192000.0 * 4.0);
-	
-	double const  latch_duration_result = memoryless::clamp( duration_lgr(gater[1]),
-													leastDuration, static_cast<double>(waveSize));
+	double constexpr leastDuration_ms = 1.0;
+	double constexpr greatestDuration_ms = 1000.f; //incorporate  static_cast<double>(waveSize)
+	double const duration_ms = memoryless::clamp(duration_lgr(gater[1]), leastDuration_ms, greatestDuration_ms);
+	double const  latch_duration_result = millisecondsToFreqSamps(duration_ms, 48000.0);
 	
 	double const  sampleIndex = accumVal + latch_position_result - (0.5 * latch_duration_result);
 	float sample = gen::peek<float, gen::interpolationModes_e::hermite, gen::boundsModes_e::wrap>(

@@ -67,15 +67,24 @@ private:
 	MuSigmaPair<float_t> _msp;
 };
 
-inline double durationMsToFreqSamps(double dur_ms, double sampleRate) {
-	dur_ms = nvs::memoryless::clamp_low<double>(dur_ms, 0.0);
-	auto dur_samps = (dur_ms / 1000.0) * sampleRate;
-	
-	dur_samps = nvs::memoryless::clamp_low<double>(dur_samps, 1.0);
-	double freq_samps = 1.0 / dur_samps;
-	return freq_samps;
+inline double millisecondsToSamples(double ms, double sampleRate) {
+	return (ms / 1000.0) * sampleRate;
+}
+inline double millisecondsToHertz(double ms){
+	return 1000.0 / ms;
+}
+inline double samplesToMilliseconds(double samps, double sampleRate) {
+	return (samps / sampleRate) * 1000.0;
 }
 
+inline double millisecondsToFreqSamps(double ms, double sampleRate) {
+	auto const samps = millisecondsToSamples(ms, sampleRate);
+	return 1.0 / samps;
+}
+inline double durationMsToGaussianSpace(double ms, double sampleRate){
+	(void)sampleRate;
+	return millisecondsToHertz(ms);
+}
 struct genGranPoly1 {
 public:
 	genGranPoly1(double const &sampleRate, std::span<float> const &wavespan, size_t nGrains);
@@ -140,7 +149,9 @@ private:
 
 struct genGrain1 {
 public:
-	explicit genGrain1(std::span<float> const &waveSpan, nvs::rand::BoxMuller *const gaussian_rng, size_t *const numGrains, int newId = -1);
+	explicit genGrain1(std::span<float> const &waveSpan, double const &sampleRate,
+					   nvs::rand::BoxMuller *const gaussian_rng, size_t *const numGrains,
+					   int newId = -1);
 
 	void setId(int newId);
 	void setRatioBasedOnNote(float ratioForNote);
@@ -167,6 +178,7 @@ public:
 	outs operator()(float trig_in);
 private:
 	std::span<float> const &_waveSpan;
+	double const &_sampleRate;
 	
 	nvs::rand::BoxMuller *const _gaussian_rng_ptr;
 	int grainId;
