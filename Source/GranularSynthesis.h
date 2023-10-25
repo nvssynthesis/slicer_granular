@@ -85,6 +85,12 @@ inline double durationMsToGaussianSpace(double ms, double sampleRate){
 	(void)sampleRate;
 	return millisecondsToHertz(ms);
 }
+inline double durationGaussianToProcessingSpace(double hertz, double sampleRate){
+	// input is in hertz
+	// = cycles per second
+	// samples per second:
+	return hertz / sampleRate;
+}
 struct genGranPoly1 {
 public:
 	genGranPoly1(double const &sampleRate, std::span<float> const &wavespan, size_t nGrains);

@@ -227,8 +227,8 @@ void genGrain1::setTranspose(float ratio){
 	transpose_lgr.setMu(ratio);
 }
 void genGrain1::setDuration(double duration){
-//	durationMsToGaussianSpace(duration, )
-	duration_lgr.setMu(duration);
+	double const dur_gaus_space = durationMsToGaussianSpace(duration, _sampleRate);
+	duration_lgr.setMu(dur_gaus_space);
 }
 void genGrain1::setPosition(double position){
 	position_lgr.setMu(position);
@@ -302,10 +302,10 @@ genGrain1::outs genGrain1::operator()(float trig_in){
 	double const  latch_position_result = memoryless::clamp(position_lgr(gater[1]),
 													0.0, static_cast<double>(waveSize));
 	
-	double constexpr leastDuration_ms = 1.0;
-	double constexpr greatestDuration_ms = 1000.f; //incorporate  static_cast<double>(waveSize)
-	double const duration_ms = memoryless::clamp(duration_lgr(gater[1]), leastDuration_ms, greatestDuration_ms);
-	double const  latch_duration_result = millisecondsToFreqSamps(duration_ms, 48000.0);
+	double constexpr leastDuration_hz = 0.001;
+	double constexpr greatestDuration_hz = 1000.f; //incorporate  static_cast<double>(waveSize)
+	double const duration_hz = memoryless::clamp(duration_lgr(gater[1]), leastDuration_hz, greatestDuration_hz);
+	double const  latch_duration_result = durationGaussianToProcessingSpace(duration_hz, _sampleRate);
 	
 	double const  sampleIndex = accumVal + latch_position_result - (0.5 * latch_duration_result);
 	float sample = gen::peek<float, gen::interpolationModes_e::hermite, gen::boundsModes_e::wrap>(
