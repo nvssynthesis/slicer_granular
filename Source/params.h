@@ -14,9 +14,11 @@
 #include <JuceHeader.h>
 
 /*** TODO:
+ -octave
  -fine tuning
- -add parameter plateau, which clips the window before parzen
  -add automatic traversal
+	-(really this could just be an LFO => Position. Then, it can easily be
+	routed anywhere just like randomness).
  -master volume
  */
 

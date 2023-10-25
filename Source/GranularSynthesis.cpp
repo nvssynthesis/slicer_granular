@@ -191,7 +191,7 @@ std::array<float, 2> genGranPoly1::operator()(float triggerIn){
 	output[1] = samp_R;
 	return output;
 }
-
+//=====================================================================================
 genGrain1::genGrain1(std::span<float> const &waveSpan, double const &sampleRate,
 					 nvs::rand::BoxMuller *const gaussian_rng, size_t *const numGrains,
 					 int newId)
@@ -206,14 +206,7 @@ genGrain1::genGrain1(std::span<float> const &waveSpan, double const &sampleRate,
 ,	skew_lgr(*_gaussian_rng_ptr, {0.5f, 0.f})
 ,	plateau_lgr(*_gaussian_rng_ptr, {1.f, 0.f})
 ,	pan_lgr(*_gaussian_rng_ptr, {0.5f, 1.f})
-{
-	transpose_lgr._rng.setNext(0.0);
-	position_lgr._rng.setNext(0.0);
-	duration_lgr._rng.setNext(durationMsToGaussianSpace(500.0, 44100.0));
-	skew_lgr._rng.setNext(0.5);
-	plateau_lgr._rng.setNext(1.0);
-	pan_lgr._rng.setNext(0.5);
-}
+{}
 
 void genGrain1::setRatioBasedOnNote(float ratioForNote){
 	_ratioBasedOnNote = ratioForNote;
