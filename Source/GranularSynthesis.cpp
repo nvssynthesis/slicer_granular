@@ -121,6 +121,7 @@ void genGranPoly1::setPan(float pan){
 }
 
 void genGranPoly1::setTransposeRandomness(float randomness){
+	randomness *= 24.f;
 	for (auto &g : _grains)
 		g.setTransposeRand(randomness);
 }
