@@ -52,6 +52,7 @@ void genGranPoly1::noteOn(noteNumber_t note, velocity_t velocity){
 
 	noteHolder.insert(p);
 	updateNotes();
+	_phasorInternalTrig.reset();
 }
 void genGranPoly1::noteOff(noteNumber_t note){
 	// remove from noteHolder
@@ -133,6 +134,7 @@ void genGranPoly1::setDurationRandomness(double randomness){
 		g.setDurationRand(randomness);
 }
 void genGranPoly1::setSpeedRandomness(float randomness){
+	randomness *= speed_lgr.getMu();
 	speed_lgr.setSigma(randomness);
 }
 void genGranPoly1::setSkewRandomness(float randomness){
@@ -152,7 +154,7 @@ std::array<float, 2> genGranPoly1::operator()(float triggerIn){
 	
 	// update phasor's frequency only if _triggerHisto.val is true
 	float freq_tmp = speed_lgr(static_cast<bool>(_triggerHisto.val));
-	freq_tmp = nvs::memoryless::clamp_low(freq_tmp, 0.1f);	// once every 10 seconds
+	freq_tmp = nvs::memoryless::clamp_low(freq_tmp, 0.5f);	// once every 2 seconds
 	_phasorInternalTrig.setFrequency(freq_tmp);
 	++_phasorInternalTrig;
 	
@@ -246,6 +248,7 @@ void genGrain1::setTransposeRand(float transposeRand){
 	transpose_lgr.setSigma(transposeRand);
 }
 void genGrain1::setDurationRand(double durationRand){
+	durationRand *= duration_lgr.getMu();
 	duration_lgr.setSigma(durationRand);
 }
 void genGrain1::setPositionRand(double positionRand){
@@ -302,7 +305,7 @@ genGrain1::outs genGrain1::operator()(float trig_in){
 	double const  latch_position_result = memoryless::clamp(position_lgr(gater[1]),
 													0.0, static_cast<double>(waveSize));
 	
-	double constexpr leastDuration_hz = 0.001;
+	double constexpr leastDuration_hz = 0.05;
 	double constexpr greatestDuration_hz = 1000.f; //incorporate  static_cast<double>(waveSize)
 	double const duration_hz = memoryless::clamp(duration_lgr(gater[1]), leastDuration_hz, greatestDuration_hz);
 	double const  latch_duration_result = durationGaussianToProcessingSpace(duration_hz, _sampleRate);

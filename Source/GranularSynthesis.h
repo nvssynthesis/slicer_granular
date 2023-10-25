@@ -61,6 +61,12 @@ struct LatchedGaussianRandom {
 	void setSigma(float_t sigma){
 		_msp.sigma = sigma;
 	}
+	float_t getMu() const {
+		return _msp.mu;
+	}
+	float_t getSigma() const {
+		return _msp.sigma;
+	}
 	nvs::rand::BoxMuller &_rng;
 private:
 	float_t val;
