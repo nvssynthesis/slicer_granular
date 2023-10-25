@@ -106,12 +106,12 @@ static const inline  std::map<params_e, paramPropsTuple> paramMap {
 	{params_e::plateau, 	{0.5f, 	5.f, 	0.f, 	0.5f, 	false, 	1.f, 	"Plateau"}},
 	{params_e::pan, 		{0.f, 	1.f, 	0.f, 	1.f, 	false, 	0.5f, 	"Panning"}},
 	
-	{params_e::transp_randomness,	{-60.f,60.f,0.f, randSkew, 	true, 0.f, "Transpose Randomness"}},
-	{params_e::pos_randomness,		{-1.f, 1.f, 0.f, randSkew, 	true, 0.f, "Position Randomness"}},
-	{params_e::speed_randomness,	{-1.f, 1.f, 0.f, randSkew, 	true, 0.f, "Speed Randomness"}},
-	{params_e::dur_randomness, 		{-1.f, 1.f, 0.f, randSkew, 	true, 0.f, "Duration Randomness"}},
-	{params_e::skew_randomness, 	{-1.f, 1.f, 0.f, randSkew, 	true, 0.f, "Skew Randomness"}},
-	{params_e::plat_randomness, 	{-1.f, 1.f, 0.f, randSkew, 	true, 0.f, "Plateau Randomness"}},
+	{params_e::transp_randomness,	{0.f, 1.f, 0.f, randSkew, 	false, 0.f, "Transpose Randomness"}},
+	{params_e::pos_randomness,		{0.f, 1.f, 0.f, randSkew, 	false, 0.f, "Position Randomness"}},
+	{params_e::speed_randomness,	{0.f, 1.f, 0.f, randSkew, 	false, 0.f, "Speed Randomness"}},
+	{params_e::dur_randomness, 		{0.f, 1.f, 0.f, randSkew, 	false, 0.f, "Duration Randomness"}},
+	{params_e::skew_randomness, 	{0.f, 1.f, 0.f, randSkew, 	false, 0.f, "Skew Randomness"}},
+	{params_e::plat_randomness, 	{0.f, 1.f, 0.f, randSkew, 	false, 0.f, "Plateau Randomness"}},
 	{params_e::pan_randomness, 		{0.f, 1.f, 0.f,	 1.5f, 		false, 1.f, "Pan Randomness"}}
 };
 

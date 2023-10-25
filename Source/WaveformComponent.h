@@ -67,14 +67,12 @@ public:
 			drawMarker(g, thumbnailBounds, pos);
 		}
 	}
-	void resized() override
-	{
-		
-	}
+	void resized() override {}
 	void changeListenerCallback (juce::ChangeBroadcaster* source) override
 	{
-		if (source == &thumbnail)
+		if (source == &thumbnail){
 			thumbnailChanged();
+		}
 	}
 	
 	juce::AudioThumbnail *const getThumbnail(){
@@ -117,4 +115,36 @@ private:
 	}
 	
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(WaveformComponent);
+};
+
+class WaveformAndPositionComponent	:	public juce::Component
+{
+public:
+	WaveformAndPositionComponent(int sourceSamplesPerThumbnailSample, juce::AudioFormatManager &formatManagerToUse)	:	wc(sourceSamplesPerThumbnailSample, formatManagerToUse)
+	{
+		addAndMakeVisible(wc);
+		addAndMakeVisible(positionSlider);
+		positionSlider.setSliderStyle(juce::Slider::SliderStyle::LinearHorizontal);
+		positionSlider.setTextBoxStyle(juce::Slider::TextEntryBoxPosition::NoTextBox, false, 0, 0);
+	}
+	
+	void resized() override
+	{
+		auto const localBounds = getLocalBounds();
+		
+		auto const totalHeight = localBounds.getHeight();
+		auto const waveformHeight = totalHeight * 0.85f;
+		auto const sliderHeight = totalHeight - waveformHeight;
+		
+		wc.setBounds(localBounds.getX(), localBounds.getY(), localBounds.getWidth(), waveformHeight);
+		positionSlider.setBounds(localBounds.getX(), wc.getBottom(), localBounds.getWidth(), sliderHeight);
+	}
+	void paint (juce::Graphics& g) override {}
+
+	// make this accessible from outside so there's no need for a bunch of forwarding methods
+	WaveformComponent wc;
+private:
+	juce::Slider positionSlider;
+	
+	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(WaveformAndPositionComponent);
 };

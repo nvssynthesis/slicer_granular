@@ -3,7 +3,7 @@
 <JUCERPROJECT id="AZwtct" name="slicer-granular" projectType="audioplug" useAppConfig="0"
               addUsingNamespaceToJuceHeader="0" displaySplashScreen="1" jucerFormatVersion="1"
               pluginCharacteristicsValue="pluginIsSynth,pluginWantsMidiIn"
-              pluginManufacturer="nvssynthesis" cppLanguageStandard="20" headerPath="/Users/nicholassolem/development/boost_1_80_0&#10;/Users/nicholassolem/development/eigen-3.4.0&#10;/Users/nicholassolem/development/nvs_maps&#10;/Users/nicholassolem/development/nvs_libraries&#10;/Users/nicholassolem/development/thirdparty/Signalsmith&#10;/Users/nicholassolem/development/thirdparty/frozen/include&#10;/Users/nicholassolem/development/thirdparty/Sprout&#10;/Users/nicholassolem/development/TSARA/inc&#10;/Users/nicholassolem/development/Xoshiro-cpp"
+              pluginManufacturer="nvssynthesis" cppLanguageStandard="20" headerPath="/Users/nicholassolem/development/boost_1_80_0&#10;/Users/nicholassolem/development/eigen-3.4.0&#10;/Users/nicholassolem/development/nvs_maps&#10;/Users/nicholassolem/development/nvs_libraries&#10;/Users/nicholassolem/development/thirdparty/Signalsmith&#10;/Users/nicholassolem/development/thirdparty/frozen/include&#10;/Users/nicholassolem/development/thirdparty/Sprout&#10;/Users/nicholassolem/development/TSARA/inc&#10;/Users/nicholassolem/development/thirdparty/Xoshiro-cpp"
               companyName="nvssynthesis" companyWebsite="https://nvssynthesis.github.io/"
               version="0.1.0" pluginAUIsSandboxSafe="1" pluginAUMainType="'aumf'"
               pluginManufacturerCode="Nvss" pluginCode="Slgr">
@@ -22,6 +22,7 @@
       <FILE id="OW557g" name="dsp_util.h" compile="0" resource="0" file="Source/dsp_util.h"/>
       <FILE id="BN5JES" name="DataStructures.h" compile="0" resource="0"
             file="Source/DataStructures.h"/>
+      <FILE id="eTazcq" name="Random.h" compile="0" resource="0" file="Source/Random.h"/>
       <FILE id="kR8qWl" name="GranularSynthesis.cpp" compile="1" resource="0"
             file="Source/GranularSynthesis.cpp"/>
       <FILE id="Rf1ssv" name="GranularSynthesis.h" compile="0" resource="0"
