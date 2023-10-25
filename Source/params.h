@@ -42,38 +42,6 @@ enum class params_e {
 	count
 };
 
-enum class param_category_e {
-	main,
-	not_ready,
-	random,
-	count
-};
-
-static const inline std::map<params_e, param_category_e>
-paramCategoryMap {
-	{params_e::transpose, param_category_e::main},
-	{params_e::position, param_category_e::main},
-	{params_e::speed, param_category_e::main},
-	{params_e::duration, param_category_e::main},
-	{params_e::skew, param_category_e::main},
-	{params_e::plateau, param_category_e::main},
-	{params_e::pan, param_category_e::main},
-	{params_e::transp_randomness, param_category_e::random},
-	{params_e::pos_randomness, param_category_e::random},
-	{params_e::speed_randomness, param_category_e::random},
-	{params_e::dur_randomness, param_category_e::random},
-	{params_e::skew_randomness, param_category_e::random},
-	{params_e::plat_randomness, param_category_e::random},
-	{params_e::pan_randomness, param_category_e::random}
-};
-
-inline bool isMainParam(params_e p){
-	return paramCategoryMap.at(p) == param_category_e::main;
-}
-inline bool isParamOfCategory(params_e p, param_category_e c){
-	return paramCategoryMap.at(p) == c;
-}
-
 inline params_e mainToRandom(params_e mainParam){
 	int mainInt = static_cast<int>(mainParam);
 	constexpr int firstRandomInt = static_cast<int>(params_e::transp_randomness);
