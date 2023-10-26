@@ -135,7 +135,7 @@ bool Slicer_granularAudioProcessor::isBusesLayoutSupported (const BusesLayout& l
 void Slicer_granularAudioProcessor::writeToLog(std::string const s){
 	fileLogger.writeToLog (s);
 }
-void Slicer_granularAudioProcessor::loadAudioFile(juce::File const f){
+void Slicer_granularAudioProcessor::loadAudioFile(juce::File const f, juce::AudioThumbnail *const thumbnail){
 	juce::AudioFormatReader *reader = formatManager.createReaderFor(f);
 	if (!reader){
 		std::cerr << "could not read file: " << f.getFileName() << "\n";
@@ -164,6 +164,10 @@ void Slicer_granularAudioProcessor::loadAudioFile(juce::File const f){
 				 1, 	//reader->numChannels,		// int numDestChannels
 				 0,		// int64 startSampleInSource
 				 newLength);	// int numSamplesToRead
+	
+	if (thumbnail){
+		thumbnail->setSource (new juce::FileInputSource (f));	// owned by thumbnail, no worry about delete
+	}
 	
 	audioBuffersChannels.updateActive();
 	delete reader;

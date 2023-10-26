@@ -19,6 +19,7 @@
 #pragma once
 #include <JuceHeader.h>
 #include <atomic>
+#include "AttachedSlider.h"
 #include "fmt/core.h"
 
 class WaveformComponent		:	public juce::Component
@@ -120,19 +121,15 @@ private:
 };
 
 class WaveformAndPositionComponent	:	public juce::Component
-,										private juce::Slider::Listener
 {
 public:
-	WaveformAndPositionComponent(int sourceSamplesPerThumbnailSample, juce::AudioFormatManager &formatManagerToUse)	:	wc(sourceSamplesPerThumbnailSample, formatManagerToUse)
+	WaveformAndPositionComponent(int sourceSamplesPerThumbnailSample, juce::AudioFormatManager &formatManagerToUse,
+								 juce::AudioProcessorValueTreeState &apvts)
+	:	wc(sourceSamplesPerThumbnailSample, formatManagerToUse)
+	,	positionSlider(apvts, params_e::position, juce::Slider::SliderStyle::LinearHorizontal, juce::Slider::NoTextBox)
 	{
 		addAndMakeVisible(wc);
-		addAndMakeVisible(positionSlider);
-		positionSlider.addListener(this);
-		positionSlider.setRange(0.0, 1.0);
-		positionSlider.setSliderStyle(juce::Slider::SliderStyle::LinearHorizontal);
-		positionSlider.setTextBoxStyle(juce::Slider::TextEntryBoxPosition::NoTextBox, false, 0, 0);
-		positionSlider.setColour(juce::Slider::ColourIds::thumbColourId, juce::Colours::palevioletred);
-		positionSlider.setColour(juce::Slider::ColourIds::textBoxTextColourId, juce::Colours::lightgrey);
+		addAndMakeVisible(&positionSlider._slider);
 	}
 	
 	void resized() override
@@ -144,20 +141,14 @@ public:
 		auto const sliderHeight = totalHeight - waveformHeight;
 		
 		wc.setBounds(localBounds.getX(), localBounds.getY(), localBounds.getWidth(), waveformHeight);
-		positionSlider.setBounds(localBounds.getX(), wc.getBottom(), localBounds.getWidth(), sliderHeight);
+		positionSlider._slider.setBounds(localBounds.getX(), wc.getBottom(), localBounds.getWidth(), sliderHeight);
 	}
 	void paint (juce::Graphics& g) override {}
 
-	void sliderValueChanged (juce::Slider *slider) override {
-		if (slider == &positionSlider){
-			position = slider->getValue();
-			fmt::print("{}\n", position.load());
-		}
-	}
 	// make this accessible from outside so there's no need for a bunch of forwarding methods
 	WaveformComponent wc;
 private:
-	juce::Slider positionSlider;
+	AttachedSlider positionSlider;
 	std::atomic<double> position;
 	
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(WaveformAndPositionComponent);

@@ -14,6 +14,7 @@
 #include "dsp_util.h"
 #include "FileSelectorComponent.h"
 #include "SliderColumn.h"
+#include "WaveformComponent.h"
 
 //==============================================================================
 /** TODO:
@@ -23,8 +24,7 @@ struct MainParamsComponent	:	public juce::Component
 {
 	MainParamsComponent(Slicer_granularAudioProcessor& p)
 	:
-	attachedSliderColumnArray
-	{
+	attachedSliderColumnArray {
 		SliderColumn(p.apvts, params_e::transpose),
 		SliderColumn(p.apvts, params_e::position),
 		SliderColumn(p.apvts, params_e::speed),
@@ -80,6 +80,7 @@ private:
 
 	FileSelectorComponent fileComp;
 	MainParamsComponent mainParamsComp;
+	WaveformAndPositionComponent waveformAndPositionComponent;
 
 /*
     std::unique_ptr<juce::FilenameComponent> fileComp;

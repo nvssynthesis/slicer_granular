@@ -26,5 +26,7 @@ dependencies:
 
 <a href="https://github.com/serge-sans-paille/frozen">frozen map</a>, a map data structure which is  statically initialized. actually, you don't need this if you #define FROZEN_MAP 0; instead it will then use the StaticMap data structure defined in this repo's DataStructures.h. However, as the project grows I may use more data structures from frozen.
 
+<a href="https://github.com/fmtlib/fmt">fmt</a>, formatting library. not yet used in an important way but it likely will be; for now it won't simply compile without it.
+
 from my libraries:
 <a href="https://github.com/nvssynthesis/nvs_libraries">nvs_libraries</a>, in particular nvs_gen, nvs_memoryless

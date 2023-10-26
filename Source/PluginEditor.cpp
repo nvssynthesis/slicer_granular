@@ -14,6 +14,7 @@ Slicer_granularAudioProcessorEditor::Slicer_granularAudioProcessorEditor (Slicer
     : AudioProcessorEditor (&p)
 ,	fileComp(juce::File(), "*.wav;*.aif;*.aiff", "", "Select file to open")
 ,	mainParamsComp(p)
+,	waveformAndPositionComponent(512, p.getAudioFormatManager(), p.apvts)
 ,	triggeringButton("hi")
 ,	audioProcessor (p)
 {
@@ -28,9 +29,11 @@ Slicer_granularAudioProcessorEditor::Slicer_granularAudioProcessorEditor (Slicer
 	
 	addAndMakeVisible(mainParamsComp);
 	
+	addAndMakeVisible(waveformAndPositionComponent);
+
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
-	constrainer.setMinimumSize(600, 400);
+	constrainer.setMinimumSize(600, 480);
 
     setSize (800, 500);
 	setResizable(true, true);
@@ -97,7 +100,7 @@ void Slicer_granularAudioProcessorEditor::resized()
 		y += smallPad;
 	}
 	{
-		auto const mainParamsRemainingHeightRatio = localBounds.getHeight();
+		auto const mainParamsRemainingHeightRatio = 0.8 * localBounds.getHeight();
 
 		int const alottedMainParamsHeight = mainParamsRemainingHeightRatio - y + smallPad;
 		int const alottedMainParamsWidth = localBounds.getWidth();
@@ -105,6 +108,8 @@ void Slicer_granularAudioProcessorEditor::resized()
 		mainParamsComp.setBounds(localBounds.getX(), y, alottedMainParamsWidth, alottedMainParamsHeight);
 		y += mainParamsComp.getHeight();
 	}
+	auto const remainingHeight = 0.2f * localBounds.getHeight();
+	waveformAndPositionComponent.setBounds(localBounds.getX(), y, localBounds.getWidth(), remainingHeight);
 }
 
 void Slicer_granularAudioProcessorEditor::sliderValueChanged(juce::Slider* sliderThatWasMoved)
@@ -120,8 +125,8 @@ void Slicer_granularAudioProcessorEditor::readFile (const juce::File& fileToRead
 	std::string st_str = fn.toStdString();
 	
 	audioProcessor.writeToLog(st_str);
-	audioProcessor.loadAudioFile(fileToRead);
-	
+	audioProcessor.loadAudioFile(fileToRead, waveformAndPositionComponent.wc.getThumbnail() );
+
 	fileComp.setCurrentFile(fileToRead, true);
 }
 

@@ -9,29 +9,7 @@
 */
 
 #pragma once
-
-struct AttachedSlider {
-	using Slider = juce::Slider;
-	using SliderAttachment = juce::AudioProcessorValueTreeState::SliderAttachment;
-	
-	AttachedSlider(juce::AudioProcessorValueTreeState &apvts, params_e param, Slider::SliderStyle sliderStyle)	:
-	_slider(),
-	_attachment(apvts, getParamName(param), _slider)
-	{
-		_slider.setSliderStyle(sliderStyle);
-		_slider.setNormalisableRange(getNormalizableRange<double>(param));
-		_slider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 25);
-		_slider.setValue(getParamDefault(param));
-
-		_slider.setColour(Slider::ColourIds::thumbColourId, juce::Colours::palevioletred);
-		_slider.setColour(Slider::ColourIds::textBoxTextColourId, juce::Colours::lightgrey);
-		
-//		_slider.getLookAndFeel();
-	}
-	
-	Slider _slider;
-	SliderAttachment _attachment;
-};
+#include "AttachedSlider.h"
 
 /*
  embeds a linear vertical slider, label, and knob into a single component

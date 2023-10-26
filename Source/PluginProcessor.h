@@ -71,7 +71,7 @@ public:
 	juce::AudioProcessorValueTreeState apvts;
 	
 	void writeToLog(std::string const s);
-	void loadAudioFile(juce::File const f);
+	void loadAudioFile(juce::File const f, juce::AudioThumbnail *const thumbnail);
 	
 	bool triggerValFromEditor {false};
 
@@ -82,6 +82,9 @@ public:
 	editorInformant<float> rmsInformant;
 	editorInformant<float> rmsWAinformant;
 	
+	juce::AudioFormatManager &getAudioFormatManager(){
+		return formatManager;
+	}
 private:
 	
 	double lastSampleRate 	{ 0.0 };

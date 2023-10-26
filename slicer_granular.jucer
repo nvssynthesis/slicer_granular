@@ -18,6 +18,8 @@
       <FILE id="mApci6" name="PluginEditor.h" compile="0" resource="0" file="Source/PluginEditor.h"/>
       <FILE id="h18YqT" name="FileSelectorComponent.h" compile="0" resource="0"
             file="Source/FileSelectorComponent.h"/>
+      <FILE id="P0Yz89" name="AttachedSlider.h" compile="0" resource="0"
+            file="Source/AttachedSlider.h"/>
       <FILE id="YfM458" name="SliderColumn.h" compile="0" resource="0" file="Source/SliderColumn.h"/>
       <FILE id="Coe6iF" name="WaveformComponent.h" compile="0" resource="0"
             file="Source/WaveformComponent.h"/>
