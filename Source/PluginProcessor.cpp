@@ -1,6 +1,6 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
-
+#include "fmt/core.h"
 //==============================================================================
 Slicer_granularAudioProcessor::Slicer_granularAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -251,7 +251,7 @@ void Slicer_granularAudioProcessor::setStateInformation (const void* data, int s
 }
 
 juce::AudioProcessorValueTreeState::ParameterLayout Slicer_granularAudioProcessor::createParameterLayout(){
-	std::cout << "createParamLayout\n";
+	fmt::print("createParamLayout\n");
 	
 	juce::AudioProcessorValueTreeState::ParameterLayout layout;
 	

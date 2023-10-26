@@ -154,8 +154,9 @@ std::array<float, 2> genGranPoly1::operator()(float triggerIn){
 	std::array<float, 2> output;
 	
 	// update phasor's frequency only if _triggerHisto.val is true
-	float freq_tmp = speed_lgr(static_cast<bool>(_triggerHisto.val));
-	freq_tmp = nvs::memoryless::clamp_low(freq_tmp, 0.5f);	// once every 2 seconds
+	float const freq_tmp = nvs::memoryless::clamp_low(
+							speed_lgr(static_cast<bool>(_triggerHisto.val)),
+												0.5f);	// once every 2 seconds
 	_phasorInternalTrig.setFrequency(freq_tmp);
 	++_phasorInternalTrig;
 	

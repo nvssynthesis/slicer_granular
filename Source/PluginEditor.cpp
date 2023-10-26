@@ -75,8 +75,6 @@ void Slicer_granularAudioProcessorEditor::resized()
 {
 	constrainer.checkComponentBounds(this);
 	juce::Rectangle<int> localBounds = getLocalBounds();
-//	std::cout << "x: " << localBounds.getX() << " y: " << localBounds.getY() <<
-//			" w: " << localBounds.getWidth() << " h: " << localBounds.getHeight() << '\n';
 	int const smallPad = 10;
 	localBounds.reduce(smallPad, smallPad);
 	

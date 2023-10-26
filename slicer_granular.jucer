@@ -3,7 +3,7 @@
 <JUCERPROJECT id="AZwtct" name="slicer-granular" projectType="audioplug" useAppConfig="0"
               addUsingNamespaceToJuceHeader="0" displaySplashScreen="1" jucerFormatVersion="1"
               pluginCharacteristicsValue="pluginIsSynth,pluginWantsMidiIn"
-              pluginManufacturer="nvssynthesis" cppLanguageStandard="20" headerPath="/Users/nicholassolem/development/boost_1_80_0&#10;/Users/nicholassolem/development/eigen-3.4.0&#10;/Users/nicholassolem/development/nvs_maps&#10;/Users/nicholassolem/development/nvs_libraries&#10;/Users/nicholassolem/development/thirdparty/Signalsmith&#10;/Users/nicholassolem/development/thirdparty/frozen/include&#10;/Users/nicholassolem/development/thirdparty/Sprout&#10;/Users/nicholassolem/development/TSARA/inc&#10;/Users/nicholassolem/development/thirdparty/Xoshiro-cpp"
+              pluginManufacturer="nvssynthesis" cppLanguageStandard="20" headerPath="/Users/nicholassolem/development/boost_1_80_0&#10;/Users/nicholassolem/development/eigen-3.4.0&#10;/Users/nicholassolem/development/nvs_maps&#10;/Users/nicholassolem/development/nvs_libraries&#10;/Users/nicholassolem/development/thirdparty/Signalsmith&#10;/Users/nicholassolem/development/thirdparty/frozen/include&#10;/Users/nicholassolem/development/thirdparty/Sprout&#10;/Users/nicholassolem/development/thirdparty/fmt/include&#10;/Users/nicholassolem/development/TSARA/inc&#10;/Users/nicholassolem/development/thirdparty/Xoshiro-cpp"
               companyName="nvssynthesis" companyWebsite="https://nvssynthesis.github.io/"
               version="0.1.0" pluginAUIsSandboxSafe="1" pluginAUMainType="'aumf'"
               pluginManufacturerCode="Nvss" pluginCode="Slgr">
@@ -19,6 +19,8 @@
       <FILE id="h18YqT" name="FileSelectorComponent.h" compile="0" resource="0"
             file="Source/FileSelectorComponent.h"/>
       <FILE id="YfM458" name="SliderColumn.h" compile="0" resource="0" file="Source/SliderColumn.h"/>
+      <FILE id="Coe6iF" name="WaveformComponent.h" compile="0" resource="0"
+            file="Source/WaveformComponent.h"/>
       <FILE id="OW557g" name="dsp_util.h" compile="0" resource="0" file="Source/dsp_util.h"/>
       <FILE id="BN5JES" name="DataStructures.h" compile="0" resource="0"
             file="Source/DataStructures.h"/>
@@ -36,7 +38,9 @@
   <EXPORTFORMATS>
     <XCODE_MAC targetFolder="Builds/MacOSX" applicationCategory="public.app-category.music"
                appSandbox="0" appSandboxInheritance="0" appSandboxOptions="com.apple.security.files.user-selected.read-only"
-               extraDefs="_LIBCPP_ENABLE_CXX20_REMOVED_TYPE_TRAITS" extraCompilerFlags="-v">
+               extraDefs="_LIBCPP_ENABLE_CXX20_REMOVED_TYPE_TRAITS" extraCompilerFlags="-v"
+               extraLinkerFlags="-L/opt/homebrew/Cellar/fmt/10.1.1/lib/static"
+               externalLibraries="fmt">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug" targetName="slicer_granular" macOSDeploymentTarget="13.1"
                        osxCompatibility="13.1 SDK"/>

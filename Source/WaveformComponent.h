@@ -18,6 +18,8 @@
 
 #pragma once
 #include <JuceHeader.h>
+#include <atomic>
+#include "fmt/core.h"
 
 class WaveformComponent		:	public juce::Component
 ,								private juce::ChangeListener
@@ -118,14 +120,19 @@ private:
 };
 
 class WaveformAndPositionComponent	:	public juce::Component
+,										private juce::Slider::Listener
 {
 public:
 	WaveformAndPositionComponent(int sourceSamplesPerThumbnailSample, juce::AudioFormatManager &formatManagerToUse)	:	wc(sourceSamplesPerThumbnailSample, formatManagerToUse)
 	{
 		addAndMakeVisible(wc);
 		addAndMakeVisible(positionSlider);
+		positionSlider.addListener(this);
+		positionSlider.setRange(0.0, 1.0);
 		positionSlider.setSliderStyle(juce::Slider::SliderStyle::LinearHorizontal);
 		positionSlider.setTextBoxStyle(juce::Slider::TextEntryBoxPosition::NoTextBox, false, 0, 0);
+		positionSlider.setColour(juce::Slider::ColourIds::thumbColourId, juce::Colours::palevioletred);
+		positionSlider.setColour(juce::Slider::ColourIds::textBoxTextColourId, juce::Colours::lightgrey);
 	}
 	
 	void resized() override
@@ -133,7 +140,7 @@ public:
 		auto const localBounds = getLocalBounds();
 		
 		auto const totalHeight = localBounds.getHeight();
-		auto const waveformHeight = totalHeight * 0.85f;
+		auto const waveformHeight = totalHeight * 0.8f;
 		auto const sliderHeight = totalHeight - waveformHeight;
 		
 		wc.setBounds(localBounds.getX(), localBounds.getY(), localBounds.getWidth(), waveformHeight);
@@ -141,10 +148,17 @@ public:
 	}
 	void paint (juce::Graphics& g) override {}
 
+	void sliderValueChanged (juce::Slider *slider) override {
+		if (slider == &positionSlider){
+			position = slider->getValue();
+			fmt::print("{}\n", position.load());
+		}
+	}
 	// make this accessible from outside so there's no need for a bunch of forwarding methods
 	WaveformComponent wc;
 private:
 	juce::Slider positionSlider;
+	std::atomic<double> position;
 	
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(WaveformAndPositionComponent);
 };
