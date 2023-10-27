@@ -9,6 +9,8 @@
               pluginManufacturerCode="Nvss" pluginCode="Slgr">
   <MAINGROUP id="QmNeTI" name="slicer-granular">
     <GROUP id="{914A1E25-4FE6-1459-BEC3-31343EE40E6A}" name="Source">
+      <FILE id="t6dReP" name="AudioBuffersChannels.h" compile="0" resource="0"
+            file="Source/AudioBuffersChannels.h"/>
       <FILE id="bnufFz" name="PluginProcessor.cpp" compile="1" resource="0"
             file="Source/PluginProcessor.cpp"/>
       <FILE id="uv2a6Q" name="PluginProcessor.h" compile="0" resource="0"
@@ -24,6 +26,7 @@
       <FILE id="Coe6iF" name="WaveformComponent.h" compile="0" resource="0"
             file="Source/WaveformComponent.h"/>
       <FILE id="OW557g" name="dsp_util.h" compile="0" resource="0" file="Source/dsp_util.h"/>
+      <FILE id="PVPUEs" name="algo_util.h" compile="0" resource="0" file="Source/algo_util.h"/>
       <FILE id="BN5JES" name="DataStructures.h" compile="0" resource="0"
             file="Source/DataStructures.h"/>
       <FILE id="eTazcq" name="Random.h" compile="0" resource="0" file="Source/Random.h"/>

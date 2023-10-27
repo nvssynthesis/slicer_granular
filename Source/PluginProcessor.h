@@ -9,6 +9,7 @@
 
 #include <JuceHeader.h>
 #include "GranularSynthesis.h"
+#include "AudioBuffersChannels.h"
 #include "dsp_util.h"
 #include "params.h"
 
@@ -90,47 +91,6 @@ private:
 	double lastSampleRate 	{ 0.0 };
 	int lastSamplesPerBlock { 0 };
 	
-	class AudioBuffersChannels{
-	private:
-		using stereoVector_t = std::array<std::vector<float>, 2>;
-		
-		std::array<stereoVector_t, 2> stereoBuffers;
-		std::span<float> activeSpan;
-		
-		unsigned int activeBufferIdx { 0 };
-		inline void updateActiveBufferIndex(){
-			activeBufferIdx = !activeBufferIdx;
-			jassert((activeBufferIdx == 0) | (activeBufferIdx == 1));
-		}
-
-	public:
-		AudioBuffersChannels(){
-			activeSpan = std::span<float>(stereoBuffers[activeBufferIdx][0]);
-		}
-		std::span<float> const &getActiveSpanRef(){
-			return activeSpan;
-		}
-		[[nodiscard]]
-		std::array<float *const, 2> prepareForWrite(size_t length, size_t numChannels){
-			auto inactiveBufferIdx = !activeBufferIdx;
-			
-			numChannels = std::min(numChannels, stereoBuffers[inactiveBufferIdx].size());
-			for (int i = 0; i < numChannels; ++i){
-				stereoBuffers[inactiveBufferIdx][i].resize(length);
-			}
-			std::array<float *const, 2> ptrsToWriteTo = {
-				stereoBuffers[inactiveBufferIdx][0].data(),
-				stereoBuffers[inactiveBufferIdx][1].data()
-			};
-			return ptrsToWriteTo;
-		}
-
-		inline void updateActive(){
-			updateActiveBufferIndex();
-			activeSpan = std::span<float>(stereoBuffers[activeBufferIdx][0]);
-		}
-
-	};
 	AudioBuffersChannels audioBuffersChannels;
 	
 	nvs::gran::genGranPoly1 gen_granular;
@@ -140,8 +100,8 @@ private:
 	juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
 	juce::AudioFormatManager formatManager;
 	
-	RMS<float> rms;
-	WeightedAveragingBuffer<float, 3> weightAvg;
+	nvs::util::RMS<float> rms;
+	nvs::util::WeightedAveragingBuffer<float, 3> weightAvg;
 
 	
 	
@@ -222,6 +182,12 @@ private:
 	}
 #endif
 
+	static constexpr int N_GRAINS =
+#if defined(DEBUG_BUILD) | defined(DEBUG) | defined(_DEBUG)
+									50;
+#else
+									100;
+#endif
 	//======logging=======================
 	juce::File logFile;
 	juce::FileLogger fileLogger;

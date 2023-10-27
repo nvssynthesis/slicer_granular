@@ -28,15 +28,18 @@ float semitonesToRatio(float_t semitones){
 	return transpositionRatio;
 }
 inline float fastSemitonesToRatio(float semitones){
-	return semitonesRatioTable(semitones);
+	return nvs::util::semitonesRatioTable(semitones);
 }
-genGranPoly1::genGranPoly1(double const &sampleRate, std::span<float> const &wavespan, size_t nGrains)
+genGranPoly1::genGranPoly1(double const &sampleRate,
+						   std::span<float> const &wavespan, double const &fileSampleRate,
+						   size_t nGrains)
 :
 _sampleRate(sampleRate),
 _wavespan(wavespan),
+_fileSampleRate(fileSampleRate),
 _numGrains(nGrains),
 _normalizer(1.f / std::sqrt(static_cast<float>(std::clamp(nGrains, 1UL, 10000UL)))),
-_grains(_numGrains, genGrain1(wavespan, _sampleRate, &_gaussian_rng, &_numGrains) ),
+_grains(_numGrains, genGrain1(_sampleRate, wavespan, fileSampleRate, &_gaussian_rng, &_numGrains) ),
 _grainIndices(_numGrains),
 _phasorInternalTrig(_sampleRate)
 {
@@ -90,18 +93,16 @@ void genGranPoly1::doSetTranspose(float transpositionSemitones){
 	for (auto &g : _grains)
 		g.setTranspose(transpositionSemitones);
 }
-void genGranPoly1::doSetPosition(double positionNormalized){
-//	positionNormalized = nvs::memoryless::clamp<double>(positionNormalized, 0.0, 1.0);
-	auto pos = positionNormalized * static_cast<double>(_wavespan.size());
-	_positionHisto(pos);
-	for (auto &g : _grains)
-		g.setPosition(_positionHisto.val);
-}
 void genGranPoly1::doSetSpeed(float newSpeed){
-	newSpeed = nvs::memoryless::clamp<float>(newSpeed, 0.f, _sampleRate/2.f);
+	newSpeed = nvs::memoryless::clamp<float>(newSpeed, 0.1f, _sampleRate/2.f);
 	speed_lgr.setMu(newSpeed);
 }
-
+void genGranPoly1::doSetPosition(double positionNormalized){
+	//	positionNormalized = nvs::memoryless::clamp<double>(positionNormalized, 0.0, 1.0);
+	double pos = positionNormalized * static_cast<double>(_wavespan.size());
+	for (auto &g : _grains)
+		g.setPosition(pos);
+}
 void genGranPoly1::doSetDuration(double dur_ms){
 	for (auto &g : _grains)
 		g.setDuration(dur_ms);
@@ -193,11 +194,12 @@ std::array<float, 2> genGranPoly1::doProcess(float triggerIn){
 	return output;
 }
 //=====================================================================================
-genGrain1::genGrain1(std::span<float> const &waveSpan, double const &sampleRate,
+genGrain1::genGrain1(double const &sampleRate, std::span<float> const &waveSpan, double const &fileSampleRate,
 					 nvs::rand::BoxMuller *const gaussian_rng, size_t *const numGrains,
 					 int newId)
-:	_waveSpan(waveSpan)
-,	_sampleRate(sampleRate)
+:	_sampleRate(sampleRate)
+,	_waveSpan(waveSpan)
+,	_fileSampleRate(fileSampleRate)
 ,	_gaussian_rng_ptr(gaussian_rng)
 ,	grainId(newId)
 ,	_numGrains_ptr(numGrains)
@@ -305,7 +307,11 @@ genGrain1::outs genGrain1::operator()(float trig_in){
 	double const duration_hz = memoryless::clamp(duration_lgr(gater[1]), leastDuration_hz, greatestDuration_hz);
 	double const  latch_duration_result = durationGaussianToProcessingSpace(duration_hz, _sampleRate);
 	
-	double const  sampleIndex = accumVal + latch_position_result - (0.5 * latch_duration_result);
+	assert(_sampleRate > 0.0);
+	assert(_fileSampleRate > 0.0);
+	double const sampleReadRate = _fileSampleRate / _sampleRate;
+	
+	double const  sampleIndex = (sampleReadRate * accumVal) + latch_position_result - (0.5 * latch_duration_result);
 	float sample = gen::peek<float, gen::interpolationModes_e::hermite, gen::boundsModes_e::wrap>(
 												_waveSpan.data(), sampleIndex, _waveSpan.size());
 	

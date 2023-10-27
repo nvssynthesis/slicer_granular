@@ -14,7 +14,8 @@ Slicer_granularAudioProcessor::Slicer_granularAudioProcessor()
                        ),
 #endif
 apvts(*this, nullptr, "PARAMETERS", createParameterLayout())
-, gen_granular(lastSampleRate, audioBuffersChannels.getActiveSpanRef(), 50)
+, gen_granular(lastSampleRate, audioBuffersChannels.getActiveSpanRef(),
+							   audioBuffersChannels.getFileSampleRateRef(), N_GRAINS)
 , logFile(juce::File::getSpecialLocation(juce::File::SpecialLocationType::currentApplicationFile).
 		  getSiblingFile("log.txt"))
 , fileLogger(logFile, "hello")
@@ -28,6 +29,13 @@ Slicer_granularAudioProcessor::~Slicer_granularAudioProcessor()
 	fileLogger.trimFileSize(logFile , 64 * 1024);
 	juce::Logger::setCurrentLogger (nullptr);
 	formatManager.clearFormats();
+#if defined(DEBUG_BUILD) | defined(DEBUG) | defined(_DEBUG)
+	fmt::print("TsaraGranularAudioProcessor DEBUG MODE\n");
+	logFile.appendText("debug\n");
+#else
+	fmt::print("TsaraGranularAudioProcessor RELEASE MODE\n");
+	logFile.appendText("release\n");
+#endif
 }
 
 //==============================================================================
@@ -142,7 +150,9 @@ void Slicer_granularAudioProcessor::loadAudioFile(juce::File const f, juce::Audi
 		return;
 	}
 	int newLength = static_cast<int>(reader->lengthInSamples);
-	
+	double const sr = reader->sampleRate;
+	audioBuffersChannels.setFileSampleRate(sr);	// use double precision; this is the reference that is shared with the synth
+
 	std::array<juce::Range<float> , 1> normalizationRange;
 	reader->readMaxLevels(0, reader->lengthInSamples, &normalizationRange[0], 1);
 	

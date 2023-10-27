@@ -94,7 +94,7 @@ inline double durationGaussianToProcessingSpace(double hertz, double sampleRate)
 }
 struct genGranPoly1 {
 public:
-	genGranPoly1(double const &sampleRate, std::span<float> const &wavespan, size_t nGrains);
+	genGranPoly1(double const &sampleRate, std::span<float> const &wavespan, double const &fileSampleRate, size_t nGrains);
 	virtual ~genGranPoly1() = default;
 	//====================================================================================
 	inline void noteOn(noteNumber_t note, velocity_t velocity){	// reassign to noteHolder
@@ -117,7 +117,7 @@ public:
 		doSetSpeed(newSpeed);
 	}
 	inline void setPosition(float positionNormalized){
-		doSetPosition(static_cast<double>(positionNormalized));
+		doSetPosition(positionNormalized);
 	}
 	inline void setDuration(float dur_ms){
 		doSetDuration(static_cast<double>(dur_ms));
@@ -159,7 +159,8 @@ public:
 	
 protected:
 	double const &_sampleRate;				// dependent on owning instantiator, subject to change value from above
-	std::span<float> const &_wavespan;	// dependent on owning instantiator, subject to change address from above
+	std::span<float> const &_wavespan;		// dependent on owning instantiator, subject to change address from above
+	double const &_fileSampleRate;
 	size_t _numGrains;
 	//================================================================================
 	virtual void doNoteOn(noteNumber_t note, velocity_t velocity);	// reassign to noteHolder
@@ -194,8 +195,6 @@ private:
 
 	LatchedGaussianRandom<float> speed_lgr {_gaussian_rng, {1.f, 0.f}};
 	
-	nvs::gen::history<double> _durationHisto;
-	nvs::gen::history<double> _positionHisto;
 	nvs::gen::history<float> _triggerHisto;
 	nvs::gen::ramp2trig<float> _ramp2trig;
 	
@@ -204,7 +203,7 @@ private:
 
 struct genGrain1 {
 public:
-	explicit genGrain1(std::span<float> const &waveSpan, double const &sampleRate,
+	explicit genGrain1(double const &sampleRate, std::span<float> const &waveSpan, double const &fileSampleRate,
 					   nvs::rand::BoxMuller *const gaussian_rng, size_t *const numGrains,
 					   int newId = -1);
 
@@ -232,8 +231,9 @@ public:
 	
 	outs operator()(float trig_in);
 private:
-	std::span<float> const &_waveSpan;
 	double const &_sampleRate;
+	std::span<float> const &_waveSpan;
+	double const &_fileSampleRate;
 	
 	nvs::rand::BoxMuller *const _gaussian_rng_ptr;
 	int grainId;

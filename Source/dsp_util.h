@@ -11,7 +11,8 @@
 #pragma once
 #include "sprout/math.hpp"
 //#include "sprout/math/constants.hpp"
-
+namespace nvs {
+namespace util {
 inline float scale(float val, float min, float range){
 	return (val - min) / range;
 }
@@ -19,7 +20,7 @@ inline float scale(float val, float min, float range){
 template<int minSemitones, int maxSemitones, int reso>
 struct SemitonesRatioTable {
 	constexpr static float semitoneRatio = static_cast<float>(1.059463094359295);
-
+	
 	constexpr SemitonesRatioTable()	:	values()
 	{
 		double incr = range() / static_cast<double>(reso);
@@ -35,7 +36,7 @@ struct SemitonesRatioTable {
 		return static_cast<double>(maxSemitones) - static_cast<double>(minSemitones);
 	}
 	std::array<float, reso> values;
-
+	
 	constexpr float operator()(float x){
 		x = scale(x, minSemitones, range());
 		float fidx = x * static_cast<float>(reso);
@@ -119,7 +120,7 @@ public:
 		auto const readIdx = getReadIdx();
 		runningAverage -= buff[write_idx] * normalizer;
 		runningAverage += x * normalizer;
-
+		
 		buff[write_idx] = x;
 		write_idx = readIdx;
 		
@@ -161,3 +162,5 @@ public:
 		return ret * overallScalar;
 	}
 };
+}	// namespace util
+}	// namespace nvs
