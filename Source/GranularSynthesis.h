@@ -95,44 +95,95 @@ inline double durationGaussianToProcessingSpace(double hertz, double sampleRate)
 struct genGranPoly1 {
 public:
 	genGranPoly1(double const &sampleRate, std::span<float> const &wavespan, size_t nGrains);
-	
-	void noteOn(noteNumber_t note, velocity_t velocity);	// reassign to noteHolder
-	void noteOff(noteNumber_t note);						// remove from noteHolder
-	void updateNotes(/*enum noteDistribution_t?*/);
-	void shuffleIndices();
-	
-	void setTranspose(float transpositionRatio);
-	void setSpeed(float newSpeed);
+	virtual ~genGranPoly1() = default;
+	//====================================================================================
+	inline void noteOn(noteNumber_t note, velocity_t velocity){	// reassign to noteHolder
+		doNoteOn(note, velocity);
+	}
+	inline void noteOff(noteNumber_t note){						// remove from noteHolder
+		doNoteOff(note);
+	}
+	inline void updateNotes(/*enum noteDistribution_t?*/){
+		doUpdateNotes();
+	}
+	inline void shuffleIndices(){
+		doShuffleIndices();
+	}
+	//=======================================================================
+	inline void setTranspose(float transpositionRatio){
+		doSetTranspose(transpositionRatio);
+	}
+	inline void setSpeed(float newSpeed){
+		doSetSpeed(newSpeed);
+	}
 	inline void setPosition(float positionNormalized){
-		setPosition(static_cast<double>(positionNormalized));
+		doSetPosition(static_cast<double>(positionNormalized));
 	}
-	void setPosition(double positionNormalized);
-	void setDuration(float dur_ms){
-		setDuration(static_cast<double>(dur_ms));
+	inline void setDuration(float dur_ms){
+		doSetDuration(static_cast<double>(dur_ms));
 	}
-	void setDuration(double dur_ms);
-	void setSkew(float skew);
-	void setPlateau(float plateau);
-	void setPan(float pan);
-	void setTransposeRandomness(float randomness);
-	void setPositionRandomness(float randomness){
-		setPositionRandomness(static_cast<double>(randomness));
+	inline void setSkew(float skew){
+		doSetSkew(skew);
 	}
-	void setPositionRandomness(double randomness);
-	void setDurationRandomness(float randomness){
-		setDurationRandomness(static_cast<double>(randomness));
+	inline void setPlateau(float plateau){
+		doSetPlateau(plateau);
 	}
-	void setDurationRandomness(double randomness);
-	void setSpeedRandomness(float randomness);
-	void setSkewRandomness(float randomness);
-	void setPlateauRandomness(float randomness);
-	void setPanRandomness(float randomness);
-	std::array<float, 2> operator()(float triggerIn);
+	inline void setPan(float pan){
+		doSetPan(pan);
+	}
+	//=======================================================================
+	inline void setTransposeRandomness(float randomness){
+		doSetTransposeRandomness(randomness);
+	}
+	inline void setPositionRandomness(float randomness){
+		doSetPositionRandomness(static_cast<double>(randomness));
+	}
+	inline void setDurationRandomness(float randomness){
+		doSetDurationRandomness(static_cast<double>(randomness));
+	}
+	inline void setSpeedRandomness(float randomness){
+		doSetSpeedRandomness(randomness);
+	}
+	inline void setSkewRandomness(float randomness){
+		doSetSkewRandomness(randomness);
+	}
+	inline void setPlateauRandomness(float randomness){
+		doSetPlateauRandomness(randomness);
+	}
+	inline void setPanRandomness(float randomness){
+		doSetPanRandomness(randomness);
+	}
+	inline std::array<float, 2> operator()(float triggerIn){
+		return doProcess(triggerIn);
+	}
 	
 protected:
 	double const &_sampleRate;				// dependent on owning instantiator, subject to change value from above
 	std::span<float> const &_wavespan;	// dependent on owning instantiator, subject to change address from above
 	size_t _numGrains;
+	//================================================================================
+	virtual void doNoteOn(noteNumber_t note, velocity_t velocity);	// reassign to noteHolder
+	virtual void doNoteOff(noteNumber_t note);						// remove from noteHolder
+	virtual void doUpdateNotes(/*enum noteDistribution_t?*/);
+	virtual void doShuffleIndices();
+	
+	virtual void doSetTranspose(float transpositionRatio);
+	virtual void doSetSpeed(float newSpeed);
+	virtual void doSetPosition(double positionNormalized);
+	virtual void doSetDuration(double dur_ms);
+	virtual void doSetSkew(float skew);
+	virtual void doSetPlateau(float plateau);
+	virtual void doSetPan(float pan);
+	
+	virtual void doSetTransposeRandomness(float randomness);
+	virtual void doSetPositionRandomness(double randomness);
+	virtual void doSetDurationRandomness(double randomness);
+	virtual void doSetSpeedRandomness(float randomness);
+	virtual void doSetSkewRandomness(float randomness);
+	virtual void doSetPlateauRandomness(float randomness);
+	virtual void doSetPanRandomness(float randomness);
+	std::array<float, 2> doProcess(float triggerIn);
+	
 private:
 	nvs::rand::BoxMuller _gaussian_rng;
 
@@ -148,9 +199,6 @@ private:
 	nvs::gen::history<float> _triggerHisto;
 	nvs::gen::ramp2trig<float> _ramp2trig;
 	
-//	nvs::gen::latch<float> _speedRandomLatch;
-		
-//	RandomNumberGenerator _rng;
 	NoteHolder noteHolder {};
 };
 
@@ -165,7 +213,7 @@ public:
 	void setAmplitudeBasedOnNote(float velocity);
 	void setTranspose(float semitones);
 	void setDuration(double duration);
-	void setPosition(double position);
+	void setPosition(double position); 
 	void setSkew(float skew);
 	void setPlateau(float plateau);
 	void setPan(float pan);

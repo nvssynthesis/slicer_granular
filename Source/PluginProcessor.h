@@ -92,7 +92,7 @@ private:
 	
 	class AudioBuffersChannels{
 	private:
-		typedef std::array<std::vector<float>, 2> stereoVector_t;
+		using stereoVector_t = std::array<std::vector<float>, 2>;
 		
 		std::array<stereoVector_t, 2> stereoBuffers;
 		std::span<float> activeSpan;

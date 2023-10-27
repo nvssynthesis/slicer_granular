@@ -46,7 +46,7 @@ _phasorInternalTrig(_sampleRate)
 	std::iota(_grainIndices.begin(), _grainIndices.end(), 0);
 }
 
-void genGranPoly1::noteOn(noteNumber_t note, velocity_t velocity){
+void genGranPoly1::doNoteOn(noteNumber_t note, velocity_t velocity){
 	// reassign to noteHolder
 	auto p = std::make_pair(note, velocity);
 
@@ -54,7 +54,7 @@ void genGranPoly1::noteOn(noteNumber_t note, velocity_t velocity){
 	updateNotes();
 	_phasorInternalTrig.reset();
 }
-void genGranPoly1::noteOff(noteNumber_t note){
+void genGranPoly1::doNoteOff(noteNumber_t note){
 	// remove from noteHolder
 //	auto p = std::make_pair(note, 0);
 	noteHolder[note] = 0;
@@ -62,7 +62,7 @@ void genGranPoly1::noteOff(noteNumber_t note){
 	noteHolder.erase(note);
 	updateNotes();
 }
-void genGranPoly1::updateNotes(){
+void genGranPoly1::doUpdateNotes(){
 	size_t numNotes = noteHolder.size();
 	float grainsPerNoteFloor = _numGrains / static_cast<float>(numNotes);
 
@@ -82,75 +82,75 @@ void genGranPoly1::updateNotes(){
 		}
 	}
 }
-void genGranPoly1::shuffleIndices(){
+void genGranPoly1::doShuffleIndices(){
 	std::shuffle(_grainIndices.begin(), _grainIndices.end(), _gaussian_rng.getGenerator());
 }
 
-void genGranPoly1::setTranspose(float transpositionSemitones){
+void genGranPoly1::doSetTranspose(float transpositionSemitones){
 	for (auto &g : _grains)
 		g.setTranspose(transpositionSemitones);
 }
-void genGranPoly1::setPosition(double positionNormalized){
+void genGranPoly1::doSetPosition(double positionNormalized){
 //	positionNormalized = nvs::memoryless::clamp<double>(positionNormalized, 0.0, 1.0);
 	auto pos = positionNormalized * static_cast<double>(_wavespan.size());
 	_positionHisto(pos);
 	for (auto &g : _grains)
 		g.setPosition(_positionHisto.val);
 }
-void genGranPoly1::setSpeed(float newSpeed){
+void genGranPoly1::doSetSpeed(float newSpeed){
 	newSpeed = nvs::memoryless::clamp<float>(newSpeed, 0.f, _sampleRate/2.f);
 	speed_lgr.setMu(newSpeed);
 }
 
-void genGranPoly1::setDuration(double dur_ms){
+void genGranPoly1::doSetDuration(double dur_ms){
 	for (auto &g : _grains)
 		g.setDuration(dur_ms);
 }
-void genGranPoly1::setSkew(float skew){
+void genGranPoly1::doSetSkew(float skew){
 	skew = nvs::memoryless::clamp<float>(skew, 0.001, 0.999);
 	for (auto &g : _grains)
 		g.setSkew(skew);
 }
-void genGranPoly1::setPlateau(float plateau){
+void genGranPoly1::doSetPlateau(float plateau){
 	for (auto &g : _grains)
 		g.setPlateau(plateau);
 }
-void genGranPoly1::setPan(float pan){
+void genGranPoly1::doSetPan(float pan){
 	for (auto &g : _grains)
 		g.setPan(pan);
 }
 
-void genGranPoly1::setTransposeRandomness(float randomness){
+void genGranPoly1::doSetTransposeRandomness(float randomness){
 	randomness *= 24.f;
 	for (auto &g : _grains)
 		g.setTransposeRand(randomness);
 }
-void genGranPoly1::setPositionRandomness(double randomness){
+void genGranPoly1::doSetPositionRandomness(double randomness){
 	randomness = randomness * static_cast<double>(_wavespan.size());
 	for (auto &g : _grains)
 		g.setPositionRand(randomness);
 }
-void genGranPoly1::setDurationRandomness(double randomness){
+void genGranPoly1::doSetDurationRandomness(double randomness){
 	for (auto &g : _grains)
 		g.setDurationRand(randomness);
 }
-void genGranPoly1::setSpeedRandomness(float randomness){
+void genGranPoly1::doSetSpeedRandomness(float randomness){
 	randomness *= speed_lgr.getMu();
 	speed_lgr.setSigma(randomness);
 }
-void genGranPoly1::setSkewRandomness(float randomness){
+void genGranPoly1::doSetSkewRandomness(float randomness){
 	for (auto &g : _grains)
 		g.setSkewRand(randomness);
 }
-void genGranPoly1::setPlateauRandomness(float randomness){
+void genGranPoly1::doSetPlateauRandomness(float randomness){
 	for (auto &g : _grains)
 		g.setPlateauRand(randomness);
 }
-void genGranPoly1::setPanRandomness(float randomness){
+void genGranPoly1::doSetPanRandomness(float randomness){
 	for (auto &g : _grains)
 		g.setPanRand(randomness);
 }
-std::array<float, 2> genGranPoly1::operator()(float triggerIn){
+std::array<float, 2> genGranPoly1::doProcess(float triggerIn){
 	std::array<float, 2> output;
 	
 	// update phasor's frequency only if _triggerHisto.val is true
