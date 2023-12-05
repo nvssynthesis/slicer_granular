@@ -8,7 +8,7 @@
 #endif
 
 #include <JuceHeader.h>
-#include "GranularSynthesis.h"
+#include "Synthesis/GranularSynthesis.h"
 #include "AudioBuffersChannels.h"
 #include "dsp_util.h"
 #include "params.h"
