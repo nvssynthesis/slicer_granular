@@ -15,7 +15,6 @@
 namespace nvs {
 namespace util {
 
-
 template<typename T>
 std::optional<std::pair<size_t, T>>
 get_closest(T target, std::vector<T> V){
@@ -40,6 +39,34 @@ get_closest(T target, std::vector<T> V){
 		T const currDiff = std::abs(target - V[low]);
 		T const prevDiff = std::abs(target - V[low - 1]);
 		if (prevDiff <= currDiff){
+			low -= 1;
+		}
+	}
+	return std::make_pair(low, V[low]);
+}
+template<typename T>
+std::optional<std::pair<size_t, T>>
+get_left(T target, std::vector<T> V){
+	assert(std::is_sorted(V.begin(), V.end()));
+	if(V.empty()){
+		return {};
+	}
+	size_t low = 0;
+	size_t high = V.size() ;
+	
+	while (low < high){
+		size_t mid = std::midpoint(low, high);
+
+		if (V[mid] < target){
+			low = mid + 1;
+		}
+		else {
+			high = mid;
+		}
+	}
+	if (low > 0){
+		T const currDiff = target - V[low]; // positive=>we are above the vector element
+		if (currDiff < 0){
 			low -= 1;
 		}
 	}
