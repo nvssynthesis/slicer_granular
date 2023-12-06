@@ -18,25 +18,29 @@
       <FILE id="LIA7dU" name="PluginEditor.cpp" compile="1" resource="0"
             file="Source/PluginEditor.cpp"/>
       <FILE id="mApci6" name="PluginEditor.h" compile="0" resource="0" file="Source/PluginEditor.h"/>
-      <FILE id="h18YqT" name="FileSelectorComponent.h" compile="0" resource="0"
-            file="Source/FileSelectorComponent.h"/>
-      <FILE id="P0Yz89" name="AttachedSlider.h" compile="0" resource="0"
-            file="Source/AttachedSlider.h"/>
-      <FILE id="YfM458" name="SliderColumn.h" compile="0" resource="0" file="Source/SliderColumn.h"/>
-      <FILE id="Coe6iF" name="WaveformComponent.h" compile="0" resource="0"
-            file="Source/WaveformComponent.h"/>
       <FILE id="OW557g" name="dsp_util.h" compile="0" resource="0" file="Source/dsp_util.h"/>
       <FILE id="PVPUEs" name="algo_util.h" compile="0" resource="0" file="Source/algo_util.h"/>
       <FILE id="BN5JES" name="DataStructures.h" compile="0" resource="0"
             file="Source/DataStructures.h"/>
       <FILE id="eTazcq" name="Random.h" compile="0" resource="0" file="Source/Random.h"/>
-      <FILE id="kR8qWl" name="GranularSynthesis.cpp" compile="1" resource="0"
-            file="Source/GranularSynthesis.cpp"/>
-      <FILE id="Rf1ssv" name="GranularSynthesis.h" compile="0" resource="0"
-            file="Source/GranularSynthesis.h"/>
       <FILE id="wKk0Fn" name="params.h" compile="0" resource="0" file="Source/params.h"/>
       <FILE id="zJ02d0" name="nvs_gen.h" compile="0" resource="0" file="../nvs_libraries/nvs_libraries/include/nvs_gen.h"/>
       <FILE id="DcXofS" name="plotting.h" compile="0" resource="0" file="Source/plotting.h"/>
+    </GROUP>
+    <GROUP id="{BC0357AF-85B3-3B4A-11BC-B4C71511F210}" name="Synthesis">
+      <FILE id="FxjJzF" name="GranularSynthesis.cpp" compile="1" resource="0"
+            file="Source/Synthesis/GranularSynthesis.cpp"/>
+      <FILE id="uydM2T" name="GranularSynthesis.h" compile="0" resource="0"
+            file="Source/Synthesis/GranularSynthesis.h"/>
+    </GROUP>
+    <GROUP id="{8B05BF9B-9113-5CDB-91DE-1C951D8F5910}" name="Gui">
+      <FILE id="KBau54" name="FileSelectorComponent.h" compile="0" resource="0"
+            file="Source/Gui/FileSelectorComponent.h"/>
+      <FILE id="jNw0CK" name="AttachedSlider.h" compile="0" resource="0"
+            file="Source/Gui/AttachedSlider.h"/>
+      <FILE id="geE4c2" name="SliderColumn.h" compile="0" resource="0" file="Source/Gui/SliderColumn.h"/>
+      <FILE id="fKuezH" name="WaveformComponent.h" compile="0" resource="0"
+            file="Source/Gui/WaveformComponent.h"/>
     </GROUP>
   </MAINGROUP>
   <JUCEOPTIONS JUCE_STRICT_REFCOUNTEDPOINTER="1" JUCE_VST3_CAN_REPLACE_VST2="0"/>

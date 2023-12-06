@@ -16,7 +16,7 @@
  */
 
 #include "GranularSynthesis.h"
-#include "dsp_util.h"
+#include "../dsp_util.h"
 
 namespace nvs {
 namespace gran {
