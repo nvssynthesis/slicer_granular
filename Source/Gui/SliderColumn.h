@@ -26,7 +26,6 @@ public:
 		
 		_label.setText(getParamName(nonRandomParam), juce::dontSendNotification);
 		
-//		_label.setFont( juce::Font("Copperplate", "Regular", proportionOfWidth(0.5f)) );
 		_label.setJustificationType(juce::Justification::centred);
 		addAndMakeVisible(&_label);
 		
@@ -45,8 +44,7 @@ public:
 		float knobProportion {0.17f};
 		[[maybe_unused]] float proportionSum = sliderProportion + labelProportion + knobProportion;
 		// would compare with 1 but floating point imprecision
-		jassert (proportionSum > 0.999f);
-		jassert (proportionSum < 1.001f);
+		jassert (proportionSum > 0.999f) && (proportionSum < 1.001f);
 		
 		juce::Rectangle<int> localBounds = getLocalBounds();
 		localBounds.removeFromBottom(extraBottomPadding);

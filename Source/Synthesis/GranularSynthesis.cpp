@@ -17,6 +17,7 @@
 
 #include "GranularSynthesis.h"
 #include "../dsp_util.h"
+#include "../algo_util.h"
 
 namespace nvs {
 namespace gran {
@@ -299,6 +300,9 @@ genGrain1::outs genGrain1::operator()(float trig_in){
 	_accum(latch_result_transposeEffectiveTotalMultiplier, static_cast<bool>(gater[1]));
 	double const  accumVal = _accum.val;
 	
+	double pos_rand_norm = position_lgr(gater[1]) / static_cast<double>(waveSize);
+	// tried to use util::get_closest to quantize position, but it chokes up the cpu
+	pos_rand_norm *= static_cast<double>(waveSize);
 	double const  latch_position_result = memoryless::clamp(position_lgr(gater[1]),
 													0.0, static_cast<double>(waveSize));
 	

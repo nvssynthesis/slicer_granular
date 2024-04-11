@@ -17,7 +17,7 @@ namespace util {
 
 template<typename T>
 std::optional<std::pair<size_t, T>>
-get_closest(T target, std::vector<T> V){
+get_closest(T target, std::vector<T> const V){
 	assert(std::is_sorted(V.begin(), V.end()));
 	if(V.empty()){
 		return {};
@@ -46,7 +46,7 @@ get_closest(T target, std::vector<T> V){
 }
 template<typename T>
 std::optional<std::pair<size_t, T>>
-get_left(T target, std::vector<T> V){
+get_left(T target, std::vector<T> const V){
 	assert(std::is_sorted(V.begin(), V.end()));
 	if(V.empty()){
 		return {};
