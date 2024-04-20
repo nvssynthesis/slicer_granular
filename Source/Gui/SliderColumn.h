@@ -44,7 +44,8 @@ public:
 		float knobProportion {0.17f};
 		[[maybe_unused]] float proportionSum = sliderProportion + labelProportion + knobProportion;
 		// would compare with 1 but floating point imprecision
-		jassert (proportionSum > 0.999f) && (proportionSum < 1.001f);
+		jassert (proportionSum > 0.999f);
+		jassert (proportionSum < 1.001f);
 		
 		juce::Rectangle<int> localBounds = getLocalBounds();
 		localBounds.removeFromBottom(extraBottomPadding);

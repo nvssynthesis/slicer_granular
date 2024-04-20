@@ -20,11 +20,12 @@
       <FILE id="mApci6" name="PluginEditor.h" compile="0" resource="0" file="Source/PluginEditor.h"/>
       <FILE id="OW557g" name="dsp_util.h" compile="0" resource="0" file="Source/dsp_util.h"/>
       <FILE id="PVPUEs" name="algo_util.h" compile="0" resource="0" file="Source/algo_util.h"/>
+      <FILE id="TKNVpc" name="misc_util.h" compile="0" resource="0" file="Source/misc_util.h"/>
       <FILE id="BN5JES" name="DataStructures.h" compile="0" resource="0"
             file="Source/DataStructures.h"/>
       <FILE id="eTazcq" name="Random.h" compile="0" resource="0" file="Source/Random.h"/>
       <FILE id="wKk0Fn" name="params.h" compile="0" resource="0" file="Source/params.h"/>
-      <FILE id="zJ02d0" name="nvs_gen.h" compile="0" resource="0" file="../nvs_libraries/nvs_libraries/include/nvs_gen.h"/>
+      <FILE id="AcOWtc" name="nvs_gen.h" compile="0" resource="0" file="nvs_libraries/nvs_libraries/include/nvs_gen.h"/>
       <FILE id="DcXofS" name="plotting.h" compile="0" resource="0" file="Source/plotting.h"/>
     </GROUP>
     <GROUP id="{BC0357AF-85B3-3B4A-11BC-B4C71511F210}" name="Synthesis">

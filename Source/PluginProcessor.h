@@ -11,6 +11,7 @@
 #include "Synthesis/GranularSynthesis.h"
 #include "AudioBuffersChannels.h"
 #include "dsp_util.h"
+#include "misc_util.h"
 #include "params.h"
 
 #if FROZEN_MAP
@@ -76,12 +77,8 @@ public:
 	
 	bool triggerValFromEditor {false};
 
-	template<typename T>
-	struct editorInformant{
-		T val;
-	};
-	editorInformant<float> rmsInformant;
-	editorInformant<float> rmsWAinformant;
+	nvs::util::EditorInformant<float> rmsInformant;
+	nvs::util::EditorInformant<float> rmsWAinformant;
 	
 	juce::AudioFormatManager &getAudioFormatManager(){
 		return formatManager;

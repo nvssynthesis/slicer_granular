@@ -121,6 +121,7 @@ private:
 };
 
 class WaveformAndPositionComponent	:	public juce::Component
+,										public juce::Slider::Listener
 {
 public:
 	WaveformAndPositionComponent(int sourceSamplesPerThumbnailSample, juce::AudioFormatManager &formatManagerToUse,
@@ -128,12 +129,15 @@ public:
 	:	wc(sourceSamplesPerThumbnailSample, formatManagerToUse)
 	,	positionSlider(apvts, params_e::position, juce::Slider::SliderStyle::LinearHorizontal, juce::Slider::NoTextBox)
 	{
+		fmt::print("WaveformAndPositionComponent constructed\n");
+		positionSlider._slider.addListener(this);
 		addAndMakeVisible(wc);
 		addAndMakeVisible(&positionSlider._slider);
 	}
 	
 	void resized() override
 	{
+		fmt::print("woah\n");
 		auto const localBounds = getLocalBounds();
 		
 		auto const totalHeight = localBounds.getHeight();
@@ -144,6 +148,12 @@ public:
 		positionSlider._slider.setBounds(localBounds.getX(), wc.getBottom(), localBounds.getWidth(), sliderHeight);
 	}
 	void paint (juce::Graphics& g) override {}
+	
+	void sliderValueChanged (juce::Slider *slider) override {
+		if (slider == &positionSlider._slider){
+			fmt::print("hi\n");
+		}
+	}
 
 	// make this accessible from outside so there's no need for a bunch of forwarding methods
 	WaveformComponent wc;
