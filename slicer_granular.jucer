@@ -33,6 +33,10 @@
             file="Source/Synthesis/GranularSynthesis.cpp"/>
       <FILE id="uydM2T" name="GranularSynthesis.h" compile="0" resource="0"
             file="Source/Synthesis/GranularSynthesis.h"/>
+      <FILE id="IYFr0l" name="JuceGranularSynth.cpp" compile="1" resource="0"
+            file="Source/Synthesis/JuceGranularSynth.cpp"/>
+      <FILE id="WYKaba" name="JuceGranularSynth.h" compile="0" resource="0"
+            file="Source/Synthesis/JuceGranularSynth.h"/>
     </GROUP>
     <GROUP id="{8B05BF9B-9113-5CDB-91DE-1C951D8F5910}" name="Gui">
       <FILE id="KBau54" name="FileSelectorComponent.h" compile="0" resource="0"

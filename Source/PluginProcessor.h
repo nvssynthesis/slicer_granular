@@ -9,6 +9,7 @@
 
 #include <JuceHeader.h>
 #include "Synthesis/GranularSynthesis.h"
+#include "Synthesis/JuceGranularSynth.h"
 #include "AudioBuffersChannels.h"
 #include "dsp_util.h"
 #include "misc_util.h"
@@ -91,6 +92,7 @@ private:
 	AudioBuffersChannels audioBuffersChannels;
 	
 	nvs::gran::genGranPoly1 gen_granular;
+	GranularSynthesizer granular_synth_juce;
 	
 	
 	float normalizationValue {1.f};	// a MULTIPLIER for the overall output, based on the inverse of the absolute max value for the current sample

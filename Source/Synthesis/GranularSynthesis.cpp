@@ -152,6 +152,7 @@ void genGranPoly1::doSetPanRandomness(float randomness){
 	for (auto &g : _grains)
 		g.setPanRand(randomness);
 }
+
 std::array<float, 2> genGranPoly1::doProcess(float triggerIn){
 	std::array<float, 2> output;
 	

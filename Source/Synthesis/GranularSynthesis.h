@@ -92,7 +92,8 @@ inline double durationGaussianToProcessingSpace(double hertz, double sampleRate)
 	// samples per second:
 	return hertz / sampleRate;
 }
-struct genGranPoly1 {
+
+class genGranPoly1 {
 public:
 	genGranPoly1(double const &sampleRate, std::span<float> const &wavespan, double const &fileSampleRate, size_t nGrains);
 	virtual ~genGranPoly1() = default;
@@ -201,7 +202,7 @@ private:
 	NoteHolder noteHolder {};
 };
 
-struct genGrain1 {
+class genGrain1 {
 public:
 	explicit genGrain1(double const &sampleRate, std::span<float> const &waveSpan, double const &fileSampleRate,
 					   nvs::rand::BoxMuller *const gaussian_rng, size_t *const numGrains,

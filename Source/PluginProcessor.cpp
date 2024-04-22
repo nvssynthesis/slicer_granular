@@ -16,6 +16,8 @@ Slicer_granularAudioProcessor::Slicer_granularAudioProcessor()
 apvts(*this, nullptr, "PARAMETERS", createParameterLayout())
 , gen_granular(lastSampleRate, audioBuffersChannels.getActiveSpanRef(),
 							   audioBuffersChannels.getFileSampleRateRef(), N_GRAINS)
+, granular_synth_juce(lastSampleRate, audioBuffersChannels.getActiveSpanRef(),
+					  audioBuffersChannels.getFileSampleRateRef(), N_GRAINS)
 , logFile(juce::File::getSpecialLocation(juce::File::SpecialLocationType::currentApplicationFile).
 		  getSiblingFile("log.txt"))
 , fileLogger(logFile, "hello")
