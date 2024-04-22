@@ -120,6 +120,13 @@ private:
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(WaveformComponent);
 };
 
+/**
+ The trick to implement:
+ Levels of position quantization
+ In the editor, user can set 'requested' position via Position slider.
+ These potentially get quantized based on onsetsInSeconds (held in the Processor).
+ The positionQuantizedReadOnlySlider should follow that quantized value
+ */
 class WaveformAndPositionComponent	:	public juce::Component
 ,										public juce::Slider::Listener
 {
@@ -129,15 +136,20 @@ public:
 	:	wc(sourceSamplesPerThumbnailSample, formatManagerToUse)
 	,	positionSlider(apvts, params_e::position, juce::Slider::SliderStyle::LinearHorizontal, juce::Slider::NoTextBox)
 	{
-		fmt::print("WaveformAndPositionComponent constructed\n");
 		positionSlider._slider.addListener(this);
+		
+		addAndMakeVisible(positionQuantizedReadOnlySlider);
+		positionQuantizedReadOnlySlider.setRange(0.0, 1.0);
+		positionQuantizedReadOnlySlider.setValue(0.75);
+		positionQuantizedReadOnlySlider.setTextBoxStyle(juce::Slider::NoTextBox, true, 100, 100);
+		positionQuantizedReadOnlySlider.setEnabled(false);
+		positionQuantizedReadOnlySlider.setColour(juce::Slider::ColourIds::thumbColourId, juce::Colours::white);
 		addAndMakeVisible(wc);
 		addAndMakeVisible(&positionSlider._slider);
 	}
 	
 	void resized() override
 	{
-		fmt::print("woah\n");
 		auto const localBounds = getLocalBounds();
 		
 		auto const totalHeight = localBounds.getHeight();
@@ -146,12 +158,14 @@ public:
 		
 		wc.setBounds(localBounds.getX(), localBounds.getY(), localBounds.getWidth(), waveformHeight);
 		positionSlider._slider.setBounds(localBounds.getX(), wc.getBottom(), localBounds.getWidth(), sliderHeight);
+		positionQuantizedReadOnlySlider.setBounds(positionSlider._slider.getX(), positionSlider._slider.getY(), positionSlider._slider.getWidth(), positionSlider._slider.getHeight());
+		
 	}
 	void paint (juce::Graphics& g) override {}
 	
 	void sliderValueChanged (juce::Slider *slider) override {
 		if (slider == &positionSlider._slider){
-			fmt::print("hi\n");
+			positionQuantizedReadOnlySlider.setValue(positionSlider._slider.getValue());
 		}
 	}
 
@@ -159,6 +173,7 @@ public:
 	WaveformComponent wc;
 private:
 	AttachedSlider positionSlider;
+	juce::Slider positionQuantizedReadOnlySlider;
 	std::atomic<double> position;
 	
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(WaveformAndPositionComponent);
