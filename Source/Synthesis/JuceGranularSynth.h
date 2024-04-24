@@ -12,6 +12,13 @@
 #include "GranularSynthesis.h"
 #include <JuceHeader.h>
 
+class GranularSound	:	public juce::SynthesiserSound
+{
+public:
+	bool appliesToNote (int midiNoteNumber) override;
+	bool appliesToChannel (int midiChannel) override;
+};
+
 class GranularVoice	:	public juce::SynthesiserVoice
 {
 public:

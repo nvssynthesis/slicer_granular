@@ -10,6 +10,10 @@
 
 #include "JuceGranularSynth.h"
 
+bool GranularSound::appliesToNote (int midiNoteNumber) {return true;}
+bool GranularSound::appliesToChannel (int midiChannel) {return true;}
+
+
 GranularVoice::GranularVoice(double const &sampleRate,  std::span<float> const &wavespan, double const &fileSampleRate, size_t nGrains)
 :	granularSynthGuts(sampleRate, wavespan,
 					  fileSampleRate, nGrains)
@@ -33,7 +37,6 @@ bool GranularVoice::canPlaySound (juce::SynthesiserSound *)
 {
 	return true;
 }
-
 
 
 GranularSynthesizer::GranularSynthesizer(double const &sampleRate,
