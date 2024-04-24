@@ -14,9 +14,9 @@ bool GranularSound::appliesToNote (int midiNoteNumber) {return true;}
 bool GranularSound::appliesToChannel (int midiChannel) {return true;}
 
 
-GranularVoice::GranularVoice(double const &sampleRate,  std::span<float> const &wavespan, double const &fileSampleRate, size_t nGrains)
+GranularVoice::GranularVoice(double const &sampleRate,  std::span<float> const &wavespan, double const &fileSampleRate)
 :	granularSynthGuts(sampleRate, wavespan,
-					  fileSampleRate, nGrains)
+					  fileSampleRate, N_GRAINS)
 {}
 void GranularVoice::startNote (int midiNoteNumber, float velocity, juce::SynthesiserSound *sound, int currentPitchWheelPosition)
 {
@@ -35,12 +35,14 @@ void GranularVoice::renderNextBlock (juce::AudioBuffer< float > &outputBuffer, i
 {
 	float trigger = 0.f;
 	auto totalNumOutputChannels = outputBuffer.getNumChannels();
-	for (auto samp = 0; samp < outputBuffer.getNumSamples(); ++samp){
+	
+//	for (auto samp = 0; samp < outputBuffer.getNumSamples(); ++samp){
+	for (auto samp = startSample; samp < startSample + numSamples; ++samp){
 		std::array<float, 2> output = granularSynthGuts(trigger);
 		for (int channel = 0; channel < totalNumOutputChannels; ++channel)
 		{
 			auto* channelData = outputBuffer.getWritePointer (channel);
-			*(channelData + samp) = output[channel];
+			*(channelData + samp) += output[channel];
 		}
 	}
 }
@@ -48,7 +50,7 @@ void GranularVoice::pitchWheelMoved (int newPitchWheelValue) {
 	// apply pitch wheel
 }
 void GranularVoice::controllerMoved (int controllerNumber, int newControllerValue) {
-	// apply modulation matrix?
+	// apply (CC aspects of) modulation matrix?
 }
 bool GranularVoice::canPlaySound (juce::SynthesiserSound *)
 {
@@ -57,11 +59,21 @@ bool GranularVoice::canPlaySound (juce::SynthesiserSound *)
 
 GranularSynthesizer::GranularSynthesizer(double const &sampleRate,
 					std::span<float> const &wavespan, double const &fileSampleRate,
-					size_t nGrains)
+					unsigned int num_voices)
 {
+	numVoices = num_voices;
+	clearVoices();
 	for (int i = 0; i < numVoices; ++i) {
-		auto voice = std::make_unique<GranularVoice>(sampleRate, wavespan, fileSampleRate, nGrains);
-		addVoice(voice.get());
+		auto voice = new GranularVoice(sampleRate, wavespan, fileSampleRate);
+		addVoice(voice);
 	}
+	
+	clearSounds();
+	auto sound = new GranularSound;
+	addSound(sound);
 }
 
+void GranularSynthesizer::foo(){
+	juce::SynthesiserVoice* voice = getVoice(0);
+	GranularVoice* granularVoice = dynamic_cast<GranularVoice*>(voice);
+}

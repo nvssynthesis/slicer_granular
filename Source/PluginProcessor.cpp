@@ -14,10 +14,10 @@ Slicer_granularAudioProcessor::Slicer_granularAudioProcessor()
                        ),
 #endif
 apvts(*this, nullptr, "PARAMETERS", createParameterLayout())
-, gen_granular(lastSampleRate, audioBuffersChannels.getActiveSpanRef(),
-							   audioBuffersChannels.getFileSampleRateRef(), N_GRAINS)
+//, gen_granular(lastSampleRate, audioBuffersChannels.getActiveSpanRef(),
+//							   audioBuffersChannels.getFileSampleRateRef(), N_GRAINS)
 , granular_synth_juce(lastSampleRate, audioBuffersChannels.getActiveSpanRef(),
-					  audioBuffersChannels.getFileSampleRateRef(), N_GRAINS)
+					  audioBuffersChannels.getFileSampleRateRef(), num_voices)
 , logFile(juce::File::getSpecialLocation(juce::File::SpecialLocationType::currentApplicationFile).
 		  getSiblingFile("log.txt"))
 , fileLogger(logFile, "hello")
@@ -107,6 +107,7 @@ void Slicer_granularAudioProcessor::prepareToPlay (double sampleRate, int sample
     // initialisation that you need..
 	lastSampleRate = sampleRate;
 	lastSamplesPerBlock = samplesPerBlock;
+	granular_synth_juce.setCurrentPlaybackSampleRate(sampleRate);	// not needed for my synth, which was constructed with reference to lastSampleRate
 //	gran_synth.loadOnsets();
 }
 
@@ -196,8 +197,11 @@ void Slicer_granularAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
 	
 	// normally we'd have the synth voice as a juce synth voice and have to dynamic cast before setting its params
 
-	paramSet<0, static_cast<int>(params_e::count)>();
+//	paramSet<0, static_cast<int>(params_e::count)>();
+	granular_synth_juce.foo();
+	granular_synth_juce.paramSet<0, num_voices>(apvts);
 
+	/*
 	float trigger = static_cast<float>(triggerValFromEditor);
 	
 	for (const juce::MidiMessageMetadata metadata : midiMessages){
@@ -220,26 +224,31 @@ void Slicer_granularAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
 			}
 		}
 	}
+	 */
 	if ( !(audioBuffersChannels.getActiveSpanRef().size()) )
 		return;
 	
-	gen_granular.shuffleIndices();
+//	gen_granular.shuffleIndices();
 	
 	
+	granular_synth_juce.renderNextBlock(buffer,
+						  midiMessages,
+						  0,
+						  buffer.getNumSamples());
 	// apply gain based on normalizationValue
 	// limit with jlimit?
 	
 	for (auto samp = 0; samp < buffer.getNumSamples(); ++samp){
-		std::array<float, 2> output = gen_granular(trigger);
-
-		rms.accumulate(output[0] + output[1]);
-		for (int channel = 0; channel < totalNumOutputChannels; ++channel)
-		{
-			output[channel] = juce::jlimit(-1.f, 1.f, output[channel] * normalizationValue);
-
-			auto* channelData = buffer.getWritePointer (channel);
-			*(channelData + samp) = output[channel];
-		}
+//		std::array<float, 2> output = gen_granular(trigger);
+//
+//		rms.accumulate(output[0] + output[1]);
+//		for (int channel = 0; channel < totalNumOutputChannels; ++channel)
+//		{
+//			output[channel] = juce::jlimit(-1.f, 1.f, output[channel] * normalizationValue);
+//
+//			auto* channelData = buffer.getWritePointer (channel);
+//			*(channelData + samp) = output[channel];
+//		}
 	}
 	const auto rms_val = rms.query();
 	rmsInformant.val = rms_val;
