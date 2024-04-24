@@ -32,6 +32,7 @@ public:
 	bool canPlaySound (juce::SynthesiserSound *) override ;
 private:
 	nvs::gran::genGranPoly1 granularSynthGuts;
+	int lastMidiNoteNumber {0};
 };
 
 

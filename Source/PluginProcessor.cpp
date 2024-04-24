@@ -224,6 +224,11 @@ void Slicer_granularAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
 		return;
 	
 	gen_granular.shuffleIndices();
+	
+	
+	// apply gain based on normalizationValue
+	// limit with jlimit?
+	
 	for (auto samp = 0; samp < buffer.getNumSamples(); ++samp){
 		std::array<float, 2> output = gen_granular(trigger);
 
