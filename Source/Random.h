@@ -15,7 +15,7 @@ namespace rand {
 
 struct RandomNumberGenerator {
 public:
-	RandomNumberGenerator()	:	xosh(1234567890UL){}
+	RandomNumberGenerator(unsigned long seed = 1234567890UL)	:	xosh(seed){}
 	double operator()(){
 		std::uint64_t randomBits = xosh();
 		double randomDouble = XoshiroCpp::DoubleFromBits(randomBits);
@@ -28,6 +28,9 @@ private:
 	XoshiroCpp::Xoshiro256Plus xosh;
 };
 struct BoxMuller {
+	BoxMuller(unsigned long seed = 1234567890UL)	:	rng(seed)	{
+		
+	}
 	double operator()(double mu, double sigma){
 		return polar(mu, sigma).first;
 //		return nowaste_pol(mu, sigma);

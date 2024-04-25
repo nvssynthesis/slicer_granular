@@ -31,9 +31,9 @@ typedef std::map<noteNumber_t, velocity_t> NoteHolder;
 
 static constexpr size_t N_GRAINS =
 #if defined(DEBUG_BUILD) | defined(DEBUG) | defined(_DEBUG)
-								5;
+								15;
 #else
-								10;
+								30;
 #endif
 
 struct genGrain1;
@@ -103,7 +103,7 @@ inline double durationGaussianToProcessingSpace(double hertz, double sampleRate)
 
 class genGranPoly1 {
 public:
-	genGranPoly1(double const &sampleRate, std::span<float> const &wavespan, double const &fileSampleRate);
+	genGranPoly1(double const &sampleRate, std::span<float> const &wavespan, double const &fileSampleRate, unsigned long seed = 1234567890UL);
 	virtual ~genGranPoly1() = default;
 	//====================================================================================
 	inline void noteOn(noteNumber_t note, velocity_t velocity){	// reassign to noteHolder

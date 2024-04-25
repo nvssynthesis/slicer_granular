@@ -32,11 +32,13 @@ inline float fastSemitonesToRatio(float semitones){
 	return nvs::util::semitonesRatioTable(semitones);
 }
 genGranPoly1::genGranPoly1(double const &sampleRate,
-						   std::span<float> const &wavespan, double const &fileSampleRate)
+						   std::span<float> const &wavespan, double const &fileSampleRate,
+						   unsigned long seed)
 :
 _sampleRate(sampleRate),
 _wavespan(wavespan),
 _fileSampleRate(fileSampleRate),
+_gaussian_rng(seed),
 _normalizer(1.f / std::sqrt(static_cast<float>(std::clamp(N_GRAINS, 1UL, 10000UL)))),
 _grains(N_GRAINS, genGrain1(_sampleRate, wavespan, fileSampleRate, &_gaussian_rng) ),
 _grainIndices(N_GRAINS),
@@ -156,8 +158,7 @@ std::array<float, 2> genGranPoly1::doProcess(float triggerIn){
 	
 	// update phasor's frequency only if _triggerHisto.val is true
 	float const freq_tmp = nvs::memoryless::clamp_low(
-							speed_lgr(static_cast<bool>(_triggerHisto.val)),
-												0.5f);	// once every 2 seconds
+							speed_lgr(static_cast<bool>(_triggerHisto.val)),  speed_lgr.getMu() * 0.125f);
 	_phasorInternalTrig.setFrequency(freq_tmp);
 	++_phasorInternalTrig;
 	
@@ -269,20 +270,12 @@ genGrain1::outs genGrain1::operator()(float trig_in){
 	
 	using namespace nvs;
 	size_t const waveSize = _waveSpan.size();
-	// return 1 if histo = TRUE, 2 if histo = FALSE
-	int switch2;
-	if (_busyHisto.val){
-		switch2 = 1;
-	}
-	else {
-		switch2 = 2;
-	}
-	std::array<float, 2> gater;
 	
-	if (switch2 == 1){
+	std::array<float, 2> gater;
+	if (_busyHisto.val){
 		gater = {trig_in, 0.f};
 	}
-	else if (switch2 == 2) {
+	else {
 		gater = {0.f, trig_in};
 	}
 	

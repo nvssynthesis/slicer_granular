@@ -39,7 +39,7 @@ public:
 class GranularVoice	:	public juce::SynthesiserVoice
 {
 public:
-	GranularVoice(double const &sampleRate,  std::span<float> const &wavespan, double const &fileSampleRate);
+	GranularVoice(double const &sampleRate,  std::span<float> const &wavespan, double const &fileSampleRate, unsigned long seed = 1234567890UL);
 	void startNote (int midiNoteNumber, float velocity, juce::SynthesiserSound *sound, int currentPitchWheelPosition) override;
 	void stopNote (float velocity, bool allowTailOff) override;
 

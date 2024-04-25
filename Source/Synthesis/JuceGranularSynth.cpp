@@ -14,8 +14,8 @@ bool GranularSound::appliesToNote (int midiNoteNumber) {return true;}
 bool GranularSound::appliesToChannel (int midiChannel) {return true;}
 
 
-GranularVoice::GranularVoice(double const &sampleRate,  std::span<float> const &wavespan, double const &fileSampleRate)
-:	granularSynthGuts(sampleRate, wavespan, fileSampleRate)
+GranularVoice::GranularVoice(double const &sampleRate,  std::span<float> const &wavespan, double const &fileSampleRate, unsigned long seed)
+:	granularSynthGuts(sampleRate, wavespan, fileSampleRate, seed)
 {}
 void GranularVoice::startNote (int midiNoteNumber, float velocity, juce::SynthesiserSound *sound, int currentPitchWheelPosition)
 {
@@ -62,9 +62,11 @@ GranularSynthesizer::GranularSynthesizer(double const &sampleRate,
 {
 	numVoices = num_voices;
 	clearVoices();
+	unsigned long seed = 1234567890UL;
 	for (int i = 0; i < numVoices; ++i) {
-		auto voice = new GranularVoice(sampleRate, wavespan, fileSampleRate);
+		auto voice = new GranularVoice(sampleRate, wavespan, fileSampleRate, seed);
 		addVoice(voice);
+		++seed;
 	}
 	
 	clearSounds();
