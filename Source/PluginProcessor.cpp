@@ -198,7 +198,6 @@ void Slicer_granularAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
 	// normally we'd have the synth voice as a juce synth voice and have to dynamic cast before setting its params
 
 //	paramSet<0, static_cast<int>(params_e::count)>();
-	granular_synth_juce.foo();
 	granular_synth_juce.paramSet<0, num_voices>(apvts);
 
 	/*

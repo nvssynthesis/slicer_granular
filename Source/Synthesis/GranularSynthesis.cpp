@@ -32,19 +32,17 @@ inline float fastSemitonesToRatio(float semitones){
 	return nvs::util::semitonesRatioTable(semitones);
 }
 genGranPoly1::genGranPoly1(double const &sampleRate,
-						   std::span<float> const &wavespan, double const &fileSampleRate,
-						   size_t nGrains)
+						   std::span<float> const &wavespan, double const &fileSampleRate)
 :
 _sampleRate(sampleRate),
 _wavespan(wavespan),
 _fileSampleRate(fileSampleRate),
-_numGrains(nGrains),
-_normalizer(1.f / std::sqrt(static_cast<float>(std::clamp(nGrains, 1UL, 10000UL)))),
-_grains(_numGrains, genGrain1(_sampleRate, wavespan, fileSampleRate, &_gaussian_rng, &_numGrains) ),
-_grainIndices(_numGrains),
+_normalizer(1.f / std::sqrt(static_cast<float>(std::clamp(N_GRAINS, 1UL, 10000UL)))),
+_grains(N_GRAINS, genGrain1(_sampleRate, wavespan, fileSampleRate, &_gaussian_rng) ),
+_grainIndices(N_GRAINS),
 _phasorInternalTrig(_sampleRate)
 {
-	for (int i = 0; i < _numGrains; ++i){
+	for (int i = 0; i < N_GRAINS; ++i){
 		_grains[i].setId(i);
 	}
 	std::iota(_grainIndices.begin(), _grainIndices.end(), 0);
@@ -68,7 +66,7 @@ void genGranPoly1::doNoteOff(noteNumber_t note){
 }
 void genGranPoly1::doUpdateNotes(){
 	size_t numNotes = noteHolder.size();
-	float grainsPerNoteFloor = _numGrains / static_cast<float>(numNotes);
+	float grainsPerNoteFloor = N_GRAINS / static_cast<float>(numNotes);
 
 	auto begin = _grains.begin();
 	float fractionalRightSide = 0.f;
@@ -172,14 +170,14 @@ std::array<float, 2> genGranPoly1::doProcess(float triggerIn){
 		trig = 1.f;
 	}
 	
-	std::vector<genGrain1::outs> _outs(_numGrains);
+	std::vector<genGrain1::outs> _outs(N_GRAINS);
 	size_t idx = _grainIndices[0];
 	_outs[idx] = _grains[idx](trig);
 	float audioOut = _outs[idx].audio;
 	float audioOut_R = _outs[idx].audio_R;
 	float voicesActive = _outs[idx].busy;
 	
-	for (size_t i = 1; i < _numGrains; ++i){
+	for (size_t i = 1; i < N_GRAINS; ++i){
 		idx = _grainIndices.data()[i];
 		size_t prevIdx = _grainIndices.data()[i - 1];
 		
@@ -197,14 +195,12 @@ std::array<float, 2> genGranPoly1::doProcess(float triggerIn){
 }
 //=====================================================================================
 genGrain1::genGrain1(double const &sampleRate, std::span<float> const &waveSpan, double const &fileSampleRate,
-					 nvs::rand::BoxMuller *const gaussian_rng, size_t *const numGrains,
-					 int newId)
+					 nvs::rand::BoxMuller *const gaussian_rng, int newId)
 :	_sampleRate(sampleRate)
 ,	_waveSpan(waveSpan)
 ,	_fileSampleRate(fileSampleRate)
 ,	_gaussian_rng_ptr(gaussian_rng)
 ,	grainId(newId)
-,	_numGrains_ptr(numGrains)
 ,	transpose_lgr(*_gaussian_rng_ptr, {0.f, 0.f})
 ,	position_lgr(*_gaussian_rng_ptr, {0.0, 0.0})
 ,	duration_lgr(*_gaussian_rng_ptr, {durationMsToGaussianSpace(500.0, 44100.0), 0.f})

@@ -29,6 +29,13 @@ typedef int noteNumber_t;
 typedef int velocity_t;
 typedef std::map<noteNumber_t, velocity_t> NoteHolder;
 
+static constexpr size_t N_GRAINS =
+#if defined(DEBUG_BUILD) | defined(DEBUG) | defined(_DEBUG)
+								5;
+#else
+								10;
+#endif
+
 struct genGrain1;
 
 template<std::floating_point float_t>
@@ -93,9 +100,10 @@ inline double durationGaussianToProcessingSpace(double hertz, double sampleRate)
 	return hertz / sampleRate;
 }
 
+
 class genGranPoly1 {
 public:
-	genGranPoly1(double const &sampleRate, std::span<float> const &wavespan, double const &fileSampleRate, size_t nGrains);
+	genGranPoly1(double const &sampleRate, std::span<float> const &wavespan, double const &fileSampleRate);
 	virtual ~genGranPoly1() = default;
 	//====================================================================================
 	inline void noteOn(noteNumber_t note, velocity_t velocity){	// reassign to noteHolder
@@ -162,7 +170,6 @@ protected:
 	double const &_sampleRate;				// dependent on owning instantiator, subject to change value from above
 	std::span<float> const &_wavespan;		// dependent on owning instantiator, subject to change address from above
 	double const &_fileSampleRate;
-	size_t _numGrains;
 	//================================================================================
 	virtual void doNoteOn(noteNumber_t note, velocity_t velocity);	// reassign to noteHolder
 	virtual void doNoteOff(noteNumber_t note);						// remove from noteHolder
@@ -205,8 +212,7 @@ private:
 class genGrain1 {
 public:
 	explicit genGrain1(double const &sampleRate, std::span<float> const &waveSpan, double const &fileSampleRate,
-					   nvs::rand::BoxMuller *const gaussian_rng, size_t *const numGrains,
-					   int newId = -1);
+					   nvs::rand::BoxMuller *const gaussian_rng, int newId = -1);
 
 	void setId(int newId);
 	void setRatioBasedOnNote(float ratioForNote);
@@ -238,8 +244,6 @@ private:
 	
 	nvs::rand::BoxMuller *const _gaussian_rng_ptr;
 	int grainId;
-	// these pointers are set by containing granular synth
-	size_t *const _numGrains_ptr;
 	
 	nvs::gen::history<float> _busyHisto;// history of 'busy' boolean signal, goes to [switch 1 2]
 	nvs::gen::latch<float> _ratioForNoteLatch {1.f};

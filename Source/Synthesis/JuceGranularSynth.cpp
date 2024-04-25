@@ -15,8 +15,7 @@ bool GranularSound::appliesToChannel (int midiChannel) {return true;}
 
 
 GranularVoice::GranularVoice(double const &sampleRate,  std::span<float> const &wavespan, double const &fileSampleRate)
-:	granularSynthGuts(sampleRate, wavespan,
-					  fileSampleRate, N_GRAINS)
+:	granularSynthGuts(sampleRate, wavespan, fileSampleRate)
 {}
 void GranularVoice::startNote (int midiNoteNumber, float velocity, juce::SynthesiserSound *sound, int currentPitchWheelPosition)
 {
@@ -71,9 +70,4 @@ GranularSynthesizer::GranularSynthesizer(double const &sampleRate,
 	clearSounds();
 	auto sound = new GranularSound;
 	addSound(sound);
-}
-
-void GranularSynthesizer::foo(){
-	juce::SynthesiserVoice* voice = getVoice(0);
-	GranularVoice* granularVoice = dynamic_cast<GranularVoice*>(voice);
 }

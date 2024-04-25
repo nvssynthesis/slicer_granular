@@ -127,12 +127,6 @@ private:
 		std::make_pair<params_e, float *>(params_e::pan_randomness, 	&lastPanRand)
 	};
 #endif
-	static constexpr int N_GRAINS =
-#if defined(DEBUG_BUILD) | defined(DEBUG) | defined(_DEBUG)
-									5;
-#else
-									10;
-#endif
 };
 
 
@@ -144,7 +138,6 @@ public:
 						unsigned int num_voices);
 	
 	
-	void foo();
 	
 	template <auto Start, auto End>
 	constexpr void paramSet(juce::AudioProcessorValueTreeState &apvts){
