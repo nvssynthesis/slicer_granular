@@ -170,7 +170,8 @@ std::array<float, 2> genGranPoly1::doProcess(float triggerIn){
 		trig = 1.f;
 	}
 	
-	std::vector<genGrain1::outs> _outs(N_GRAINS);
+	std::array<genGrain1::outs, N_GRAINS> _outs;
+
 	size_t idx = _grainIndices[0];
 	_outs[idx] = _grains[idx](trig);
 	float audioOut = _outs[idx].audio;
