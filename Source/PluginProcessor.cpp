@@ -14,8 +14,6 @@ Slicer_granularAudioProcessor::Slicer_granularAudioProcessor()
                        ),
 #endif
 apvts(*this, nullptr, "PARAMETERS", createParameterLayout())
-//, gen_granular(lastSampleRate, audioBuffersChannels.getActiveSpanRef(),
-//							   audioBuffersChannels.getFileSampleRateRef(), N_GRAINS)
 , granular_synth_juce(lastSampleRate, audioBuffersChannels.getActiveSpanRef(),
 					  audioBuffersChannels.getFileSampleRateRef(), num_voices)
 , logFile(juce::File::getSpecialLocation(juce::File::SpecialLocationType::currentApplicationFile).
@@ -24,6 +22,7 @@ apvts(*this, nullptr, "PARAMETERS", createParameterLayout())
 {
 	juce::Logger::setCurrentLogger (&fileLogger);
 	formatManager.registerBasicFormats();
+	granular_synth_juce.setNoteStealingEnabled (true);
 }
 
 Slicer_granularAudioProcessor::~Slicer_granularAudioProcessor()
@@ -107,7 +106,16 @@ void Slicer_granularAudioProcessor::prepareToPlay (double sampleRate, int sample
     // initialisation that you need..
 	lastSampleRate = sampleRate;
 	lastSamplesPerBlock = samplesPerBlock;
-	granular_synth_juce.setCurrentPlaybackSampleRate(sampleRate);	// not needed for my synth, which was constructed with reference to lastSampleRate
+//	granular_synth_juce.prepareToPlay(sampleRate, samplesPerBlock);
+	
+	granular_synth_juce.setCurrentPlaybackSampleRate (sampleRate);
+	for (int i = 0; i < granular_synth_juce.getNumVoices(); i++)
+	{
+		if (auto voice = dynamic_cast<GranularVoice*>(granular_synth_juce.getVoice(i)))
+		{
+			voice->prepareToPlay (sampleRate, samplesPerBlock);
+		}
+	}
 //	gran_synth.loadOnsets();
 }
 

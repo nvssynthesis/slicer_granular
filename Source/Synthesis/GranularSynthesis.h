@@ -115,6 +115,9 @@ public:
 	inline void updateNotes(/*enum noteDistribution_t?*/){
 		doUpdateNotes();
 	}
+	inline void clearNotes(){
+		doClearNotes();
+	}
 	inline void shuffleIndices(){
 		doShuffleIndices();
 	}
@@ -174,6 +177,7 @@ protected:
 	virtual void doNoteOn(noteNumber_t note, velocity_t velocity);	// reassign to noteHolder
 	virtual void doNoteOff(noteNumber_t note);						// remove from noteHolder
 	virtual void doUpdateNotes(/*enum noteDistribution_t?*/);
+	virtual void doClearNotes();
 	virtual void doShuffleIndices();
 	
 	virtual void doSetTranspose(float transpositionRatio);

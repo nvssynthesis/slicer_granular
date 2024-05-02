@@ -18,6 +18,7 @@
 #include "GranularSynthesis.h"
 #include "../dsp_util.h"
 #include "../algo_util.h"
+#include "fmt/core.h"
 
 namespace nvs {
 namespace gran {
@@ -85,6 +86,9 @@ void genGranPoly1::doUpdateNotes(){
 			(*left).setAmplitudeBasedOnNote(amp);
 		}
 	}
+}
+void genGranPoly1::doClearNotes(){
+	noteHolder.clear();
 }
 void genGranPoly1::doShuffleIndices(){
 	std::shuffle(_grainIndices.begin(), _grainIndices.end(), _gaussian_rng.getGenerator());
@@ -159,6 +163,9 @@ std::array<float, 2> genGranPoly1::doProcess(float triggerIn){
 	// update phasor's frequency only if _triggerHisto.val is true
 	float const freq_tmp = nvs::memoryless::clamp_low(
 							speed_lgr(static_cast<bool>(_triggerHisto.val)),  speed_lgr.getMu() * 0.125f);
+//	if (_triggerHisto.val){
+//		fmt::print("{}\n", freq_tmp);
+//	}
 	_phasorInternalTrig.setFrequency(freq_tmp);
 	++_phasorInternalTrig;
 	

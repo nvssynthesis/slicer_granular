@@ -40,9 +40,13 @@ class GranularVoice	:	public juce::SynthesiserVoice
 {
 public:
 	GranularVoice(double const &sampleRate,  std::span<float> const &wavespan, double const &fileSampleRate, unsigned long seed = 1234567890UL);
+//	void setCurrentPlaybackSampleRate(double sr) override ;
+	void prepareToPlay(double sampleRate, int samplesPerBlock);	// why not override??
+	
 	void startNote (int midiNoteNumber, float velocity, juce::SynthesiserSound *sound, int currentPitchWheelPosition) override;
 	void stopNote (float velocity, bool allowTailOff) override;
-
+	bool isVoiceActive() const override;
+	
 	void renderNextBlock (juce::AudioBuffer< float > &outputBuffer, int startSample, int numSamples) override;
 	void pitchWheelMoved (int newPitchWheelValue) override;
 	void controllerMoved (int controllerNumber, int newControllerValue) override;
@@ -68,6 +72,8 @@ public:
 private:
 	nvs::gran::genGranPoly1 granularSynthGuts;
 	int lastMidiNoteNumber {0};
+	juce::ADSR adsr;
+	juce::ADSR::Parameters adsrParameters {0.1, 0.3, 0.5, 0.05};
 	
 	float lastTranspose 	{getParamDefault(params_e::transpose)};
 	float lastPosition 		{getParamDefault(params_e::position)};
@@ -127,6 +133,19 @@ private:
 		std::make_pair<params_e, float *>(params_e::pan_randomness, 	&lastPanRand)
 	};
 #endif
+	
+	struct dbg_counter {
+		using int_t = unsigned long;
+		int_t i {0};
+		bool go(int_t cmp){
+			if (++i == cmp){
+				i = 0;
+				return true;
+			} else {
+				return false;
+			}
+		}
+	} counter;
 };
 
 
@@ -137,7 +156,7 @@ public:
 						std::span<float> const &wavespan, double const &fileSampleRate,
 						unsigned int num_voices);
 	
-	
+//	void setCurrentPlaybackSampleRate(double sampleRate) override;
 	
 	template <auto Start, auto End>
 	constexpr void paramSet(juce::AudioProcessorValueTreeState &apvts){
