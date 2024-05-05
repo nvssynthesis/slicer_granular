@@ -49,11 +49,6 @@ private:
 	MainParamsComponent mainParamsComp;
 	WaveformAndPositionComponent waveformAndPositionComponent;
 
-/*
-    std::unique_ptr<juce::FilenameComponent> fileComp;
-	juce::StringArray recentFiles;
-	juce::File recentFilesListFile;
-*/
 	juce::ToggleButton triggeringButton;
 	std::array<juce::Colour, 5> gradientColors {
 		juce::Colours::transparentBlack,
@@ -63,28 +58,10 @@ private:
 		juce::Colours::black
 	};
 	size_t colourOffsetIndex {0};
-
-	void update()
-	{
-		return;
-//		const auto needsToRepaint = updateState();
-	   
-		const float level = audioProcessor.rmsInformant.val;
-		const float recentLevel = audioProcessor.rmsWAinformant.val;
-
-		const bool needsToRepaint = (level > (recentLevel * 1.2f));
-		
-		if (needsToRepaint){
-			++colourOffsetIndex;
-			colourOffsetIndex %= gradientColors.size();
-			repaint();
-		}
-	}
-	juce::VBlankAttachment vbAttachment { this, [this] { update(); } };
 	
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
     Slicer_granularAudioProcessor& audioProcessor;
-
+	
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Slicer_granularAudioProcessorEditor)
 };
