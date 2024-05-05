@@ -10,6 +10,8 @@
 
 #pragma once
 #include <JuceHeader.h>
+#include "../params.h"
+#include "./SliderColumn.h"
 
 struct MainParamsComponent	:	public juce::Component
 {

@@ -10,12 +10,10 @@
 
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
-#include "params.h"
 #include "dsp_util.h"
 #include "Gui/FileSelectorComponent.h"
-#include "Gui/SliderColumn.h"
 #include "Gui/WaveformComponent.h"
-#include "Gui/MainParamsComponent.h"
+#include "Gui/GranularMainParametersPage.h"
 
 //==============================================================================
 /** TODO:
@@ -46,7 +44,7 @@ private:
 	juce::ComponentBoundsConstrainer constrainer;
 
 	FileSelectorComponent fileComp;
-	MainParamsComponent mainParamsComp;
+	GranularMainParametersPage mainParamsPage;
 	WaveformAndPositionComponent waveformAndPositionComponent;
 
 	juce::ToggleButton triggeringButton;
