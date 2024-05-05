@@ -13,7 +13,7 @@
 #include "dsp_util.h"
 #include "Gui/FileSelectorComponent.h"
 #include "Gui/WaveformComponent.h"
-#include "Gui/GranularMainParametersPage.h"
+#include "Gui/TabbedPages.h"
 
 //==============================================================================
 /** TODO:
@@ -44,7 +44,7 @@ private:
 	juce::ComponentBoundsConstrainer constrainer;
 
 	FileSelectorComponent fileComp;
-	GranularMainParametersPage mainParamsPage;
+	TabbedPagesComponent tabbedPages;
 	WaveformAndPositionComponent waveformAndPositionComponent;
 
 	juce::ToggleButton triggeringButton;

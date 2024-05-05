@@ -13,7 +13,7 @@
 Slicer_granularAudioProcessorEditor::Slicer_granularAudioProcessorEditor (Slicer_granularAudioProcessor& p)
     : AudioProcessorEditor (&p)
 ,	fileComp(juce::File(), "*.wav;*.aif;*.aiff", "", "Select file to open")
-,	mainParamsPage(p.apvts)
+,	tabbedPages(p.apvts)
 ,	waveformAndPositionComponent(512, p.getAudioFormatManager(), p.apvts)
 ,	triggeringButton("hi")
 ,	audioProcessor (p)
@@ -26,7 +26,7 @@ Slicer_granularAudioProcessorEditor::Slicer_granularAudioProcessorEditor (Slicer
 	triggeringButton.onClick = [this, &p]{ updateToggleState(&triggeringButton, "Trigger", p.triggerValFromEditor);	};
 	triggeringButton.setClickingTogglesState(true);
 	
-	addAndMakeVisible(mainParamsPage);
+	addAndMakeVisible(tabbedPages);
 	
 	addAndMakeVisible(waveformAndPositionComponent);
 
@@ -104,8 +104,8 @@ void Slicer_granularAudioProcessorEditor::resized()
 		int const alottedMainParamsHeight = mainParamsRemainingHeightRatio - y + smallPad;
 		int const alottedMainParamsWidth = localBounds.getWidth();
 		
-		mainParamsPage.setBounds(localBounds.getX(), y, alottedMainParamsWidth, alottedMainParamsHeight);
-		y += mainParamsPage.getHeight();
+		tabbedPages.setBounds(localBounds.getX(), y, alottedMainParamsWidth, alottedMainParamsHeight);
+		y += tabbedPages.getHeight();
 	}
 	auto const remainingHeight = 0.2f * localBounds.getHeight();
 	waveformAndPositionComponent.setBounds(localBounds.getX(), y, localBounds.getWidth(), remainingHeight);

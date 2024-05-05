@@ -39,6 +39,8 @@
             file="Source/Synthesis/JuceGranularSynth.h"/>
     </GROUP>
     <GROUP id="{8B05BF9B-9113-5CDB-91DE-1C951D8F5910}" name="Gui">
+      <FILE id="u3Rs7d" name="TabbedPages.cpp" compile="1" resource="0" file="Source/Gui/TabbedPages.cpp"/>
+      <FILE id="dhH3GX" name="TabbedPages.h" compile="0" resource="0" file="Source/Gui/TabbedPages.h"/>
       <FILE id="KBau54" name="FileSelectorComponent.h" compile="0" resource="0"
             file="Source/Gui/FileSelectorComponent.h"/>
       <FILE id="jNw0CK" name="AttachedSlider.h" compile="0" resource="0"

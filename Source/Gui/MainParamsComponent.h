@@ -15,7 +15,7 @@
 
 struct MainParamsComponent	:	public juce::Component
 {
-	MainParamsComponent(juce::AudioProcessorValueTreeState& apvts/*TsaraGranularAudioProcessor& p*/)
+	MainParamsComponent(juce::AudioProcessorValueTreeState& apvts)
 	:
 	attachedSliderColumnArray
 	{
