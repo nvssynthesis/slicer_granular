@@ -18,10 +18,11 @@
 #include "GranularSynthesis.h"
 #include "../dsp_util.h"
 #include "../algo_util.h"
+#if defined(DEBUG_BUILD) | defined(DEBUG) | defined(_DEBUG)
 #include "fmt/core.h"
+#endif
 
-namespace nvs {
-namespace gran {
+namespace nvs::gran {
 
 template <typename float_t>
 float semitonesToRatio(float_t semitones){
@@ -163,9 +164,6 @@ std::array<float, 2> genGranPoly1::doProcess(float triggerIn){
 	// update phasor's frequency only if _triggerHisto.val is true
 	float const freq_tmp = nvs::memoryless::clamp_low(
 							speed_lgr(static_cast<bool>(_triggerHisto.val)),  speed_lgr.getMu() * 0.125f);
-//	if (_triggerHisto.val){
-//		fmt::print("{}\n", freq_tmp);
-//	}
 	_phasorInternalTrig.setFrequency(freq_tmp);
 	++_phasorInternalTrig;
 	
@@ -353,5 +351,4 @@ genGrain1::outs genGrain1::operator()(float trig_in){
 	return o;
 }
 
-}	// namespace gran
-}	// namespace nvs
+}	// namespace nvs::gran

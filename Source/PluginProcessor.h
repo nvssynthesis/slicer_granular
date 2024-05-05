@@ -79,7 +79,12 @@ private:
 	
 //	nvs::gran::genGranPoly1 gen_granular;
 	GranularSynthesizer granular_synth_juce;
-	constexpr static int num_voices = 6;
+	constexpr static int num_voices =
+#if defined(DEBUG_BUILD) | defined(DEBUG) | defined(_DEBUG)
+										6;
+#else
+										16;
+#endif
 	
 	float normalizationValue {1.f};	// a MULTIPLIER for the overall output, based on the inverse of the absolute max value for the current sample
 	juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();

@@ -52,12 +52,10 @@
   <EXPORTFORMATS>
     <XCODE_MAC targetFolder="Builds/MacOSX" applicationCategory="public.app-category.music"
                appSandbox="0" appSandboxInheritance="0" appSandboxOptions="com.apple.security.files.user-selected.read-only"
-               extraDefs="_LIBCPP_ENABLE_CXX20_REMOVED_TYPE_TRAITS" extraCompilerFlags="-v"
-               extraLinkerFlags="-L/opt/homebrew/Cellar/fmt/10.1.1/lib/static"
-               externalLibraries="fmt">
+               extraDefs="_LIBCPP_ENABLE_CXX20_REMOVED_TYPE_TRAITS" extraCompilerFlags="-v">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug" targetName="slicer_granular" macOSDeploymentTarget="13.1"
-                       osxCompatibility="13.1 SDK"/>
+                       osxCompatibility="13.1 SDK" extraLinkerFlags="-L/opt/homebrew/Cellar/fmt/10.1.1/lib/static&#10;-lfmt"/>
         <CONFIGURATION isDebug="0" name="Release" targetName="slicer_granular" macOSDeploymentTarget="13.1"
                        osxCompatibility="13.1 SDK"/>
       </CONFIGURATIONS>

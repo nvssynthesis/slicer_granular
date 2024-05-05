@@ -9,7 +9,9 @@
 */
 
 #include "JuceGranularSynth.h"
+#if defined(DEBUG_BUILD) | defined(DEBUG) | defined(_DEBUG)
 #include <fmt/core.h>
+#endif
 
 bool GranularSound::appliesToNote (int midiNoteNumber) {return true;}
 bool GranularSound::appliesToChannel (int midiChannel) {return true;}

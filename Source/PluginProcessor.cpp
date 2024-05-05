@@ -1,6 +1,8 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+#if defined(DEBUG_BUILD) | defined(DEBUG) | defined(_DEBUG)
 #include "fmt/core.h"
+#endif
 //==============================================================================
 Slicer_granularAudioProcessor::Slicer_granularAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -34,8 +36,8 @@ Slicer_granularAudioProcessor::~Slicer_granularAudioProcessor()
 	fmt::print("TsaraGranularAudioProcessor DEBUG MODE\n");
 	logFile.appendText("debug\n");
 #else
-	fmt::print("TsaraGranularAudioProcessor RELEASE MODE\n");
-	logFile.appendText("release\n");
+//	fmt::print("TsaraGranularAudioProcessor RELEASE MODE\n");
+//	logFile.appendText("release\n");
 #endif
 }
 
@@ -288,8 +290,9 @@ void Slicer_granularAudioProcessor::setStateInformation (const void* data, int s
 }
 
 juce::AudioProcessorValueTreeState::ParameterLayout Slicer_granularAudioProcessor::createParameterLayout(){
+#if defined(DEBUG_BUILD) | defined(DEBUG) | defined(_DEBUG)
 	fmt::print("createParamLayout\n");
-	
+#endif
 	juce::AudioProcessorValueTreeState::ParameterLayout layout;
 	
 	auto stringFromValue = [&](float value, int maximumStringLength){
