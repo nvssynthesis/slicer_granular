@@ -10,3 +10,12 @@
 
 #include "GranularMainParametersPage.h"
 
+GranularMainParametersPage::GranularMainParametersPage(juce::AudioProcessorValueTreeState &apvts)	:	mainParamsComp(apvts)
+{
+	addAndMakeVisible(mainParamsComp);
+}
+	
+void GranularMainParametersPage::resized() {
+	mainParamsComp.setBounds(getLocalBounds());
+}
+

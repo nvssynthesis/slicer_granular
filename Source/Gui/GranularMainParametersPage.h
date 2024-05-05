@@ -13,22 +13,12 @@
 #include "./MainParamsComponent.h"
 /**
  TODO:
- -add title for tab
  */
-
 struct GranularMainParametersPage	:	public juce::Component
 {
-	GranularMainParametersPage(juce::AudioProcessorValueTreeState &apvts)	:	mainParamsComp(apvts)
-	{
-		addAndMakeVisible(mainParamsComp);
-	}
-	
-	void resized() override {
-		mainParamsComp.setBounds(getLocalBounds());
-	}
-
+	GranularMainParametersPage(juce::AudioProcessorValueTreeState &apvts);
+	void resized() override;
 private:
 	MainParamsComponent mainParamsComp;
-	
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(GranularMainParametersPage)
 };
