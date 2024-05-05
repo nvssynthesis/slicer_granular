@@ -19,9 +19,7 @@ bool GranularSound::appliesToChannel (int midiChannel) {return true;}
 
 GranularVoice::GranularVoice(double const &sampleRate,  std::span<float> const &wavespan, double const &fileSampleRate, unsigned long seed)
 :	granularSynthGuts(sampleRate, wavespan, fileSampleRate, seed)
-{
-//	adsr.setParameters(juce::ADSR::Parameters(0.1f, 0.3f, 0.5f, 0.5f));
-}
+{}
 
 void GranularVoice::prepareToPlay(double sampleRate, int samplesPerBlock)
  {
