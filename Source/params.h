@@ -77,7 +77,7 @@ static constexpr float randSkew {0.33f};
 
 static constexpr float envTimingMin {0.01f};
 static constexpr float envTimingMax {8.f};
-static constexpr float envTimingSkew {1.f};
+static constexpr float envTimingSkew {0.5f};
 static const inline  std::map<params_e, paramPropsTuple> paramMap {
 	// 				   		min,   max,  spacing, skew, symmetrical, default, name
 	{params_e::transpose,	{-60.f, 60.f, 	0.f, 	1.f, 	true, 	0.f, 	"Transpose"}},

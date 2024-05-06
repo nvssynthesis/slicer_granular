@@ -18,9 +18,9 @@ EnvelopeParametersPage::EnvelopeParametersPage(juce::AudioProcessorValueTreeStat
 }
 {
 	for (auto &s : envelopeSliders){
-		s._slider.setTextValueSuffix("s");
-		s._slider.setNumDecimalPlacesToDisplay(2);
+
 		addAndMakeVisible(s._slider);
+		s._slider.setTextValueSuffix("s");
 	}
 }
 
