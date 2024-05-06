@@ -213,7 +213,7 @@ genGrain1::genGrain1(double const &sampleRate, std::span<float> const &waveSpan,
 ,	duration_lgr(*_gaussian_rng_ptr, {durationMsToGaussianSpace(500.0, 44100.0), 0.f})
 ,	skew_lgr(*_gaussian_rng_ptr, {0.5f, 0.f})
 ,	plateau_lgr(*_gaussian_rng_ptr, {1.f, 0.f})
-,	pan_lgr(*_gaussian_rng_ptr, {0.5f, 1.f})
+,	pan_lgr(*_gaussian_rng_ptr, {0.5f, 0.23f})
 {}
 
 void genGrain1::setRatioBasedOnNote(float ratioForNote){
