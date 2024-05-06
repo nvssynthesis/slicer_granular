@@ -44,9 +44,9 @@ struct MainParamsComponent	:	public juce::Component
 		}
 	}
 	void setSliderParam(params_e param, double val){
-		assert(static_cast<size_t>(param) < (static_cast<size_t>(params_e::count) / 2) );
+		assert(static_cast<size_t>(param) < (static_cast<size_t>(params_e::count_main_granular_params) / 2) );
 		attachedSliderColumnArray[static_cast<size_t>(param)].setVal(val);
 	}
 private:
-	std::array<SliderColumn, static_cast<size_t>(params_e::count) / 2> attachedSliderColumnArray;
+	std::array<SliderColumn, static_cast<size_t>(params_e::count_main_granular_params) / 2> attachedSliderColumnArray;
 };

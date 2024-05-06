@@ -202,43 +202,15 @@ void Slicer_granularAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
     auto totalNumInputChannels  = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
 
-    for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
-        buffer.clear (i, 0, buffer.getNumSamples());
-	
-	// normally we'd have the synth voice as a juce synth voice and have to dynamic cast before setting its params
-
-//	paramSet<0, static_cast<int>(params_e::count)>();
-	granular_synth_juce.paramSet<0, num_voices>(apvts);
-
-	/*
-	float trigger = static_cast<float>(triggerValFromEditor);
-	
-	for (const juce::MidiMessageMetadata metadata : midiMessages){
-		if (metadata.numBytes == 3){
-			fileLogger.writeToLog (metadata.getMessage().getDescription());
-			juce::MidiMessage message = metadata.getMessage();
-			if (message.isNoteOn()){
-				gen_granular.noteOn(message.getNoteNumber(), message.getVelocity());
-			}
-			else if (message.isNoteOff()){
-				gen_granular.noteOff(message.getNoteNumber());
-			}
-			else if (message.isAftertouch()){
-				// do something with it...
-				message.getAfterTouchValue();
-			}
-			else if (message.isPitchWheel()){
-				// do something with it...
-				message.getPitchWheelValue();
-			}
-		}
+	for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i){
+		buffer.clear (i, 0, buffer.getNumSamples());
 	}
-	 */
-	if ( !(audioBuffersChannels.getActiveSpanRef().size()) )
+	
+	granular_synth_juce.paramSet<0, num_voices>(apvts);
+	
+	if ( !(audioBuffersChannels.getActiveSpanRef().size()) ){
 		return;
-	
-//	gen_granular.shuffleIndices();
-	
+	}
 	
 	granular_synth_juce.renderNextBlock(buffer,
 						  midiMessages,
@@ -247,18 +219,6 @@ void Slicer_granularAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
 	// apply gain based on normalizationValue
 	// limit with jlimit?
 	
-	for (auto samp = 0; samp < buffer.getNumSamples(); ++samp){
-//		std::array<float, 2> output = gen_granular(trigger);
-//
-//		rms.accumulate(output[0] + output[1]);
-//		for (int channel = 0; channel < totalNumOutputChannels; ++channel)
-//		{
-//			output[channel] = juce::jlimit(-1.f, 1.f, output[channel] * normalizationValue);
-//
-//			auto* channelData = buffer.getWritePointer (channel);
-//			*(channelData + samp) = output[channel];
-//		}
-	}
 	const auto rms_val = rms.query();
 	rmsInformant.val = rms_val;
 	rmsWAinformant.val = weightAvg(rms_val);
@@ -294,6 +254,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout Slicer_granularAudioProcesso
 	fmt::print("createParamLayout\n");
 #endif
 	juce::AudioProcessorValueTreeState::ParameterLayout layout;
+	auto mainGranularParams = std::make_unique<juce::AudioProcessorParameterGroup>("Gran", "MainGranularParams", "|");
 	
 	auto stringFromValue = [&](float value, int maximumStringLength){
 		return juce::String (value, 4);	//getNumDecimalPlacesToDisplay()
@@ -315,11 +276,20 @@ juce::AudioProcessorValueTreeState::ParameterLayout Slicer_granularAudioProcesso
 												   nullptr);	// valueFromString
 	};
 	
-	for (size_t i = 0; i < static_cast<size_t>(params_e::count); ++i){
+	for (size_t i = 0; i < static_cast<size_t>(params_e::count_main_granular_params); ++i){
 		params_e param = static_cast<params_e>(i);
-		layout.add(a(param));
+		mainGranularParams->addChild(a(param));
 	}
+	layout.add(std::move(mainGranularParams));
 	
+	/*
+	juce::String pName {"Attack"};
+	layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID(pName, 1),
+														   pName,
+														juce::NormalisableRange<float>(0.01f, 5.f), 0.05f,
+														pName,
+														juce::AudioProcessorParameter::genericParameter));
+	*/
 	return layout;
 }
 

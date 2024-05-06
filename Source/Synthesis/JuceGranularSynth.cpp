@@ -25,7 +25,6 @@ void GranularVoice::prepareToPlay(double sampleRate, int samplesPerBlock)
  {
 	adsr.reset();
 	adsr.setSampleRate(sampleRate);
-	adsr.setParameters(adsrParameters);
 }
 
 void GranularVoice::startNote (int midiNoteNumber, float velocity, juce::SynthesiserSound *sound, int currentPitchWheelPosition)
@@ -37,6 +36,7 @@ void GranularVoice::startNote (int midiNoteNumber, float velocity, juce::Synthes
 		granularSynthGuts.noteOn(midiNoteNumber, velIntegral);
 	}
 	
+	adsr.setParameters(adsrParameters);
 	
 	lastMidiNoteNumber = midiNoteNumber;
 	adsr.noteOn();
@@ -64,7 +64,6 @@ void GranularVoice::renderNextBlock (juce::AudioBuffer< float > &outputBuffer, i
 {
 	float trigger = 0.f;
 	auto totalNumOutputChannels = outputBuffer.getNumChannels();
-	
 
 	for (auto samp = startSample; samp < startSample + numSamples; ++samp){
 		double envelope = adsr.getNextSample();
@@ -80,9 +79,6 @@ void GranularVoice::renderNextBlock (juce::AudioBuffer< float > &outputBuffer, i
 	if (!isVoiceActive()){
 		granularSynthGuts.clearNotes();
 	}
-	
-//	if (counter.go(100)){
-//	}
 }
 void GranularVoice::pitchWheelMoved (int newPitchWheelValue) {
 	// apply pitch wheel
