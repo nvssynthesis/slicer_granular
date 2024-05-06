@@ -206,7 +206,8 @@ void Slicer_granularAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
 		buffer.clear (i, 0, buffer.getNumSamples());
 	}
 	
-	granular_synth_juce.paramSet<0, num_voices>(apvts);
+	granular_synth_juce.granularMainParamSet<0, num_voices>(apvts);	// this just sets the params internal to the granular synth (effectively a voice)
+	granular_synth_juce.envelopeParamSet<0, num_voices>(apvts);
 	
 	if ( !(audioBuffersChannels.getActiveSpanRef().size()) ){
 		return;
@@ -282,14 +283,15 @@ juce::AudioProcessorValueTreeState::ParameterLayout Slicer_granularAudioProcesso
 	}
 	layout.add(std::move(mainGranularParams));
 	
-	/*
-	juce::String pName {"Attack"};
-	layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID(pName, 1),
-														   pName,
-														juce::NormalisableRange<float>(0.01f, 5.f), 0.05f,
-														pName,
-														juce::AudioProcessorParameter::genericParameter));
-	*/
+	auto envelopeParams = std::make_unique<juce::AudioProcessorParameterGroup>("Env", "EnvelopeParams", "|");
+	
+	for (size_t i = static_cast<size_t>(params_e::count_main_granular_params) + 1;
+		 i < static_cast<size_t>(params_e::count_envelope_params);
+		 ++i){
+		params_e param = static_cast<params_e>(i);
+		envelopeParams->addChild(a(param));
+	}
+	layout.add(std::move(envelopeParams));
 	return layout;
 }
 

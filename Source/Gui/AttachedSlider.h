@@ -10,6 +10,7 @@
 
 #pragma once
 #include <JuceHeader.h>
+#include "../params.h"
 
 struct AttachedSlider {
 	using Slider = juce::Slider;

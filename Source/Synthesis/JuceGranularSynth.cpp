@@ -33,6 +33,7 @@ void GranularVoice::startNote (int midiNoteNumber, float velocity, juce::Synthes
 	
 	if (adsr.isActive()){}
 	else {
+		granularSynthGuts.clearNotes();
 		granularSynthGuts.noteOn(midiNoteNumber, velIntegral);
 	}
 	
@@ -44,7 +45,6 @@ void GranularVoice::startNote (int midiNoteNumber, float velocity, juce::Synthes
 void GranularVoice::stopNote (float velocity, bool allowTailOff)
 {
 	(void)velocity;
-	granularSynthGuts.noteOff(lastMidiNoteNumber);
 	if (allowTailOff)	// releasing regularly
 	{
 		adsr.noteOff();
@@ -53,6 +53,7 @@ void GranularVoice::stopNote (float velocity, bool allowTailOff)
 	{
 		adsr.reset();
 		clearCurrentNote();
+		granularSynthGuts.clearNotes();
 	}
 }
 bool GranularVoice::isVoiceActive() const {
@@ -68,8 +69,8 @@ void GranularVoice::renderNextBlock (juce::AudioBuffer< float > &outputBuffer, i
 	for (auto samp = startSample; samp < startSample + numSamples; ++samp){
 		double envelope = adsr.getNextSample();
 		std::array<float, 2> output = granularSynthGuts(trigger);
-//		output[0] *= envelope;
-//		output[1] *= envelope;
+		output[0] *= envelope;
+		output[1] *= envelope;
 		for (int channel = 0; channel < totalNumOutputChannels; ++channel)
 		{
 			auto* channelData = outputBuffer.getWritePointer (channel);
@@ -78,6 +79,7 @@ void GranularVoice::renderNextBlock (juce::AudioBuffer< float > &outputBuffer, i
 	}
 	if (!isVoiceActive()){
 		granularSynthGuts.clearNotes();
+		granularSynthGuts.noteOff(lastMidiNoteNumber);
 	}
 }
 void GranularVoice::pitchWheelMoved (int newPitchWheelValue) {
@@ -85,6 +87,18 @@ void GranularVoice::pitchWheelMoved (int newPitchWheelValue) {
 }
 void GranularVoice::controllerMoved (int controllerNumber, int newControllerValue) {
 	// apply (CC aspects of) modulation matrix?
+}
+void GranularVoice::setAmpAttack(float newAttack){
+	adsrParameters.attack = newAttack;
+}
+void GranularVoice::setAmpDecay(float newDecay){
+	adsrParameters.decay = newDecay;
+}
+void GranularVoice::setAmpSustain(float newSustain){
+	adsrParameters.sustain = newSustain;
+}
+void GranularVoice::setAmpRelease(float newRelease){
+	adsrParameters.release = newRelease;
 }
 bool GranularVoice::canPlaySound (juce::SynthesiserSound *)
 {

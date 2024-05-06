@@ -39,7 +39,14 @@ enum class params_e {
 	plat_randomness,
 	pan_randomness,
 	
-	count_main_granular_params
+	count_main_granular_params,
+	
+	amp_attack,
+	amp_decay,
+	amp_sustain,
+	amp_release,
+	
+	count_envelope_params
 };
 
 inline params_e mainToRandom(params_e mainParam){
@@ -47,7 +54,9 @@ inline params_e mainToRandom(params_e mainParam){
 	constexpr int firstRandomInt = static_cast<int>(params_e::transp_randomness);
 	assert(mainInt < firstRandomInt);
 	constexpr int diff = firstRandomInt - static_cast<int>(params_e::transpose);
-	return static_cast<params_e>(mainInt + diff);
+	int randomParamIdx = mainInt + diff;
+	assert(randomParamIdx < static_cast<int>(params_e::count_main_granular_params));
+	return static_cast<params_e>(randomParamIdx);
 }
 
 enum class param_elem_e {
@@ -66,6 +75,9 @@ typedef std::tuple<float, float, float,  float,    bool,    float,   std::string
 
 static constexpr float randSkew {0.33f};
 
+static constexpr float envTimingMin {0.01f};
+static constexpr float envTimingMax {8.f};
+static constexpr float envTimingSkew {1.f};
 static const inline  std::map<params_e, paramPropsTuple> paramMap {
 	// 				   		min,   max,  spacing, skew, symmetrical, default, name
 	{params_e::transpose,	{-60.f, 60.f, 	0.f, 	1.f, 	true, 	0.f, 	"Transpose"}},
@@ -75,14 +87,19 @@ static const inline  std::map<params_e, paramPropsTuple> paramMap {
 	{params_e::skew, 		{0.01f, 0.99f, 0.f, 	1.f, 	false, 	0.5f, 	"Skew"}},
 	{params_e::plateau, 	{0.5f, 	5.f, 	0.f, 	0.5f, 	false, 	1.f, 	"Plateau"}},
 	{params_e::pan, 		{0.f, 	1.f, 	0.f, 	1.f, 	false, 	0.5f, 	"Panning"}},
-	
+	// 				   				min,  max, spacing, skew, 	sym,  default, name
 	{params_e::transp_randomness,	{0.f, 1.f, 0.f, randSkew, 	false, 0.f, "Transpose Randomness"}},
 	{params_e::pos_randomness,		{0.f, 1.f, 0.f, randSkew, 	false, 0.f, "Position Randomness"}},
 	{params_e::speed_randomness,	{0.f, 1.f, 0.f, randSkew, 	false, 0.1f, "Speed Randomness"}},
 	{params_e::dur_randomness, 		{0.f, 1.f, 0.f, randSkew, 	false, 0.1f, "Duration Randomness"}},
 	{params_e::skew_randomness, 	{0.f, 1.f, 0.f, randSkew, 	false, 0.f, "Skew Randomness"}},
 	{params_e::plat_randomness, 	{0.f, 1.f, 0.f, randSkew, 	false, 0.f, "Plateau Randomness"}},
-	{params_e::pan_randomness, 		{0.f, 1.f, 0.f,	 0.75f, 		false, 0.23f, "Pan Randomness"}}
+	{params_e::pan_randomness, 		{0.f, 1.f, 0.f,	 0.75f, 	false, 0.23f, "Pan Randomness"}},
+	// 				   		min,   			max,  		spacing,  skew, 	symmetrical, default, name
+	{params_e::amp_attack,	{envTimingMin, envTimingMax, 0.f, 	envTimingSkew, 	false, 	0.05f, 	"Amp Env Attack"}},
+	{params_e::amp_decay,	{envTimingMin, envTimingMax, 0.f, 	envTimingSkew, 	false, 	0.5f, 	"Amp Env Decay"}},
+	{params_e::amp_sustain,	{0.f,   		1.f, 		 0.f, 		1.f, 		false, 	0.5f, 	"Amp Env Sustain"}},
+	{params_e::amp_release,	{envTimingMin, envTimingMax, 0.f, 	envTimingSkew, 	false, 	0.8f, 	"Amp Env Release"}}
 };
 
 

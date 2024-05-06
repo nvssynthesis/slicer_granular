@@ -9,24 +9,30 @@
 */
 
 #include "EnvelopeParameterPage.h"
-
-EnvelopeParametersPage::EnvelopeParametersPage(juce::AudioProcessorValueTreeState &apvts){
-	attackSlider.setSliderStyle(juce::Slider::SliderStyle::LinearBarVertical);
-	attackSlider.setTitle("atk");
-	attackSlider.setName("attlk");
-	attackSlider.setHelpText("sets attack");
-	attackSlider.setDescription("it sets attack");
-	attackSlider.setTooltip("this sets atk");
-	attackSlider.setTextValueSuffix("s");
-	attackSlider.setNumDecimalPlacesToDisplay(2);
-	addAndMakeVisible(attackSlider);
-
+EnvelopeParametersPage::EnvelopeParametersPage(juce::AudioProcessorValueTreeState &apvts)
+:	envelopeSliders{
+	AttachedSlider(apvts, params_e::amp_attack, juce::Slider::SliderStyle::LinearBarVertical),
+	AttachedSlider(apvts, params_e::amp_decay, juce::Slider::SliderStyle::LinearBarVertical),
+	AttachedSlider(apvts, params_e::amp_sustain, juce::Slider::SliderStyle::LinearBarVertical),
+	AttachedSlider(apvts, params_e::amp_release, juce::Slider::SliderStyle::LinearBarVertical),
+}
+{
+	for (auto &s : envelopeSliders){
+		s._slider.setTextValueSuffix("s");
+		s._slider.setNumDecimalPlacesToDisplay(2);
+		addAndMakeVisible(s._slider);
+	}
 }
 
 void EnvelopeParametersPage::resized() {
 	int constexpr nParams = 4;
 	auto const bounds = getLocalBounds();
 	int const sliderWidth = bounds.getWidth() / nParams;
-	auto x = 0;
-	attackSlider.setBounds(x, 0, sliderWidth, bounds.getHeight());
+	int x = 0;
+	int const y = bounds.getY();
+	int const h = bounds.getHeight();
+	for (auto &s : envelopeSliders){
+		s._slider.setBounds(x, y, sliderWidth, h);
+		x += sliderWidth;
+	}
 }

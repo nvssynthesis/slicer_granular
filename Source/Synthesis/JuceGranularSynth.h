@@ -52,27 +52,48 @@ public:
 	bool canPlaySound (juce::SynthesiserSound *) override ;
 	
 	template <auto Start, auto End>
-	constexpr void paramSet(juce::AudioProcessorValueTreeState &apvts) {
+	constexpr void granularMainParamSet(juce::AudioProcessorValueTreeState &apvts) {
 		float tmp;
 
 		if constexpr (Start < End){
 			constexpr params_e p = static_cast<params_e>(Start);
 			tmp = *apvts.getRawParameterValue(getParamElement<p, param_elem_e::name>());
-			float *last = lastParamsMap.at(p);
+			float *last = lastGranularMainParamsMap.at(p);
 			if (tmp != *last){
 				*last = tmp;
 				granMembrSetFunc setFunc = paramSetterMap.at(p);
 				(granularSynthGuts.*setFunc)(tmp);	// could replace with std::invoke
 			}
 			
-			paramSet<Start + 1, End>(apvts);
+			granularMainParamSet<Start + 1, End>(apvts);
 		}
 	}
+	template <auto Start, auto End>
+	constexpr void envelopeParamSet(juce::AudioProcessorValueTreeState &apvts) {
+		float tmp;
+		if constexpr (Start < End){
+			constexpr params_e p = static_cast<params_e>(Start);
+			tmp = *apvts.getRawParameterValue(getParamElement<p, param_elem_e::name>());
+			float *last = lastEnvelopeParamsMap.at(p);
+			if (tmp != *last){
+				*last = tmp;
+				juceVoiceSetFunc setFunc = envParamSetterMap.at(p);
+				(this->*setFunc)(tmp);	// could replace with std::invoke
+			}
+			
+			envelopeParamSet<Start + 1, End>(apvts);
+		}
+	}
+	void setAmpAttack(float newAttack);
+	void setAmpDecay(float newDecay);
+	void setAmpSustain(float newSustain);
+	void setAmpRelease(float newRelease);
 private:
 	nvs::gran::genGranPoly1 granularSynthGuts;
 	int lastMidiNoteNumber {0};
 	juce::ADSR adsr;
 	juce::ADSR::Parameters adsrParameters {0.1, 0.3, 0.5, 0.05};
+
 	
 	float lastTranspose 	{getParamDefault(params_e::transpose)};
 	float lastPosition 		{getParamDefault(params_e::position)};
@@ -89,7 +110,12 @@ private:
 	float lastSkewRand 		{getParamDefault(params_e::skew_randomness)};
 	float lastPlateauRand	{getParamDefault(params_e::plat_randomness)};
 	float lastPanRand 		{getParamDefault(params_e::pan_randomness)};
-	
+
+	float lastAmpAttack 	{getParamDefault(params_e::amp_attack)};
+	float lastAmpDecay 		{getParamDefault(params_e::amp_decay)};
+	float lastAmpSustain 	{getParamDefault(params_e::amp_sustain)};
+	float lastAmpRelease 	{getParamDefault(params_e::amp_release)};
+
 #if (STATIC_MAP | FROZEN_MAP)
 	using granMembrSetFunc = void(nvs::gran::genGranPoly1::*) (float);
 
@@ -108,14 +134,20 @@ private:
 		std::make_pair<params_e, granMembrSetFunc>(params_e::dur_randomness, 	&nvs::gran::genGranPoly1::setDurationRandomness),
 		std::make_pair<params_e, granMembrSetFunc>(params_e::skew_randomness, 	&nvs::gran::genGranPoly1::setSkewRandomness),
 		std::make_pair<params_e, granMembrSetFunc>(params_e::plat_randomness,	&nvs::gran::genGranPoly1::setPlateauRandomness),
-		std::make_pair<params_e, granMembrSetFunc>(params_e::pan_randomness, 	&nvs::gran::genGranPoly1::setPanRandomness)
+		std::make_pair<params_e, granMembrSetFunc>(params_e::pan_randomness, 	&nvs::gran::genGranPoly1::setPanRandomness),
 	};
-	
+	using juceVoiceSetFunc = void(GranularVoice::*) (float);
+	static constexpr inline MAP<params_e, juceVoiceSetFunc, 4> envParamSetterMap {
+		std::make_pair<params_e, juceVoiceSetFunc>(params_e::amp_attack, &GranularVoice::setAmpAttack),
+		std::make_pair<params_e, juceVoiceSetFunc>(params_e::amp_decay, &GranularVoice::setAmpDecay),
+		std::make_pair<params_e, juceVoiceSetFunc>(params_e::amp_sustain, &GranularVoice::setAmpSustain),
+		std::make_pair<params_e, juceVoiceSetFunc>(params_e::amp_release, &GranularVoice::setAmpRelease),
+	};
 	/*
 	 this map is unnecessary because these pointed-to floats are never called by name. could just use an std::array<float, static_cast<size_t>(params_e::count)> lastParams
 	 */
 	MAP<params_e, float *, static_cast<size_t>(params_e::count_main_granular_params)>
-	lastParamsMap{
+	lastGranularMainParamsMap{
 		std::make_pair<params_e, float *>(params_e::transpose, 	&lastTranspose),
 		std::make_pair<params_e, float *>(params_e::position, 	&lastPosition),
 		std::make_pair<params_e, float *>(params_e::speed, 		&lastSpeed),
@@ -130,6 +162,13 @@ private:
 		std::make_pair<params_e, float *>(params_e::skew_randomness, 	&lastSkewRand),
 		std::make_pair<params_e, float *>(params_e::plat_randomness, 	&lastPlateauRand),
 		std::make_pair<params_e, float *>(params_e::pan_randomness, 	&lastPanRand)
+	};
+	MAP<params_e, float *, 4>
+	lastEnvelopeParamsMap{
+		std::make_pair<params_e, float *>(params_e::amp_attack,		&lastAmpAttack),
+		std::make_pair<params_e, float *>(params_e::amp_decay,		&lastAmpDecay),
+		std::make_pair<params_e, float *>(params_e::amp_sustain,	&lastAmpSustain),
+		std::make_pair<params_e, float *>(params_e::amp_release,	&lastAmpRelease)
 	};
 #endif
 	
@@ -156,18 +195,34 @@ public:
 						unsigned int num_voices);
 		
 	template <auto Start, auto End>
-	constexpr void paramSet(juce::AudioProcessorValueTreeState &apvts){
+	constexpr void granularMainParamSet(juce::AudioProcessorValueTreeState &apvts){
 
 		if constexpr (Start < End){
 			
 			juce::SynthesiserVoice* voice = getVoice(Start);
 			if (GranularVoice* granularVoice = dynamic_cast<GranularVoice*>(voice)){
-				granularVoice->paramSet<0, static_cast<int>(params_e::count_main_granular_params)>(apvts);
+				granularVoice->granularMainParamSet<0, static_cast<int>(params_e::count_main_granular_params)>(apvts);
 			}
 			else {
 				jassert (false);
 			}
-			paramSet<Start + 1, End>(apvts);
+			granularMainParamSet<Start + 1, End>(apvts);
+		}
+	}
+	
+	template <auto Start, auto End>
+	constexpr void envelopeParamSet(juce::AudioProcessorValueTreeState &apvts){
+		if constexpr (Start < End){
+			juce::SynthesiserVoice* voice = getVoice(Start);
+			if (GranularVoice* granularVoice = dynamic_cast<GranularVoice*>(voice)){
+				granularVoice->envelopeParamSet<static_cast<int>(params_e::count_main_granular_params)+1,
+												static_cast<int>(params_e::count_envelope_params)>
+												(apvts);
+			}
+			else {
+				jassert (false);
+			}
+			envelopeParamSet<Start + 1, End>(apvts);
 		}
 	}
 private:

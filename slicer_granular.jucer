@@ -56,6 +56,8 @@
             resource="0" file="Source/Gui/GranularMainParametersPage.cpp"/>
       <FILE id="CZi0kN" name="GranularMainParametersPage.h" compile="0" resource="0"
             file="Source/Gui/GranularMainParametersPage.h"/>
+      <FILE id="kLnWlN" name="MainParamsComponent.h" compile="0" resource="0"
+            file="Source/Gui/MainParamsComponent.h"/>
     </GROUP>
   </MAINGROUP>
   <JUCEOPTIONS JUCE_STRICT_REFCOUNTEDPOINTER="1" JUCE_VST3_CAN_REPLACE_VST2="0"/>
