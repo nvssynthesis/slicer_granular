@@ -5,7 +5,7 @@
 
 #include <JuceHeader.h>
 #include "Synthesis/GranularSynthesis.h"
-#include "Synthesis/JuceGranularSynth.h"
+#include "Synthesis/JuceGranularSynthesizer.h"
 #include "AudioBuffersChannels.h"
 #include "dsp_util.h"
 #include "misc_util.h"
