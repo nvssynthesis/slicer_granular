@@ -33,10 +33,18 @@
             file="Source/Synthesis/GranularSynthesis.cpp"/>
       <FILE id="uydM2T" name="GranularSynthesis.h" compile="0" resource="0"
             file="Source/Synthesis/GranularSynthesis.h"/>
-      <FILE id="IYFr0l" name="JuceGranularSynth.cpp" compile="1" resource="0"
-            file="Source/Synthesis/JuceGranularSynth.cpp"/>
-      <FILE id="WYKaba" name="JuceGranularSynth.h" compile="0" resource="0"
-            file="Source/Synthesis/JuceGranularSynth.h"/>
+      <FILE id="sH0ruw" name="JuceGranularSynthesizer.cpp" compile="1" resource="0"
+            file="Source/Synthesis/JuceGranularSynthesizer.cpp"/>
+      <FILE id="jOFpD3" name="JuceGranularSynthesizer.h" compile="0" resource="0"
+            file="Source/Synthesis/JuceGranularSynthesizer.h"/>
+      <FILE id="Tkq2J6" name="JuceGranularSynthSound.cpp" compile="1" resource="0"
+            file="Source/Synthesis/JuceGranularSynthSound.cpp"/>
+      <FILE id="gure9G" name="JuceGranularSynthSound.h" compile="0" resource="0"
+            file="Source/Synthesis/JuceGranularSynthSound.h"/>
+      <FILE id="fHng5w" name="JuceGranularSynthVoice.cpp" compile="1" resource="0"
+            file="Source/Synthesis/JuceGranularSynthVoice.cpp"/>
+      <FILE id="DHDiBm" name="JuceGranularSynthVoice.h" compile="0" resource="0"
+            file="Source/Synthesis/JuceGranularSynthVoice.h"/>
     </GROUP>
     <GROUP id="{8B05BF9B-9113-5CDB-91DE-1C951D8F5910}" name="Gui">
       <FILE id="MH0zIT" name="EnvelopeParameterPage.cpp" compile="1" resource="0"
