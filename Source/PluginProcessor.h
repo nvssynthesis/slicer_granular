@@ -77,7 +77,6 @@ private:
 	
 	AudioBuffersChannels audioBuffersChannels;
 	
-//	nvs::gran::genGranPoly1 gen_granular;
 	GranularSynthesizer granular_synth_juce;
 	constexpr static int num_voices =
 #if defined(DEBUG_BUILD) | defined(DEBUG) | defined(_DEBUG)

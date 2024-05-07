@@ -20,7 +20,6 @@
 */
 
 class Slicer_granularAudioProcessorEditor  : public juce::AudioProcessorEditor
-,			                                 public juce::Slider::Listener
 ,											 public juce::FilenameComponentListener
 {
 public:
@@ -32,12 +31,9 @@ public:
     void paint (juce::Graphics&) override;
     void resized() override;
 	
-	void sliderValueChanged(juce::Slider*) override;
-	
 	//===============================================================================
 	void filenameComponentChanged (juce::FilenameComponent* fileComponentThatHasChanged) override;
 	void readFile (const juce::File& fileToRead);
-	
 	//===============================================================================
 
 private:
@@ -47,7 +43,6 @@ private:
 	TabbedPagesComponent tabbedPages;
 	WaveformAndPositionComponent waveformAndPositionComponent;
 
-	juce::ToggleButton triggeringButton;
 	std::array<juce::Colour, 5> gradientColors {
 		juce::Colours::transparentBlack,
 		juce::Colours::darkred,

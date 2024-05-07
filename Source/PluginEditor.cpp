@@ -15,16 +15,11 @@ Slicer_granularAudioProcessorEditor::Slicer_granularAudioProcessorEditor (Slicer
 ,	fileComp(juce::File(), "*.wav;*.aif;*.aiff", "", "Select file to open")
 ,	tabbedPages(p.apvts)
 ,	waveformAndPositionComponent(512, p.getAudioFormatManager(), p.apvts)
-,	triggeringButton("hi")
 ,	audioProcessor (p)
 {
 	addAndMakeVisible (fileComp);
 	fileComp.addListener (this);
 	fileComp.getRecentFilesFromUserApplicationDataDirectory();
-	
-	addAndMakeVisible(triggeringButton);
-	triggeringButton.onClick = [this, &p]{ updateToggleState(&triggeringButton, "Trigger", p.triggerValFromEditor);	};
-	triggeringButton.setClickingTogglesState(true);
 	
 	addAndMakeVisible(tabbedPages);
 	
@@ -90,14 +85,6 @@ void Slicer_granularAudioProcessorEditor::resized()
 		y += fileCompHeight;
 		y += smallPad;
 	}
-	if constexpr (false)	// triggering button
-	{
-		int buttonWidth = 50;
-		int buttonHeight = buttonWidth;
-		triggeringButton.setBounds(x, y, buttonWidth, buttonHeight);
-		y += buttonHeight;
-		y += smallPad;
-	}
 	{
 		auto const mainParamsRemainingHeightRatio = 0.8 * localBounds.getHeight();
 
@@ -111,10 +98,6 @@ void Slicer_granularAudioProcessorEditor::resized()
 	waveformAndPositionComponent.setBounds(localBounds.getX(), y, localBounds.getWidth(), remainingHeight);
 }
 
-void Slicer_granularAudioProcessorEditor::sliderValueChanged(juce::Slider* sliderThatWasMoved)
-{
-    // nothing needed, everything changed is a parameter
-}
 void Slicer_granularAudioProcessorEditor::readFile (const juce::File& fileToRead)
 {
 	if (! fileToRead.existsAsFile())

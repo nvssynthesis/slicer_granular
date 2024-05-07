@@ -4,6 +4,7 @@
 #include "fmt/core.h"
 #endif
 //==============================================================================
+
 Slicer_granularAudioProcessor::Slicer_granularAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
      : AudioProcessor (BusesProperties()
