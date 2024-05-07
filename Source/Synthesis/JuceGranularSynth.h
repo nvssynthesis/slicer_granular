@@ -62,7 +62,7 @@ public:
 			if (tmp != *last){
 				*last = tmp;
 				granMembrSetFunc setFunc = paramSetterMap.at(p);
-				(granularSynthGuts.*setFunc)(tmp);	// could replace with std::invoke
+				(granularSynthGuts->*setFunc)(tmp);	// could replace with std::invoke
 			}
 			
 			granularMainParamSet<Start + 1, End>(apvts);
@@ -89,7 +89,7 @@ public:
 	void setAmpSustain(float newSustain);
 	void setAmpRelease(float newRelease);
 private:
-	nvs::gran::genGranPoly1 granularSynthGuts;
+	nvs::gran::genGranPoly1 *granularSynthGuts;
 	int lastMidiNoteNumber {0};
 	juce::ADSR adsr;
 	juce::ADSR::Parameters adsrParameters {0.1, 0.3, 0.5, 0.05};

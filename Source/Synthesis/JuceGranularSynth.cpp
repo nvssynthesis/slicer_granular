@@ -18,8 +18,10 @@ bool GranularSound::appliesToChannel (int midiChannel) {return true;}
 
 
 GranularVoice::GranularVoice(double const &sampleRate,  std::span<float> const &wavespan, double const &fileSampleRate, unsigned long seed)
-:	granularSynthGuts(sampleRate, wavespan, fileSampleRate, seed)
-{}
+:	granularSynthGuts{new nvs::gran::genGranPoly1(sampleRate, wavespan, fileSampleRate, seed)}
+{
+	
+}
 
 void GranularVoice::prepareToPlay(double sampleRate, int samplesPerBlock)
  {
@@ -33,8 +35,8 @@ void GranularVoice::startNote (int midiNoteNumber, float velocity, juce::Synthes
 	
 	if (adsr.isActive()){}
 	else {
-		granularSynthGuts.clearNotes();
-		granularSynthGuts.noteOn(midiNoteNumber, velIntegral);
+		granularSynthGuts->clearNotes();
+		granularSynthGuts->noteOn(midiNoteNumber, velIntegral);
 	}
 	
 	adsr.setParameters(adsrParameters);
@@ -53,7 +55,7 @@ void GranularVoice::stopNote (float velocity, bool allowTailOff)
 	{
 		adsr.reset();
 		clearCurrentNote();
-		granularSynthGuts.clearNotes();
+		granularSynthGuts->clearNotes();
 	}
 }
 bool GranularVoice::isVoiceActive() const {
@@ -68,7 +70,7 @@ void GranularVoice::renderNextBlock (juce::AudioBuffer< float > &outputBuffer, i
 
 	for (auto samp = startSample; samp < startSample + numSamples; ++samp){
 		double envelope = adsr.getNextSample();
-		std::array<float, 2> output = granularSynthGuts(trigger);
+		std::array<float, 2> output = (*granularSynthGuts)(trigger);
 		output[0] *= envelope;
 		output[1] *= envelope;
 		for (int channel = 0; channel < totalNumOutputChannels; ++channel)
@@ -78,8 +80,8 @@ void GranularVoice::renderNextBlock (juce::AudioBuffer< float > &outputBuffer, i
 		}
 	}
 	if (!isVoiceActive()){
-		granularSynthGuts.clearNotes();
-		granularSynthGuts.noteOff(lastMidiNoteNumber);
+		granularSynthGuts->clearNotes();
+		granularSynthGuts->noteOff(lastMidiNoteNumber);
 	}
 }
 void GranularVoice::pitchWheelMoved (int newPitchWheelValue) {

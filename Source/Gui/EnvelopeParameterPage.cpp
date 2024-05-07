@@ -14,7 +14,7 @@ EnvelopeParametersPage::EnvelopeParametersPage(juce::AudioProcessorValueTreeStat
 	AttachedSlider(apvts, params_e::amp_attack, juce::Slider::SliderStyle::LinearBarVertical),
 	AttachedSlider(apvts, params_e::amp_decay, juce::Slider::SliderStyle::LinearBarVertical),
 	AttachedSlider(apvts, params_e::amp_sustain, juce::Slider::SliderStyle::LinearBarVertical),
-	AttachedSlider(apvts, params_e::amp_release, juce::Slider::SliderStyle::LinearBarVertical),
+	AttachedSlider(apvts, params_e::amp_release, juce::Slider::SliderStyle::LinearBarVertical)
 }
 {
 	for (auto &s : envelopeSliders){
