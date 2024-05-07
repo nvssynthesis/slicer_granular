@@ -22,6 +22,14 @@
 #include "fmt/core.h"
 #endif
 
+static constexpr size_t N_GRAINS =
+#if defined(DEBUG_BUILD) | defined(DEBUG) | defined(_DEBUG)
+								15;
+#else
+								30;
+#endif
+
+
 namespace nvs::gran {
 
 template <typename float_t>

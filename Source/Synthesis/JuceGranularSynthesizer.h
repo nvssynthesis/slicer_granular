@@ -50,5 +50,4 @@ public:
 		}
 	}
 private:
-	unsigned int numVoices {0};
 };

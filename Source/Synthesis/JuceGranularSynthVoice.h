@@ -85,6 +85,10 @@ public:
 	void setAmpDecay(float newDecay);
 	void setAmpSustain(float newSustain);
 	void setAmpRelease(float newRelease);
+	
+	nvs::gran::genGranPoly1* getGranularSynthGuts(){
+		return granularSynthGuts.get();
+	}
 private:
 	std::unique_ptr<nvs::gran::genGranPoly1> granularSynthGuts;
 	int lastMidiNoteNumber {0};

@@ -105,11 +105,8 @@ void Slicer_granularAudioProcessor::changeProgramName (int index, const juce::St
 //==============================================================================
 void Slicer_granularAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-    // Use this method as the place to do any pre-playback
-    // initialisation that you need..
 	lastSampleRate = sampleRate;
 	lastSamplesPerBlock = samplesPerBlock;
-//	granular_synth_juce.prepareToPlay(sampleRate, samplesPerBlock);
 	
 	granular_synth_juce.setCurrentPlaybackSampleRate (sampleRate);
 	for (int i = 0; i < granular_synth_juce.getNumVoices(); i++)
@@ -119,14 +116,9 @@ void Slicer_granularAudioProcessor::prepareToPlay (double sampleRate, int sample
 			voice->prepareToPlay (sampleRate, samplesPerBlock);
 		}
 	}
-//	gran_synth.loadOnsets();
 }
 
-void Slicer_granularAudioProcessor::releaseResources()
-{
-    // When playback stops, you can use this as an opportunity to free up any
-    // spare memory, etc.
-}
+void Slicer_granularAudioProcessor::releaseResources(){}
 
 #ifndef JucePlugin_PreferredChannelConfigurations
 bool Slicer_granularAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const

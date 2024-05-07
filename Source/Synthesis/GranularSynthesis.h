@@ -29,13 +29,6 @@ typedef int noteNumber_t;
 typedef int velocity_t;
 typedef std::map<noteNumber_t, velocity_t> NoteHolder;
 
-static constexpr size_t N_GRAINS =
-#if defined(DEBUG_BUILD) | defined(DEBUG) | defined(_DEBUG)
-								15;
-#else
-								30;
-#endif
-
 struct genGrain1;
 
 template<std::floating_point float_t>
