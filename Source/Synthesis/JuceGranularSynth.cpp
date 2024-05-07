@@ -16,13 +16,6 @@
 bool GranularSound::appliesToNote (int midiNoteNumber) {return true;}
 bool GranularSound::appliesToChannel (int midiChannel) {return true;}
 
-
-GranularVoice::GranularVoice(double const &sampleRate,  std::span<float> const &wavespan, double const &fileSampleRate, unsigned long seed)
-:	granularSynthGuts{new nvs::gran::genGranPoly1(sampleRate, wavespan, fileSampleRate, seed)}
-{
-	
-}
-
 void GranularVoice::prepareToPlay(double sampleRate, int samplesPerBlock)
  {
 	adsr.reset();
@@ -115,7 +108,7 @@ GranularSynthesizer::GranularSynthesizer(double const &sampleRate,
 	clearVoices();
 	unsigned long seed = 1234567890UL;
 	for (int i = 0; i < numVoices; ++i) {
-		auto voice = new GranularVoice(sampleRate, wavespan, fileSampleRate, seed);
+		auto voice = new GranularVoice(std::make_unique<nvs::gran::genGranPoly1>(sampleRate, wavespan, fileSampleRate, seed));
 		addVoice(voice);
 		++seed;
 	}
@@ -124,9 +117,3 @@ GranularSynthesizer::GranularSynthesizer(double const &sampleRate,
 	auto sound = new GranularSound;
 	addSound(sound);
 }
-
-//void GranularSynthesizer::setCurrentPlaybackSampleRate(double sampleRate) {
-//	for (auto &voice : voices){
-//		voice->setCurrentPlaybackSampleRate(sampleRate);
-//	}
-//}

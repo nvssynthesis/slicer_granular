@@ -39,7 +39,11 @@ public:
 class GranularVoice	:	public juce::SynthesiserVoice
 {
 public:
-	GranularVoice(double const &sampleRate,  std::span<float> const &wavespan, double const &fileSampleRate, unsigned long seed = 1234567890UL);
+	template<typename granularGuts_t>
+	GranularVoice(std::unique_ptr<granularGuts_t> synthGuts)
+	:	granularSynthGuts{std::move(synthGuts)}
+	{}
+	
 	void prepareToPlay(double sampleRate, int samplesPerBlock);	// why not override??
 	
 	void startNote (int midiNoteNumber, float velocity, juce::SynthesiserSound *sound, int currentPitchWheelPosition) override;
@@ -62,7 +66,7 @@ public:
 			if (tmp != *last){
 				*last = tmp;
 				granMembrSetFunc setFunc = paramSetterMap.at(p);
-				(granularSynthGuts->*setFunc)(tmp);	// could replace with std::invoke
+				(granularSynthGuts.get()->*setFunc)(tmp);	// could replace with std::invoke
 			}
 			
 			granularMainParamSet<Start + 1, End>(apvts);
@@ -89,7 +93,7 @@ public:
 	void setAmpSustain(float newSustain);
 	void setAmpRelease(float newRelease);
 private:
-	nvs::gran::genGranPoly1 *granularSynthGuts;
+	std::unique_ptr<nvs::gran::genGranPoly1> granularSynthGuts;
 	int lastMidiNoteNumber {0};
 	juce::ADSR adsr;
 	juce::ADSR::Parameters adsrParameters {0.1, 0.3, 0.5, 0.05};
