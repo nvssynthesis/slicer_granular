@@ -149,6 +149,11 @@ bool Slicer_granularAudioProcessor::isBusesLayoutSupported (const BusesLayout& l
 void Slicer_granularAudioProcessor::writeToLog(std::string const s){
 	fileLogger.writeToLog (s);
 }
+
+void Slicer_granularAudioProcessor::loadAudioFilesFolder(juce::File const folder, juce::AudioThumbnail *const thumbnail){
+	
+}
+
 void Slicer_granularAudioProcessor::loadAudioFile(juce::File const f, juce::AudioThumbnail *const thumbnail){
 	juce::AudioFormatReader *reader = formatManager.createReaderFor(f);
 	if (!reader){

@@ -18,8 +18,12 @@
 class FileSelectorComponent	:	public juce::FilenameComponent
 {
 public:
-	FileSelectorComponent(const juce::File &currentFile, const juce::String &fileBrowserWildcard, const juce::String &enforcedSuffix, const juce::String &textWhenNothingSelected)
-	:	FilenameComponent("FileComp", currentFile, false, false, false, fileBrowserWildcard, enforcedSuffix, textWhenNothingSelected)
+	FileSelectorComponent(const juce::File &currentFile, const juce::String &fileBrowserWildcard, const juce::String &enforcedSuffix, const juce::String &textWhenNothingSelected, bool allowDirectory = false)
+	:	FilenameComponent("FileComp", currentFile,
+						  false,	// can edit filename
+						  allowDirectory,		// isDirectory
+						  false,	// isForSaving
+						  fileBrowserWildcard, enforcedSuffix, textWhenNothingSelected)
 	{}
 	~FileSelectorComponent(){}
 	

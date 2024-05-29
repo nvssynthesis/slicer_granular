@@ -9,6 +9,9 @@
 */
 
 #pragma once
+#include <array>
+#include <vector>
+#include <span>
 
 class AudioBuffersChannels
 {
@@ -52,7 +55,7 @@ private:
 	unsigned int activeBufferIdx { 0 };
 	inline void updateActiveBufferIndex(){
 		activeBufferIdx = !activeBufferIdx;
-		jassert((activeBufferIdx == 0) | (activeBufferIdx == 1));
+		assert((activeBufferIdx == 0) | (activeBufferIdx == 1));
 	}
 
 };

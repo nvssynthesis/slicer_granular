@@ -12,7 +12,7 @@
 
 Slicer_granularAudioProcessorEditor::Slicer_granularAudioProcessorEditor (Slicer_granularAudioProcessor& p)
     : AudioProcessorEditor (&p)
-,	fileComp(juce::File(), "*.wav;*.aif;*.aiff", "", "Select file to open")
+,	fileComp(juce::File(), "*.wav;*.aif;*.aiff", "", "Select file to open", false)
 ,	tabbedPages(p.apvts)
 ,	waveformAndPositionComponent(512, p.getAudioFormatManager(), p.apvts)
 ,	audioProcessor (p)
@@ -100,13 +100,15 @@ void Slicer_granularAudioProcessorEditor::resized()
 
 void Slicer_granularAudioProcessorEditor::readFile (const juce::File& fileToRead)
 {
+	if (fileToRead.isDirectory()){
+		// handle whole directory
+	}
 	if (! fileToRead.existsAsFile())
 		return;
 
-	juce::String fn = fileToRead.getFullPathName();
-	std::string st_str = fn.toStdString();
+	std::string fn = fileToRead.getFullPathName().toStdString();
 	
-	audioProcessor.writeToLog(st_str);
+	audioProcessor.writeToLog(fn);
 	audioProcessor.loadAudioFile(fileToRead, waveformAndPositionComponent.wc.getThumbnail() );
 
 	fileComp.setCurrentFile(fileToRead, true);

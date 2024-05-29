@@ -62,6 +62,8 @@ public:
 	void writeToLog(std::string const s);
 	void loadAudioFile(juce::File const f, juce::AudioThumbnail *const thumbnail);
 	
+	void loadAudioFilesFolder(juce::File const folder, juce::AudioThumbnail *const thumbnail);
+	
 	bool triggerValFromEditor {false};
 
 	nvs::util::EditorInformant<float> rmsInformant;

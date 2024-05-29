@@ -15,7 +15,7 @@
 #include <numeric>
 
 #include "../Random.h"
-#include "nvs_libraries/include/nvs_gen.h"
+#include "../../nvs_libraries/nvs_libraries/include/nvs_gen.h"
 
 /*** TODO:
  -envelopes shall have secondary parameter, plateau, which clips the window before parzen

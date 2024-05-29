@@ -27,45 +27,45 @@
       <FILE id="wKk0Fn" name="params.h" compile="0" resource="0" file="Source/params.h"/>
       <FILE id="AcOWtc" name="nvs_gen.h" compile="0" resource="0" file="nvs_libraries/nvs_libraries/include/nvs_gen.h"/>
       <FILE id="DcXofS" name="plotting.h" compile="0" resource="0" file="Source/plotting.h"/>
-    </GROUP>
-    <GROUP id="{BC0357AF-85B3-3B4A-11BC-B4C71511F210}" name="Synthesis">
-      <FILE id="FxjJzF" name="GranularSynthesis.cpp" compile="1" resource="0"
-            file="Source/Synthesis/GranularSynthesis.cpp"/>
-      <FILE id="uydM2T" name="GranularSynthesis.h" compile="0" resource="0"
-            file="Source/Synthesis/GranularSynthesis.h"/>
-      <FILE id="sH0ruw" name="JuceGranularSynthesizer.cpp" compile="1" resource="0"
-            file="Source/Synthesis/JuceGranularSynthesizer.cpp"/>
-      <FILE id="jOFpD3" name="JuceGranularSynthesizer.h" compile="0" resource="0"
-            file="Source/Synthesis/JuceGranularSynthesizer.h"/>
-      <FILE id="Tkq2J6" name="JuceGranularSynthSound.cpp" compile="1" resource="0"
-            file="Source/Synthesis/JuceGranularSynthSound.cpp"/>
-      <FILE id="gure9G" name="JuceGranularSynthSound.h" compile="0" resource="0"
-            file="Source/Synthesis/JuceGranularSynthSound.h"/>
-      <FILE id="fHng5w" name="JuceGranularSynthVoice.cpp" compile="1" resource="0"
-            file="Source/Synthesis/JuceGranularSynthVoice.cpp"/>
-      <FILE id="DHDiBm" name="JuceGranularSynthVoice.h" compile="0" resource="0"
-            file="Source/Synthesis/JuceGranularSynthVoice.h"/>
-    </GROUP>
-    <GROUP id="{8B05BF9B-9113-5CDB-91DE-1C951D8F5910}" name="Gui">
-      <FILE id="MH0zIT" name="EnvelopeParameterPage.cpp" compile="1" resource="0"
-            file="Source/Gui/EnvelopeParameterPage.cpp"/>
-      <FILE id="hzGEX2" name="EnvelopeParameterPage.h" compile="0" resource="0"
-            file="Source/Gui/EnvelopeParameterPage.h"/>
-      <FILE id="u3Rs7d" name="TabbedPages.cpp" compile="1" resource="0" file="Source/Gui/TabbedPages.cpp"/>
-      <FILE id="dhH3GX" name="TabbedPages.h" compile="0" resource="0" file="Source/Gui/TabbedPages.h"/>
-      <FILE id="KBau54" name="FileSelectorComponent.h" compile="0" resource="0"
-            file="Source/Gui/FileSelectorComponent.h"/>
-      <FILE id="jNw0CK" name="AttachedSlider.h" compile="0" resource="0"
-            file="Source/Gui/AttachedSlider.h"/>
-      <FILE id="geE4c2" name="SliderColumn.h" compile="0" resource="0" file="Source/Gui/SliderColumn.h"/>
-      <FILE id="fKuezH" name="WaveformComponent.h" compile="0" resource="0"
-            file="Source/Gui/WaveformComponent.h"/>
-      <FILE id="rpJma0" name="GranularMainParametersPage.cpp" compile="1"
-            resource="0" file="Source/Gui/GranularMainParametersPage.cpp"/>
-      <FILE id="CZi0kN" name="GranularMainParametersPage.h" compile="0" resource="0"
-            file="Source/Gui/GranularMainParametersPage.h"/>
-      <FILE id="kLnWlN" name="MainParamsComponent.h" compile="0" resource="0"
-            file="Source/Gui/MainParamsComponent.h"/>
+      <GROUP id="{BC0357AF-85B3-3B4A-11BC-B4C71511F210}" name="Synthesis">
+        <FILE id="FxjJzF" name="GranularSynthesis.cpp" compile="1" resource="0"
+              file="Source/Synthesis/GranularSynthesis.cpp"/>
+        <FILE id="uydM2T" name="GranularSynthesis.h" compile="0" resource="0"
+              file="Source/Synthesis/GranularSynthesis.h"/>
+        <FILE id="sH0ruw" name="JuceGranularSynthesizer.cpp" compile="1" resource="0"
+              file="Source/Synthesis/JuceGranularSynthesizer.cpp"/>
+        <FILE id="jOFpD3" name="JuceGranularSynthesizer.h" compile="0" resource="0"
+              file="Source/Synthesis/JuceGranularSynthesizer.h"/>
+        <FILE id="Tkq2J6" name="JuceGranularSynthSound.cpp" compile="1" resource="0"
+              file="Source/Synthesis/JuceGranularSynthSound.cpp"/>
+        <FILE id="gure9G" name="JuceGranularSynthSound.h" compile="0" resource="0"
+              file="Source/Synthesis/JuceGranularSynthSound.h"/>
+        <FILE id="fHng5w" name="JuceGranularSynthVoice.cpp" compile="1" resource="0"
+              file="Source/Synthesis/JuceGranularSynthVoice.cpp"/>
+        <FILE id="DHDiBm" name="JuceGranularSynthVoice.h" compile="0" resource="0"
+              file="Source/Synthesis/JuceGranularSynthVoice.h"/>
+      </GROUP>
+      <GROUP id="{8B05BF9B-9113-5CDB-91DE-1C951D8F5910}" name="Gui">
+        <FILE id="MH0zIT" name="EnvelopeParameterPage.cpp" compile="1" resource="0"
+              file="Source/Gui/EnvelopeParameterPage.cpp"/>
+        <FILE id="hzGEX2" name="EnvelopeParameterPage.h" compile="0" resource="0"
+              file="Source/Gui/EnvelopeParameterPage.h"/>
+        <FILE id="u3Rs7d" name="TabbedPages.cpp" compile="1" resource="0" file="Source/Gui/TabbedPages.cpp"/>
+        <FILE id="dhH3GX" name="TabbedPages.h" compile="0" resource="0" file="Source/Gui/TabbedPages.h"/>
+        <FILE id="KBau54" name="FileSelectorComponent.h" compile="0" resource="0"
+              file="Source/Gui/FileSelectorComponent.h"/>
+        <FILE id="jNw0CK" name="AttachedSlider.h" compile="0" resource="0"
+              file="Source/Gui/AttachedSlider.h"/>
+        <FILE id="geE4c2" name="SliderColumn.h" compile="0" resource="0" file="Source/Gui/SliderColumn.h"/>
+        <FILE id="fKuezH" name="WaveformComponent.h" compile="0" resource="0"
+              file="Source/Gui/WaveformComponent.h"/>
+        <FILE id="rpJma0" name="GranularMainParametersPage.cpp" compile="1"
+              resource="0" file="Source/Gui/GranularMainParametersPage.cpp"/>
+        <FILE id="CZi0kN" name="GranularMainParametersPage.h" compile="0" resource="0"
+              file="Source/Gui/GranularMainParametersPage.h"/>
+        <FILE id="kLnWlN" name="MainParamsComponent.h" compile="0" resource="0"
+              file="Source/Gui/MainParamsComponent.h"/>
+      </GROUP>
     </GROUP>
   </MAINGROUP>
   <JUCEOPTIONS JUCE_STRICT_REFCOUNTEDPOINTER="1" JUCE_VST3_CAN_REPLACE_VST2="0"/>
