@@ -140,7 +140,7 @@ public:
 		
 		addAndMakeVisible(positionQuantizedReadOnlySlider);
 		positionQuantizedReadOnlySlider.setRange(0.0, 1.0);
-		positionQuantizedReadOnlySlider.setValue(0.75);
+		positionQuantizedReadOnlySlider.setValue(0.0);
 		positionQuantizedReadOnlySlider.setTextBoxStyle(juce::Slider::NoTextBox, true, 100, 100);
 		positionQuantizedReadOnlySlider.setEnabled(false);
 		positionQuantizedReadOnlySlider.setColour(juce::Slider::ColourIds::thumbColourId, juce::Colours::white);
@@ -159,7 +159,6 @@ public:
 		wc.setBounds(localBounds.getX(), localBounds.getY(), localBounds.getWidth(), waveformHeight);
 		positionSlider._slider.setBounds(localBounds.getX(), wc.getBottom(), localBounds.getWidth(), sliderHeight);
 		positionQuantizedReadOnlySlider.setBounds(positionSlider._slider.getX(), positionSlider._slider.getY(), positionSlider._slider.getWidth(), positionSlider._slider.getHeight());
-		
 	}
 	void paint (juce::Graphics& g) override {}
 	
