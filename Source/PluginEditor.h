@@ -44,7 +44,7 @@ private:
 	WaveformAndPositionComponent waveformAndPositionComponent;
 
 	std::array<juce::Colour, 5> gradientColors {
-		juce::Colours::transparentBlack,
+		juce::Colours::darkred,
 		juce::Colours::darkred,
 		juce::Colours::red,
 		juce::Colours::darkred,
