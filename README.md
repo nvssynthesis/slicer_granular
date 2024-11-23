@@ -1,6 +1,6 @@
 slicer-granular is a granular synthesizer, developed primarily as the basis of a more advanced [granular synth that incorporates timbre space navigation (TSN) capabilities](https://github.com/nvssynthesis/tsn-granular/). 
 
-![](picture.jpg "slicer-granular")
+[![YouTube](http://i.ytimg.com/vi/gGwrM2HmIXU/hqdefault.jpg)](https://www.youtube.com/watch?v=gGwrM2HmIXU)
 
 the design here is optimized for maintainability and extendability. for instance, it will be simple to add many new parameters without altering lots of areas of the code.
 
