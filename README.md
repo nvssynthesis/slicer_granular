@@ -1,4 +1,4 @@
-slicer-granular is a granular synthesizer. it is intended as the ground of a granular synth that will incorporate TSARA (timbre space analysis-resynthesis) capabilities. this version does not possess these abilities; they will be added in an upcoming virtual instrument (probably to be called TSARA-granular) once the basic features are in top shape.
+slicer-granular is a granular synthesizer, developed primarily as the basis of a more advanced [granular synth that incorporates timbre space navigation (TSN) capabilities](https://github.com/nvssynthesis/tsn-granular/). 
 
 ![](picture.jpg "slicer-granular")
 
