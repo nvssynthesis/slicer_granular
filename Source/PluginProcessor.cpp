@@ -240,12 +240,18 @@ void Slicer_granularAudioProcessor::getStateInformation (juce::MemoryBlock& dest
     // You should use this method to store your parameters in the memory block.
     // You could do that either as raw data, or use the XML or ValueTree classes
     // as intermediaries to make it easy to save and load complex data.
+	juce::MemoryOutputStream stream(destData, true);
+	apvts.state.writeToStream(stream);
 }
 
 void Slicer_granularAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
     // You should use this method to restore your parameters from this memory block,
     // whose contents will have been created by the getStateInformation() call.
+	juce::ValueTree tree = juce::ValueTree::readFromData(data, sizeInBytes);
+	if (tree.isValid()) {
+		apvts.state = tree;
+	}
 }
 
 juce::AudioProcessorValueTreeState::ParameterLayout Slicer_granularAudioProcessor::createParameterLayout(){
