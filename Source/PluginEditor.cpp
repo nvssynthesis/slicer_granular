@@ -108,8 +108,13 @@ void Slicer_granularAudioProcessorEditor::readFile (const juce::File& fileToRead
 	std::string fn = fileToRead.getFullPathName().toStdString();
 	
 	audioProcessor.writeToLog(fn);
-	audioProcessor.loadAudioFile(fileToRead, waveformAndPositionComponent.wc.getThumbnail() );
+	audioProcessor.loadAudioFile(fileToRead);
 
+	auto thumbnail = waveformAndPositionComponent.wc.getThumbnail();
+	if (thumbnail){
+		thumbnail->setSource (new juce::FileInputSource (fileToRead));	// owned by thumbnail, no worry about delete
+	}
+	
 	fileComp.setCurrentFile(fileToRead, true);
 }
 

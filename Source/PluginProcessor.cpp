@@ -150,11 +150,11 @@ void Slicer_granularAudioProcessor::writeToLog(std::string const s){
 	fileLogger.writeToLog (s);
 }
 
-void Slicer_granularAudioProcessor::loadAudioFilesFolder(juce::File const folder, juce::AudioThumbnail *const thumbnail){
-	
+void Slicer_granularAudioProcessor::loadAudioFilesFolder(juce::File const folder){
+	DBG("loadAudioFilesFolder is not implemented!");
 }
 
-void Slicer_granularAudioProcessor::loadAudioFile(juce::File const f, juce::AudioThumbnail *const thumbnail){
+void Slicer_granularAudioProcessor::loadAudioFile(juce::File const f){
 	juce::AudioFormatReader *reader = formatManager.createReaderFor(f);
 	if (!reader){
 		std::cerr << "could not read file: " << f.getFileName() << "\n";
@@ -186,11 +186,9 @@ void Slicer_granularAudioProcessor::loadAudioFile(juce::File const f, juce::Audi
 				 0,		// int64 startSampleInSource
 				 newLength);	// int numSamplesToRead
 	
-	if (thumbnail){
-		thumbnail->setSource (new juce::FileInputSource (f));	// owned by thumbnail, no worry about delete
-	}
-	
 	audioBuffersChannels.updateActive();
+	
+	apvts.state.setProperty(audioFilePathValueTreeStateIdentifier, f.getFullPathName(), nullptr);
 	delete reader;
 }
 

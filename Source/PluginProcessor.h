@@ -60,9 +60,9 @@ public:
 	juce::AudioProcessorValueTreeState apvts;
 	
 	void writeToLog(std::string const s);
-	void loadAudioFile(juce::File const f, juce::AudioThumbnail *const thumbnail);
+	void loadAudioFile(juce::File const f);
 	
-	void loadAudioFilesFolder(juce::File const folder, juce::AudioThumbnail *const thumbnail);
+	void loadAudioFilesFolder(juce::File const folder);
 	
 	bool triggerValFromEditor {false};
 
@@ -90,6 +90,7 @@ private:
 	float normalizationValue {1.f};	// a MULTIPLIER for the overall output, based on the inverse of the absolute max value for the current sample
 	juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
 	juce::AudioFormatManager formatManager;
+	const juce::String audioFilePathValueTreeStateIdentifier {"sampleFilePath"};
 	
 	nvs::util::RMS<float> rms;
 	nvs::util::WeightedAveragingBuffer<float, 3> weightAvg;

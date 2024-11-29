@@ -26,7 +26,6 @@ struct AttachedSlider {
 		_slider.setSliderStyle(sliderStyle);
 		_slider.setNormalisableRange(getNormalizableRange<double>(param));
 		_slider.setTextBoxStyle(entryPos, false, 50, 25);
-//		_slider.setValue(getParamDefault(param));
 
 		_slider.setColour(Slider::ColourIds::thumbColourId, juce::Colours::palevioletred);
 		_slider.setColour(Slider::ColourIds::textBoxTextColourId, juce::Colours::lightgrey);
