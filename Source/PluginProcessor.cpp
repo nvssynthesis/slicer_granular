@@ -179,6 +179,7 @@ void Slicer_granularAudioProcessor::setStateInformation (const void* data, int s
 }
 
 void Slicer_granularAudioProcessor::loadAudioFile(juce::File const f){
+	fileLogger.logMessage("Slicer_granularAudioProcessor::loadAudioFile");
 	juce::AudioFormatReader *reader = formatManager.createReaderFor(f);
 	if (!reader){
 		std::cerr << "could not read file: " << f.getFileName() << "\n";
@@ -216,7 +217,7 @@ void Slicer_granularAudioProcessor::loadAudioFile(juce::File const f){
 
 	juce::Value sampleFilePathValue = apvts.state.getPropertyAsValue(audioFilePathValueTreeStateIdentifier, nullptr, true);
 	sampleFilePathValue.setValue(sampleFilePath);
-	fileLogger.logMessage("Processor: sending change message");
+	fileLogger.logMessage("Processor: sending change message from loadAudioFile");
 	sendChangeMessage();	// notify editor to draw thumbnail
 	
 	delete reader;

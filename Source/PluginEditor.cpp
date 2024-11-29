@@ -106,15 +106,19 @@ void Slicer_granularAudioProcessorEditor::resized()
 
 void Slicer_granularAudioProcessorEditor::readFile (const juce::File& fileToRead)
 {
+	audioProcessor.writeToLog("Slicer_granularAudioProcessorEditor::readFile");
+
 	if (fileToRead.isDirectory()){
 		// handle whole directory
 	}
 	if (! fileToRead.existsAsFile())
 		return;
+	
+	audioProcessor.writeToLog("... in readFile, file exists as a single file. ");
 
 	std::string fn = fileToRead.getFullPathName().toStdString();
-	
-	audioProcessor.writeToLog(fn);
+
+	audioProcessor.writeToLog("fileToRead: " + fn);
 	audioProcessor.loadAudioFile(fileToRead);
 }
 
@@ -134,15 +138,18 @@ void Slicer_granularAudioProcessorEditor::drawThumbnail(){
  processor needs to now actually inform fileComp of the fileToRead
  */
 void Slicer_granularAudioProcessorEditor::changeListenerCallback (juce::ChangeBroadcaster* source){
+	audioProcessor.writeToLog("editor: changeListenerCallback.");
 	if (source == &audioProcessor){
-		audioProcessor.writeToLog("editor: changeListenerCallback. Notating fileComp and drawing thumbnail...");
+		audioProcessor.writeToLog("changeListenerCallback: source is audioProcessor. Notating fileComp and drawing thumbnail...");
 		notateFileComp();
 		drawThumbnail();
 	}
 }
 void Slicer_granularAudioProcessorEditor::filenameComponentChanged (juce::FilenameComponent* fileComponentThatHasChanged)
 {
+	audioProcessor.writeToLog("editor: filenameComponentChanged.");
 	if (fileComponentThatHasChanged == &fileComp){
+		audioProcessor.writeToLog("filenameComponentChanged: source is fileComp. triggering readFile...");
 		readFile (fileComp.getCurrentFile());
 	}
 }
