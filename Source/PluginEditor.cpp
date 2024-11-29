@@ -19,9 +19,8 @@ Slicer_granularAudioProcessorEditor::Slicer_granularAudioProcessorEditor (Slicer
 ,	audioProcessor (p)
 {
 //	p.addListener(this); // would this make updating file path from processor to inform editor work properly?
-	p.addChangeListener(this);
+	audioProcessor.addChangeListener(this);
 	DBG("editor constructor, editor has been added as Processor listener");
-//	p.sendChangeMessage();
 	notateFileComp();
 	drawThumbnail();
 	
@@ -44,6 +43,7 @@ Slicer_granularAudioProcessorEditor::Slicer_granularAudioProcessorEditor (Slicer
 Slicer_granularAudioProcessorEditor::~Slicer_granularAudioProcessorEditor()
 {
 	fileComp.pushRecentFilesToFile();
+	audioProcessor.removeChangeListener(this);
 }
 //==============================================================================
 void Slicer_granularAudioProcessorEditor::updateToggleState (juce::Button* button, juce::String name, bool &valToAffect)
