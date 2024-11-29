@@ -16,12 +16,13 @@ Slicer_granularAudioProcessor::Slicer_granularAudioProcessor()
                      #endif
                        ),
 #endif
-apvts(*this, nullptr, "PARAMETERS", createParameterLayout())
-, granular_synth_juce(lastSampleRate, audioBuffersChannels.getActiveSpanRef(),
-					  audioBuffersChannels.getFileSampleRateRef(), num_voices)
-, logFile(juce::File::getSpecialLocation(juce::File::SpecialLocationType::currentApplicationFile).
+logFile(juce::File::getSpecialLocation(juce::File::SpecialLocationType::currentApplicationFile).
 		  getSiblingFile("log.txt"))
 , fileLogger(logFile, "hello")
+, apvts(*this, nullptr, "PARAMETERS", createParameterLayout())
+, granular_synth_juce(lastSampleRate, audioBuffersChannels.getActiveSpanRef(),
+					  audioBuffersChannels.getFileSampleRateRef(), num_voices)
+
 {
 	juce::Logger::setCurrentLogger (&fileLogger);
 	formatManager.registerBasicFormats();
@@ -33,13 +34,6 @@ Slicer_granularAudioProcessor::~Slicer_granularAudioProcessor()
 	fileLogger.trimFileSize(logFile , 64 * 1024);
 	juce::Logger::setCurrentLogger (nullptr);
 	formatManager.clearFormats();
-#if defined(DEBUG_BUILD) | defined(DEBUG) | defined(_DEBUG)
-	fmt::print("TsaraGranularAudioProcessor DEBUG MODE\n");
-	logFile.appendText("debug\n");
-#else
-//	fmt::print("TsaraGranularAudioProcessor RELEASE MODE\n");
-//	logFile.appendText("release\n");
-#endif
 }
 
 //==============================================================================
@@ -151,7 +145,7 @@ void Slicer_granularAudioProcessor::writeToLog(std::string const s){
 }
 
 void Slicer_granularAudioProcessor::loadAudioFilesFolder(juce::File const folder){
-	DBG("loadAudioFilesFolder is not implemented!");
+	fileLogger.logMessage("loadAudioFilesFolder is not implemented!");
 }
 
 void Slicer_granularAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
@@ -159,7 +153,7 @@ void Slicer_granularAudioProcessor::getStateInformation (juce::MemoryBlock& dest
 	// You should use this method to store your parameters in the memory block.
 	// You could do that either as raw data, or use the XML or ValueTree classes
 	// as intermediaries to make it easy to save and load complex data.
-	DBG("getStateInformation");
+	fileLogger.logMessage("getStateInformation");
 	auto state = apvts.copyState();
 	std::unique_ptr<juce::XmlElement> xml (state.createXml());
 	
@@ -170,7 +164,7 @@ void Slicer_granularAudioProcessor::setStateInformation (const void* data, int s
 {
 	// You should use this method to restore your parameters from this memory block,
 	// whose contents will have been created by the getStateInformation() call.
-	DBG("setStateInformation");
+	fileLogger.logMessage("setStateInformation");
 	std::unique_ptr<juce::XmlElement> xmlState (getXmlFromBinary (data, sizeInBytes));
 	
 	if (xmlState.get() != nullptr){
@@ -222,7 +216,7 @@ void Slicer_granularAudioProcessor::loadAudioFile(juce::File const f){
 
 	juce::Value sampleFilePathValue = apvts.state.getPropertyAsValue(audioFilePathValueTreeStateIdentifier, nullptr, true);
 	sampleFilePathValue.setValue(sampleFilePath);
-	DBG("Processor: sending change message");
+	fileLogger.logMessage("Processor: sending change message");
 	sendChangeMessage();	// notify editor to draw thumbnail
 	
 	delete reader;
@@ -274,9 +268,7 @@ juce::AudioProcessorEditor* Slicer_granularAudioProcessor::createEditor()
 
 
 juce::AudioProcessorValueTreeState::ParameterLayout Slicer_granularAudioProcessor::createParameterLayout(){
-#if defined(DEBUG_BUILD) | defined(DEBUG) | defined(_DEBUG)
-	fmt::print("createParamLayout\n");
-#endif
+	fileLogger.logMessage("createParamLayout\n");
 	juce::AudioProcessorValueTreeState::ParameterLayout layout;
 	auto mainGranularParams = std::make_unique<juce::AudioProcessorParameterGroup>("Gran", "MainGranularParams", "|");
 	

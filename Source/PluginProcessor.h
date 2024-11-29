@@ -58,6 +58,11 @@ public:
 	void getStateInformation (juce::MemoryBlock& destData) override;
 	void setStateInformation (const void* data, int sizeInBytes) override;
 	
+private:
+	//======logging=======================
+	juce::File logFile;
+	juce::FileLogger fileLogger;
+public:
 	juce::AudioProcessorValueTreeState apvts;
 	
 	void writeToLog(std::string const s);
@@ -98,10 +103,6 @@ private:
 	nvs::util::RMS<float> rms;
 	nvs::util::WeightedAveragingBuffer<float, 3> weightAvg;
 
-
-	//======logging=======================
-	juce::File logFile;
-	juce::FileLogger fileLogger;
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Slicer_granularAudioProcessor)
 };
