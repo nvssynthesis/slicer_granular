@@ -13,10 +13,18 @@
 Slicer_granularAudioProcessorEditor::Slicer_granularAudioProcessorEditor (Slicer_granularAudioProcessor& p)
     : AudioProcessorEditor (&p)
 ,	fileComp(juce::File(), "*.wav;*.aif;*.aiff", "", "Select file to open", false)
+// is it bad that tabbedPages and waveformAndPositionComponent know about processor's members?
 ,	tabbedPages(p.apvts)
 ,	waveformAndPositionComponent(512, p.getAudioFormatManager(), p.apvts)
 ,	audioProcessor (p)
 {
+//	p.addListener(this); // would this make updating file path from processor to inform editor work properly?
+	p.addChangeListener(this);
+	DBG("editor constructor, editor has been added as Processor listener");
+//	p.sendChangeMessage();
+	notateFileComp();
+	drawThumbnail();
+	
 	addAndMakeVisible (fileComp);
 	fileComp.addListener (this);
 	fileComp.getRecentFilesFromUserApplicationDataDirectory();
@@ -109,15 +117,30 @@ void Slicer_granularAudioProcessorEditor::readFile (const juce::File& fileToRead
 	
 	audioProcessor.writeToLog(fn);
 	audioProcessor.loadAudioFile(fileToRead);
+}
 
+void Slicer_granularAudioProcessorEditor::notateFileComp(){
+	auto const s = audioProcessor.getSampleFilePath();
+	fileComp.setCurrentFile(s, true);
+}
+void Slicer_granularAudioProcessorEditor::drawThumbnail(){
+	auto fileToRead = audioProcessor.getSampleFilePath();
 	auto thumbnail = waveformAndPositionComponent.wc.getThumbnail();
 	if (thumbnail){
 		thumbnail->setSource (new juce::FileInputSource (fileToRead));	// owned by thumbnail, no worry about delete
 	}
-	
-	fileComp.setCurrentFile(fileToRead, true);
 }
-
+/*
+ THIS DOESN'T SOLVE A PROBLEM:
+ processor needs to now actually inform fileComp of the fileToRead
+ */
+void Slicer_granularAudioProcessorEditor::changeListenerCallback (juce::ChangeBroadcaster* source){
+	if (source == &audioProcessor){
+		DBG("editor: changeListenerCallback. Notating fileComp and drawing thumbnail...");
+		notateFileComp();
+		drawThumbnail();
+	}
+}
 void Slicer_granularAudioProcessorEditor::filenameComponentChanged (juce::FilenameComponent* fileComponentThatHasChanged)
 {
 	if (fileComponentThatHasChanged == &fileComp){

@@ -14,7 +14,8 @@
 
 //==============================================================================
 
-class Slicer_granularAudioProcessor  : public juce::AudioProcessor
+class Slicer_granularAudioProcessor  : 	public juce::AudioProcessor
+,										public juce::ChangeBroadcaster
                             #if JucePlugin_Enable_ARA
                              , public juce::AudioProcessorARAExtension
                             #endif
@@ -72,6 +73,7 @@ public:
 	juce::AudioFormatManager &getAudioFormatManager(){
 		return formatManager;
 	}
+	juce::String getSampleFilePath() const;
 private:
 	
 	double lastSampleRate 	{ 0.0 };
@@ -91,6 +93,7 @@ private:
 	juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
 	juce::AudioFormatManager formatManager;
 	const juce::String audioFilePathValueTreeStateIdentifier {"sampleFilePath"};
+	juce::String sampleFilePath;
 	
 	nvs::util::RMS<float> rms;
 	nvs::util::WeightedAveragingBuffer<float, 3> weightAvg;

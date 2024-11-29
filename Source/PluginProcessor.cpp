@@ -154,6 +154,36 @@ void Slicer_granularAudioProcessor::loadAudioFilesFolder(juce::File const folder
 	DBG("loadAudioFilesFolder is not implemented!");
 }
 
+void Slicer_granularAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
+{
+	// You should use this method to store your parameters in the memory block.
+	// You could do that either as raw data, or use the XML or ValueTree classes
+	// as intermediaries to make it easy to save and load complex data.
+	DBG("getStateInformation");
+	auto state = apvts.copyState();
+	std::unique_ptr<juce::XmlElement> xml (state.createXml());
+	
+	copyXmlToBinary (*xml, destData);
+}
+
+void Slicer_granularAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
+{
+	// You should use this method to restore your parameters from this memory block,
+	// whose contents will have been created by the getStateInformation() call.
+	DBG("setStateInformation");
+	std::unique_ptr<juce::XmlElement> xmlState (getXmlFromBinary (data, sizeInBytes));
+	
+	if (xmlState.get() != nullptr){
+		if (xmlState->hasTagName (apvts.state.getType())){
+			apvts.replaceState (juce::ValueTree::fromXml (*xmlState));
+			
+			juce::Value sampleFilePath = apvts.state.getPropertyAsValue(audioFilePathValueTreeStateIdentifier, nullptr, true);
+			juce::File const sampleFile = juce::File(sampleFilePath.toString());
+			loadAudioFile(sampleFile);
+		}
+	}
+}
+
 void Slicer_granularAudioProcessor::loadAudioFile(juce::File const f){
 	juce::AudioFormatReader *reader = formatManager.createReaderFor(f);
 	if (!reader){
@@ -179,7 +209,7 @@ void Slicer_granularAudioProcessor::loadAudioFile(juce::File const f){
 		normalizationValue = 1.f;
 	}
 	
-	std::array<float * const, 2> ptrsToWriteTo = audioBuffersChannels.prepareForWrite(newLength, reader->numChannels);
+	std::array<float *const, 2> ptrsToWriteTo = audioBuffersChannels.prepareForWrite(newLength, reader->numChannels);
 	
 	reader->read(&ptrsToWriteTo[0],	// float *const *destChannels
 				 1, 	//reader->numChannels,		// int numDestChannels
@@ -188,10 +218,18 @@ void Slicer_granularAudioProcessor::loadAudioFile(juce::File const f){
 	
 	audioBuffersChannels.updateActive();
 	
-	apvts.state.setProperty(audioFilePathValueTreeStateIdentifier, f.getFullPathName(), nullptr);
+	sampleFilePath = f.getFullPathName();
+
+	juce::Value sampleFilePathValue = apvts.state.getPropertyAsValue(audioFilePathValueTreeStateIdentifier, nullptr, true);
+	sampleFilePathValue.setValue(sampleFilePath);
+	DBG("Processor: sending change message");
+	sendChangeMessage();	// notify editor to draw thumbnail
+	
 	delete reader;
 }
-
+juce::String Slicer_granularAudioProcessor::getSampleFilePath() const {
+	return sampleFilePath;
+}
 void Slicer_granularAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
     juce::ScopedNoDenormals noDenormals;
@@ -233,24 +271,7 @@ juce::AudioProcessorEditor* Slicer_granularAudioProcessor::createEditor()
 }
 
 //==============================================================================
-void Slicer_granularAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
-{
-    // You should use this method to store your parameters in the memory block.
-    // You could do that either as raw data, or use the XML or ValueTree classes
-    // as intermediaries to make it easy to save and load complex data.
-	juce::MemoryOutputStream stream(destData, true);
-	apvts.state.writeToStream(stream);
-}
 
-void Slicer_granularAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
-{
-    // You should use this method to restore your parameters from this memory block,
-    // whose contents will have been created by the getStateInformation() call.
-	juce::ValueTree tree = juce::ValueTree::readFromData(data, sizeInBytes);
-	if (tree.isValid()) {
-		apvts.state = tree;
-	}
-}
 
 juce::AudioProcessorValueTreeState::ParameterLayout Slicer_granularAudioProcessor::createParameterLayout(){
 #if defined(DEBUG_BUILD) | defined(DEBUG) | defined(_DEBUG)

@@ -19,8 +19,9 @@
 /** TODO:
 */
 
-class Slicer_granularAudioProcessorEditor  : public juce::AudioProcessorEditor
-,											 public juce::FilenameComponentListener
+class Slicer_granularAudioProcessorEditor  : 	public juce::AudioProcessorEditor
+,												public juce::ChangeListener
+,											 	public juce::FilenameComponentListener
 {
 public:
     Slicer_granularAudioProcessorEditor (Slicer_granularAudioProcessor&);
@@ -30,12 +31,16 @@ public:
     //==============================================================================
     void paint (juce::Graphics&) override;
     void resized() override;
-	
+	//===============================================================================
+	void changeListenerCallback (juce::ChangeBroadcaster* source) override;
 	//===============================================================================
 	void filenameComponentChanged (juce::FilenameComponent* fileComponentThatHasChanged) override;
-	void readFile (const juce::File& fileToRead);
+private:
 	//===============================================================================
-
+	void readFile (const juce::File& fileToRead);
+	void drawThumbnail();
+	void notateFileComp();
+	//===============================================================================
 private:
 	juce::ComponentBoundsConstrainer constrainer;
 
