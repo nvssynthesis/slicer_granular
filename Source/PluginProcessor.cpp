@@ -18,7 +18,7 @@ Slicer_granularAudioProcessor::Slicer_granularAudioProcessor()
 #endif
 logFile(juce::File::getSpecialLocation(juce::File::SpecialLocationType::currentApplicationFile).
 		  getSiblingFile("log.txt"))
-, fileLogger(logFile, "hello")
+, fileLogger(logFile, "slicer_granular logging")
 , apvts(*this, nullptr, "PARAMETERS", createParameterLayout())
 , granular_synth_juce(lastSampleRate, audioBuffersChannels.getActiveSpanRef(),
 					  audioBuffersChannels.getFileSampleRateRef(), num_voices)
@@ -153,9 +153,9 @@ void Slicer_granularAudioProcessor::getStateInformation (juce::MemoryBlock& dest
 	// You should use this method to store your parameters in the memory block.
 	// You could do that either as raw data, or use the XML or ValueTree classes
 	// as intermediaries to make it easy to save and load complex data.
-	fileLogger.logMessage("getStateInformation");
 	auto state = apvts.copyState();
 	std::unique_ptr<juce::XmlElement> xml (state.createXml());
+	fileLogger.logMessage("getStateInformation:\n" + xml->toString());
 	
 	copyXmlToBinary (*xml, destData);
 }
@@ -164,8 +164,8 @@ void Slicer_granularAudioProcessor::setStateInformation (const void* data, int s
 {
 	// You should use this method to restore your parameters from this memory block,
 	// whose contents will have been created by the getStateInformation() call.
-	fileLogger.logMessage("setStateInformation");
 	std::unique_ptr<juce::XmlElement> xmlState (getXmlFromBinary (data, sizeInBytes));
+	fileLogger.logMessage("setStateInformation:\n" + xmlState->toString());
 	
 	if (xmlState.get() != nullptr){
 		if (xmlState->hasTagName (apvts.state.getType())){
