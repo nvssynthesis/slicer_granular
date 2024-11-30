@@ -9,13 +9,13 @@
 */
 
 #pragma once
-#include <span>
 #include <map>
 #include <algorithm>
 #include <numeric>
 
 #include "../Random.h"
 #include "../../nvs_libraries/nvs_libraries/include/nvs_gen.h"
+#include <JuceHeader.h>
 
 /*** TODO:
  -envelopes shall have secondary parameter, plateau, which clips the window before parzen
@@ -96,8 +96,10 @@ inline double durationGaussianToProcessingSpace(double hertz, double sampleRate)
 
 class genGranPoly1 {
 public:
-	genGranPoly1(double const &sampleRate, std::span<float> const &wavespan, double const &fileSampleRate, unsigned long seed = 1234567890UL);
+	genGranPoly1(double const &sampleRate, juce::AudioBuffer<float>& waveBuffer, double const &fileSampleRate, unsigned long seed = 1234567890UL);
 	virtual ~genGranPoly1() = default;
+	//====================================================================================
+	void setAudioBlock(juce::AudioBuffer<float>& waveBuffer);
 	//====================================================================================
 	inline void noteOn(noteNumber_t note, velocity_t velocity){	// reassign to noteHolder
 		doNoteOn(note, velocity);
@@ -164,7 +166,7 @@ public:
 	
 protected:
 	double const &_sampleRate;				// dependent on owning instantiator, subject to change value from above
-	std::span<float> const &_wavespan;		// dependent on owning instantiator, subject to change address from above
+	juce::dsp::AudioBlock<float> _waveBlock;	// dependent on owning instantiator, subject to change address from above
 	double const &_fileSampleRate;
 	//================================================================================
 	virtual void doNoteOn(noteNumber_t note, velocity_t velocity);	// reassign to noteHolder
@@ -208,10 +210,11 @@ private:
 
 class genGrain1 {
 public:
-	explicit genGrain1(double const &sampleRate, std::span<float> const &waveSpan, double const &fileSampleRate,
+	explicit genGrain1(double const &sampleRate, juce::AudioBuffer<float>& waveBuffer, double const &fileSampleRate,
 					   nvs::rand::BoxMuller *const gaussian_rng, int newId = -1);
 
 	void setId(int newId);
+	void setAudioBlock(juce::AudioBuffer<float>& audioBuffer);
 	void setRatioBasedOnNote(float ratioForNote);
 	void setAmplitudeBasedOnNote(float velocity);
 	void setTranspose(float semitones);
@@ -236,7 +239,7 @@ public:
 	outs operator()(float trig_in);
 private:
 	double const &_sampleRate;
-	std::span<float> const &_waveSpan;
+	juce::dsp::AudioBlock<float> _waveBlock;
 	double const &_fileSampleRate;
 	
 	nvs::rand::BoxMuller *const _gaussian_rng_ptr;

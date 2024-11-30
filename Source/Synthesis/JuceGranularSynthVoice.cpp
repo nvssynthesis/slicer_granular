@@ -11,6 +11,10 @@
 #include "JuceGranularSynthVoice.h"
 
 
+void GranularVoice::setAudioBlock(juce::AudioBuffer<float>& audioBuffer){
+	granularSynthGuts->setAudioBlock(audioBuffer);
+}
+
 void GranularVoice::prepareToPlay(double sampleRate, int samplesPerBlock)
  {
 	adsr.reset();

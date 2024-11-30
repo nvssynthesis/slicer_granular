@@ -42,15 +42,15 @@ inline float fastSemitonesToRatio(float semitones){
 	return nvs::util::semitonesRatioTable(semitones);
 }
 genGranPoly1::genGranPoly1(double const &sampleRate,
-						   std::span<float> const &wavespan, double const &fileSampleRate,
+						   juce::AudioBuffer<float>& waveBuffer, double const &fileSampleRate,
 						   unsigned long seed)
 :
 _sampleRate(sampleRate),
-_wavespan(wavespan),
+_waveBlock(waveBuffer),
 _fileSampleRate(fileSampleRate),
 _gaussian_rng(seed),
 _normalizer(1.f / std::sqrt(static_cast<float>(std::clamp(N_GRAINS, 1UL, 10000UL)))),
-_grains(N_GRAINS, genGrain1(_sampleRate, wavespan, fileSampleRate, &_gaussian_rng) ),
+_grains(N_GRAINS, genGrain1(_sampleRate, waveBuffer, fileSampleRate, &_gaussian_rng) ),
 _grainIndices(N_GRAINS),
 _phasorInternalTrig(_sampleRate)
 {
@@ -59,6 +59,13 @@ _phasorInternalTrig(_sampleRate)
 	}
 	std::iota(_grainIndices.begin(), _grainIndices.end(), 0);
 }
+void genGranPoly1::setAudioBlock(juce::AudioBuffer<float>& waveBuffer){
+	_waveBlock = juce::dsp::AudioBlock<float>(waveBuffer);
+	for (auto &g : _grains){
+		g.setAudioBlock(waveBuffer);
+	}
+}
+
 
 void genGranPoly1::doNoteOn(noteNumber_t note, velocity_t velocity){
 	// reassign to noteHolder
@@ -113,7 +120,7 @@ void genGranPoly1::doSetSpeed(float newSpeed){
 }
 void genGranPoly1::doSetPosition(double positionNormalized){
 	//	positionNormalized = nvs::memoryless::clamp<double>(positionNormalized, 0.0, 1.0);
-	double pos = positionNormalized * static_cast<double>(_wavespan.size());
+	double pos = positionNormalized * static_cast<double>(_waveBlock.getNumSamples());
 	for (auto &g : _grains)
 		g.setPosition(pos);
 }
@@ -141,7 +148,7 @@ void genGranPoly1::doSetTransposeRandomness(float randomness){
 		g.setTransposeRand(randomness);
 }
 void genGranPoly1::doSetPositionRandomness(double randomness){
-	randomness = randomness * static_cast<double>(_wavespan.size());
+	randomness = randomness * static_cast<double>(_waveBlock.getNumSamples());
 	for (auto &g : _grains)
 		g.setPositionRand(randomness);
 }
@@ -209,10 +216,10 @@ std::array<float, 2> genGranPoly1::doProcess(float triggerIn){
 	return output;
 }
 //=====================================================================================
-genGrain1::genGrain1(double const &sampleRate, std::span<float> const &waveSpan, double const &fileSampleRate,
+genGrain1::genGrain1(double const &sampleRate, juce::AudioBuffer<float> &waveBuffer, double const &fileSampleRate,
 					 nvs::rand::BoxMuller *const gaussian_rng, int newId)
 :	_sampleRate(sampleRate)
-,	_waveSpan(waveSpan)
+,	_waveBlock(waveBuffer)
 ,	_fileSampleRate(fileSampleRate)
 ,	_gaussian_rng_ptr(gaussian_rng)
 ,	grainId(newId)
@@ -235,6 +242,10 @@ void genGrain1::setAmplitudeBasedOnNote(float velocity){
 void genGrain1::setId(int newId){
 	grainId = newId;
 }
+void genGrain1::setAudioBlock(juce::AudioBuffer<float>& audioBuffer){
+	_waveBlock = juce::dsp::AudioBlock<float>(audioBuffer);
+}
+
 void genGrain1::setTranspose(float ratio){
 	transpose_lgr.setMu(ratio);
 }
@@ -282,7 +293,7 @@ genGrain1::outs genGrain1::operator()(float trig_in){
 	}
 	
 	using namespace nvs;
-	size_t const waveSize = _waveSpan.size();
+	size_t const waveSize = _waveBlock.getNumSamples();
 	
 	std::array<float, 2> gater;
 	if (_busyHisto.val){
@@ -323,7 +334,7 @@ genGrain1::outs genGrain1::operator()(float trig_in){
 #pragma message("need to test this skew-based sample index offset further")
 	double const  sampleIndex = (sampleReadRate * accumVal) + latch_position_result - (latch_skew_result * latch_duration_result);
 	float sample = gen::peek<float, gen::interpolationModes_e::hermite, gen::boundsModes_e::wrap>(
-												_waveSpan.data(), sampleIndex, _waveSpan.size());
+												_waveBlock.getChannelPointer(0), sampleIndex, _waveBlock.getNumSamples());
 	
 	assert(latch_result_transposeEffectiveTotalMultiplier > 0.f);
 	double const windowIdx = memoryless::clamp(

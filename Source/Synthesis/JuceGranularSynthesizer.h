@@ -10,14 +10,16 @@
 
 #pragma once
 #include "./JuceGranularSynthVoice.h"
+#include <JuceHeader.h>
 
 class GranularSynthesizer	:	public juce::Synthesiser
 {
 public:
 	GranularSynthesizer(double const &sampleRate,
-						std::span<float> const &wavespan, double const &fileSampleRate,
+						juce::AudioBuffer<float> &waveBuffer, double const &fileSampleRate,
 						unsigned int num_voices);
-		
+	void setAudioBlock(juce::AudioBuffer<float> &waveBuffer);
+	
 	template <auto Start, auto End>
 	constexpr void granularMainParamSet(juce::AudioProcessorValueTreeState &apvts){
 

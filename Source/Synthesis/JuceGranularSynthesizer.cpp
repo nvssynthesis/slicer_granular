@@ -16,14 +16,14 @@
 #include "./JuceGranularSynthSound.h"
 
 GranularSynthesizer::GranularSynthesizer(double const &sampleRate,
-					std::span<float> const &wavespan, double const &fileSampleRate,
+					juce::AudioBuffer<float> &waveBuffer, double const &fileSampleRate,
 					unsigned int num_voices)
 {
 	clearVoices();
 	unsigned long seed = 1234567890UL;
 	for (int i = 0; i < num_voices; ++i) {
 
-		auto voice = new GranularVoice(std::make_unique<nvs::gran::genGranPoly1>(sampleRate, wavespan, fileSampleRate, seed));
+		auto voice = new GranularVoice(std::make_unique<nvs::gran::genGranPoly1>(sampleRate, waveBuffer, fileSampleRate, seed));
 		addVoice(voice);
 		++seed;
 	}
@@ -32,3 +32,13 @@ GranularSynthesizer::GranularSynthesizer(double const &sampleRate,
 	auto sound = new GranularSound;
 	addSound(sound);
 }
+void GranularSynthesizer::setAudioBlock(juce::AudioBuffer<float> &waveBuffer){
+	for (int i = 0; i < getNumVoices(); i++)
+	{
+		if (auto voice = dynamic_cast<GranularVoice*>(getVoice(i)))
+		{
+			voice->setAudioBlock(waveBuffer);
+		}
+	}
+}
+

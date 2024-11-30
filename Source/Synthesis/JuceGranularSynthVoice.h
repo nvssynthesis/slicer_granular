@@ -36,7 +36,8 @@ public:
 	GranularVoice(std::unique_ptr<nvs::gran::genGranPoly1> synthGuts)
 	:	granularSynthGuts{std::move(synthGuts)}
 	{}
-	
+	void setAudioBlock(juce::AudioBuffer<float>& audioBuffer);
+
 	void prepareToPlay(double sampleRate, int samplesPerBlock);	// why not override??
 	
 	void startNote (int midiNoteNumber, float velocity, juce::SynthesiserSound *sound, int currentPitchWheelPosition) override;

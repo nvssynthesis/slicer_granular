@@ -80,11 +80,14 @@ public:
 	}
 	juce::String getSampleFilePath() const;
 private:
+	juce::SpinLock audioBlockLock;
 	
 	double lastSampleRate 	{ 0.0 };
 	int lastSamplesPerBlock { 0 };
 	
-	AudioBuffersChannels audioBuffersChannels;
+//	AudioBuffersChannels audioBuffersChannels;
+	juce::AudioBuffer<float> audioBuffer;
+	double lastFileSampleRate { 0.0 };
 	
 	GranularSynthesizer granular_synth_juce;
 	constexpr static int num_voices =

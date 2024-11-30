@@ -20,8 +20,8 @@ logFile(juce::File::getSpecialLocation(juce::File::SpecialLocationType::currentA
 		  getSiblingFile("log.txt"))
 , fileLogger(logFile, "slicer_granular logging")
 , apvts(*this, nullptr, "PARAMETERS", createParameterLayout())
-, granular_synth_juce(lastSampleRate, audioBuffersChannels.getActiveSpanRef(),
-					  audioBuffersChannels.getFileSampleRateRef(), num_voices)
+, granular_synth_juce(lastSampleRate, audioBuffer,
+					  lastFileSampleRate, num_voices)
 
 {
 	juce::Logger::setCurrentLogger (&fileLogger);
@@ -180,14 +180,21 @@ void Slicer_granularAudioProcessor::setStateInformation (const void* data, int s
 
 void Slicer_granularAudioProcessor::loadAudioFile(juce::File const f){
 	fileLogger.logMessage("Slicer_granularAudioProcessor::loadAudioFile");
+
+	const juce::SpinLock::ScopedLockType lock(audioBlockLock);
+	
+//	if (!lock.isLocked()){
+//		fileLogger.logMessage("loadAudioFile: lock was not locked. Returning early without loading audio file.");
+//		return;
+//	}
+		
 	juce::AudioFormatReader *reader = formatManager.createReaderFor(f);
 	if (!reader){
 		std::cerr << "could not read file: " << f.getFileName() << "\n";
 		return;
 	}
-	int newLength = static_cast<int>(reader->lengthInSamples);
-	double const sr = reader->sampleRate;
-	audioBuffersChannels.setFileSampleRate(sr);	// use double precision; this is the reference that is shared with the synth
+	
+	lastFileSampleRate = reader->sampleRate;
 
 	std::array<juce::Range<float> , 1> normalizationRange;
 	reader->readMaxLevels(0, reader->lengthInSamples, &normalizationRange[0], 1);
@@ -204,14 +211,16 @@ void Slicer_granularAudioProcessor::loadAudioFile(juce::File const f){
 		normalizationValue = 1.f;
 	}
 	
-	std::array<float *const, 2> ptrsToWriteTo = audioBuffersChannels.prepareForWrite(newLength, reader->numChannels);
+	audioBuffer.setSize(reader->numChannels, reader->lengthInSamples);
 	
-	reader->read(&ptrsToWriteTo[0],	// float *const *destChannels
-				 1, 	//reader->numChannels,		// int numDestChannels
-				 0,		// int64 startSampleInSource
-				 newLength);	// int numSamplesToRead
-	
-	audioBuffersChannels.updateActive();
+	reader->read(audioBuffer.getArrayOfWritePointers(),	// float *const *destChannels
+				 reader->numChannels,		// int numDestChannels
+				 0,							// int64 startSampleInSource
+				 reader->lengthInSamples);	// int numSamplesToRead
+#pragma message("May be tiny amount of time where the synths' AudioBlock is invalid. Need juce::SpinLock?")
+	granular_synth_juce.setAudioBlock(audioBuffer);
+#pragma message("No update active vs. inactive. Problem?")
+//	audioBuffersChannels.updateActive();
 	
 	sampleFilePath = f.getFullPathName();
 
@@ -227,7 +236,14 @@ juce::String Slicer_granularAudioProcessor::getSampleFilePath() const {
 }
 void Slicer_granularAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
+//	writeToLog("Slicer_granularAudioProcessor::processBlock");
     juce::ScopedNoDenormals noDenormals;
+	const juce::SpinLock::ScopedTryLockType lock(audioBlockLock);
+	
+	if (!lock.isLocked()){
+		writeToLog("ProcessBlock: lock was not locked; exiting early.");
+		return;
+	}
     auto totalNumInputChannels  = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
 
@@ -238,7 +254,8 @@ void Slicer_granularAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
 	granular_synth_juce.granularMainParamSet<0, num_voices>(apvts);	// this just sets the params internal to the granular synth (effectively a voice)
 	granular_synth_juce.envelopeParamSet<0, num_voices>(apvts);
 	
-	if ( !(audioBuffersChannels.getActiveSpanRef().size()) ){
+#pragma message("Is this really the best cautionary check we could do?")
+	if ( (!audioBuffer.getNumSamples()) || (!audioBuffer.getNumChannels())){
 		return;
 	}
 	
@@ -246,6 +263,7 @@ void Slicer_granularAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
 						  midiMessages,
 						  0,
 						  buffer.getNumSamples());
+	
 	// apply gain based on normalizationValue
 	// limit with jlimit?
 	
