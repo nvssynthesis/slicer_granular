@@ -183,11 +183,6 @@ void Slicer_granularAudioProcessor::loadAudioFile(juce::File const f){
 
 	const juce::SpinLock::ScopedLockType lock(audioBlockLock);
 	
-//	if (!lock.isLocked()){
-//		fileLogger.logMessage("loadAudioFile: lock was not locked. Returning early without loading audio file.");
-//		return;
-//	}
-		
 	juce::AudioFormatReader *reader = formatManager.createReaderFor(f);
 	if (!reader){
 		std::cerr << "could not read file: " << f.getFileName() << "\n";
@@ -217,15 +212,12 @@ void Slicer_granularAudioProcessor::loadAudioFile(juce::File const f){
 				 reader->numChannels,		// int numDestChannels
 				 0,							// int64 startSampleInSource
 				 reader->lengthInSamples);	// int numSamplesToRead
-#pragma message("May be tiny amount of time where the synths' AudioBlock is invalid. Need juce::SpinLock?")
+
 	granular_synth_juce.setAudioBlock(audioBuffer);
-#pragma message("No update active vs. inactive. Problem?")
-//	audioBuffersChannels.updateActive();
-	
-	sampleFilePath = f.getFullPathName();
+
 
 	juce::Value sampleFilePathValue = apvts.state.getPropertyAsValue(audioFilePathValueTreeStateIdentifier, nullptr, true);
-	sampleFilePathValue.setValue(sampleFilePath);
+	sampleFilePathValue.setValue(f.getFullPathName());
 	fileLogger.logMessage("Processor: sending change message from loadAudioFile");
 	sendChangeMessage();	// notify editor to draw thumbnail
 	

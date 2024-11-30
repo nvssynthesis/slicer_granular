@@ -13,12 +13,10 @@
 Slicer_granularAudioProcessorEditor::Slicer_granularAudioProcessorEditor (Slicer_granularAudioProcessor& p)
     : AudioProcessorEditor (&p)
 ,	fileComp(juce::File(), "*.wav;*.aif;*.aiff", "", "Select file to open", false)
-// is it bad that tabbedPages and waveformAndPositionComponent know about processor's members?
 ,	tabbedPages(p.apvts)
 ,	waveformAndPositionComponent(512, p.getAudioFormatManager(), p.apvts)
 ,	audioProcessor (p)
 {
-//	p.addListener(this); // would this make updating file path from processor to inform editor work properly?
 	audioProcessor.addChangeListener(this);
 	notateFileComp();
 	drawThumbnail();
