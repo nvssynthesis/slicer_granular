@@ -22,6 +22,7 @@
 class Slicer_granularAudioProcessorEditor  : 	public juce::AudioProcessorEditor
 ,												public juce::ChangeListener
 ,											 	public juce::FilenameComponentListener
+, private juce::Timer
 {
 public:
     Slicer_granularAudioProcessorEditor (Slicer_granularAudioProcessor&);
@@ -35,6 +36,7 @@ public:
 	void changeListenerCallback (juce::ChangeBroadcaster* source) override;
 	//===============================================================================
 	void filenameComponentChanged (juce::FilenameComponent* fileComponentThatHasChanged) override;
+	void timerCallback() override;
 private:
 	//===============================================================================
 	void readFile (const juce::File& fileToRead);

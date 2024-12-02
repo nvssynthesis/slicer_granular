@@ -12,14 +12,17 @@
 
 Slicer_granularAudioProcessorEditor::Slicer_granularAudioProcessorEditor (Slicer_granularAudioProcessor& p)
     : AudioProcessorEditor (&p)
-,	fileComp(juce::File(), "*.wav;*.aif;*.aiff", "", "Select file to open", false)
+,	fileComp(p.getSampleFilePath(), "*.wav;*.aif;*.aiff", "", "Select file to open", false)
 ,	tabbedPages(p.apvts)
 ,	waveformAndPositionComponent(512, p.getAudioFormatManager(), p.apvts)
 ,	audioProcessor (p)
 {
 	audioProcessor.addChangeListener(this);
+//	auto const fp = audioProcessor.getSampleFilePath();
+//	fileComp.setCurrentFile(fp, false);
 	notateFileComp();
 	drawThumbnail();
+	startTimer(100);
 	
 	addAndMakeVisible (fileComp);
 	fileComp.addListener (this);
@@ -36,7 +39,12 @@ Slicer_granularAudioProcessorEditor::Slicer_granularAudioProcessorEditor (Slicer
     setSize (800, 500);
 	setResizable(true, true);
 }
-
+void Slicer_granularAudioProcessorEditor::timerCallback() {
+	// this is a workaround for now to address the behavior of the file comp notating the DAW's path
+	audioProcessor.writeToLog("Timer callback notating file comp");
+	notateFileComp();
+	stopTimer();
+}
 Slicer_granularAudioProcessorEditor::~Slicer_granularAudioProcessorEditor()
 {
 	fileComp.pushRecentFilesToFile();
@@ -104,25 +112,32 @@ void Slicer_granularAudioProcessorEditor::resized()
 
 void Slicer_granularAudioProcessorEditor::readFile (const juce::File& fileToRead)
 {
-	audioProcessor.writeToLog("Slicer_granularAudioProcessorEditor::readFile");
+	audioProcessor.writeToLog("Slicer_granularAudioProcessorEditor::readFile, reading " + fileToRead.getFullPathName());
 
 	if (fileToRead.isDirectory()){
 		// handle whole directory
+		audioProcessor.loadAudioFilesFolder(fileToRead);
 	}
-	if (! fileToRead.existsAsFile())
+	if (! fileToRead.existsAsFile()){
+		audioProcessor.writeToLog("... in readFile, file does NOT exist as a single file. ");
+
 		return;
+	}
 	
 	audioProcessor.writeToLog("... in readFile, file exists as a single file. ");
 
-	std::string fn = fileToRead.getFullPathName().toStdString();
+	juce::String fn = fileToRead.getFullPathName();
 
 	audioProcessor.writeToLog("fileToRead: " + fn);
-	audioProcessor.loadAudioFile(fileToRead);
+	audioProcessor.loadAudioFile(fileToRead, false);
+	notateFileComp();
+	drawThumbnail();
 }
 
 void Slicer_granularAudioProcessorEditor::notateFileComp(){
 	auto const s = audioProcessor.getSampleFilePath();
-	fileComp.setCurrentFile(s, true);
+	audioProcessor.writeToLog("Notating fileComp with " + s);
+	fileComp.setCurrentFile(s, true, juce::dontSendNotification);
 }
 void Slicer_granularAudioProcessorEditor::drawThumbnail(){
 	auto fileToRead = audioProcessor.getSampleFilePath();
@@ -136,18 +151,26 @@ void Slicer_granularAudioProcessorEditor::drawThumbnail(){
  processor needs to now actually inform fileComp of the fileToRead
  */
 void Slicer_granularAudioProcessorEditor::changeListenerCallback (juce::ChangeBroadcaster* source){
-	audioProcessor.writeToLog("editor: changeListenerCallback.");
+	audioProcessor.writeToLog("editor: changeListenerCallback.\n\n\n");
 	if (source == &audioProcessor){
 		audioProcessor.writeToLog("changeListenerCallback: source is audioProcessor. Notating fileComp and drawing thumbnail...");
+//		juce::MessageManager::callAsync([this]() {
 		notateFileComp();
 		drawThumbnail();
+//		});
 	}
 }
 void Slicer_granularAudioProcessorEditor::filenameComponentChanged (juce::FilenameComponent* fileComponentThatHasChanged)
 {
 	audioProcessor.writeToLog("editor: filenameComponentChanged.");
 	if (fileComponentThatHasChanged == &fileComp){
-		audioProcessor.writeToLog("filenameComponentChanged: source is fileComp. triggering readFile...");
-		readFile (fileComp.getCurrentFile());
+		const juce::File file = fileComp.getCurrentFile();
+		audioProcessor.writeToLog("     filenameComponentChanged: source is fileComp. triggering readFile with " + file.getFullPathName());
+		if (file.existsAsFile()) {
+			audioProcessor.writeToLog(file.getFullPathName() + " exists as file.");
+			audioProcessor.loadAudioFile(file, false);  // Ensure this is thread-safe
+			notateFileComp();
+			drawThumbnail();
+	   }
 	}
 }

@@ -140,12 +140,8 @@ bool Slicer_granularAudioProcessor::isBusesLayoutSupported (const BusesLayout& l
 }
 #endif
 
-void Slicer_granularAudioProcessor::writeToLog(std::string const s){
+void Slicer_granularAudioProcessor::writeToLog(juce::String const &s){
 	fileLogger.writeToLog (s);
-}
-
-void Slicer_granularAudioProcessor::loadAudioFilesFolder(juce::File const folder){
-	fileLogger.logMessage("loadAudioFilesFolder is not implemented!");
 }
 
 void Slicer_granularAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
@@ -155,7 +151,7 @@ void Slicer_granularAudioProcessor::getStateInformation (juce::MemoryBlock& dest
 	// as intermediaries to make it easy to save and load complex data.
 	auto state = apvts.copyState();
 	std::unique_ptr<juce::XmlElement> xml (state.createXml());
-	fileLogger.logMessage("getStateInformation:\n" + xml->toString());
+	fileLogger.logMessage("getStateInformation"); // + xml->toString()
 	
 	copyXmlToBinary (*xml, destData);
 }
@@ -165,7 +161,7 @@ void Slicer_granularAudioProcessor::setStateInformation (const void* data, int s
 	// You should use this method to restore your parameters from this memory block,
 	// whose contents will have been created by the getStateInformation() call.
 	std::unique_ptr<juce::XmlElement> xmlState (getXmlFromBinary (data, sizeInBytes));
-	fileLogger.logMessage("setStateInformation:\n" + xmlState->toString());
+	fileLogger.logMessage("setStateInformation"); // + xmlState->toString()
 	
 	if (xmlState.get() != nullptr){
 		if (xmlState->hasTagName (apvts.state.getType())){
@@ -173,16 +169,14 @@ void Slicer_granularAudioProcessor::setStateInformation (const void* data, int s
 			
 			juce::Value sampleFilePath = apvts.state.getPropertyAsValue(audioFilePathValueTreeStateIdentifier, nullptr, true);
 			juce::File const sampleFile = juce::File(sampleFilePath.toString());
-			loadAudioFile(sampleFile);
+			loadAudioFile(sampleFile, true);
 		}
 	}
 }
-
-void Slicer_granularAudioProcessor::loadAudioFile(juce::File const f){
-	fileLogger.logMessage("Slicer_granularAudioProcessor::loadAudioFile");
-
-	const juce::SpinLock::ScopedLockType lock(audioBlockLock);
-	
+void Slicer_granularAudioProcessor::loadAudioFilesFolder(juce::File const folder){
+	fileLogger.logMessage("loadAudioFilesFolder is not implemented!");
+}
+void Slicer_granularAudioProcessor::readInAudioFileToBuffer(juce::File const f){
 	juce::AudioFormatReader *reader = formatManager.createReaderFor(f);
 	if (!reader){
 		std::cerr << "could not read file: " << f.getFileName() << "\n";
@@ -190,7 +184,7 @@ void Slicer_granularAudioProcessor::loadAudioFile(juce::File const f){
 	}
 	
 	lastFileSampleRate = reader->sampleRate;
-
+	
 	std::array<juce::Range<float> , 1> normalizationRange;
 	reader->readMaxLevels(0, reader->lengthInSamples, &normalizationRange[0], 1);
 	
@@ -205,23 +199,31 @@ void Slicer_granularAudioProcessor::loadAudioFile(juce::File const f){
 		std::cerr << "either the sample is digital silence, or something's gone wrong\n";
 		normalizationValue = 1.f;
 	}
-	
-	audioBuffer.setSize(reader->numChannels, reader->lengthInSamples);
+	int lengthInSamps = static_cast<int>(reader->lengthInSamples);
+	audioBuffer.setSize(reader->numChannels, lengthInSamps);
 	
 	reader->read(audioBuffer.getArrayOfWritePointers(),	// float *const *destChannels
 				 reader->numChannels,		// int numDestChannels
 				 0,							// int64 startSampleInSource
-				 reader->lengthInSamples);	// int numSamplesToRead
-
-	granular_synth_juce.setAudioBlock(audioBuffer);
-
-
-	juce::Value sampleFilePathValue = apvts.state.getPropertyAsValue(audioFilePathValueTreeStateIdentifier, nullptr, true);
-	sampleFilePathValue.setValue(f.getFullPathName());
-	fileLogger.logMessage("Processor: sending change message from loadAudioFile");
-	sendChangeMessage();	// notify editor to draw thumbnail
-	
+				 lengthInSamps);	// int numSamplesToRead
 	delete reader;
+}
+void Slicer_granularAudioProcessor::loadAudioFile(juce::File const f, bool notifyEditor){
+	fileLogger.logMessage("Slicer_granularAudioProcessor::loadAudioFile");
+
+	const juce::SpinLock::ScopedLockType lock(audioBlockLock);
+	readInAudioFileToBuffer(f);
+	granular_synth_juce.setAudioBlock(audioBuffer);
+	{
+		juce::Value sampleFilePathValue = apvts.state.getPropertyAsValue(audioFilePathValueTreeStateIdentifier, nullptr, true);
+		sampleFilePathValue.setValue(f.getFullPathName());
+		sampleFilePath = sampleFilePathValue.toString();
+		apvts.state.setProperty(audioFilePathValueTreeStateIdentifier, sampleFilePathValue, nullptr);
+	}
+	if (notifyEditor){
+		fileLogger.logMessage("Processor: sending change message from loadAudioFile");
+		sendChangeMessage();	// notify editor to draw thumbnail
+	}
 }
 juce::String Slicer_granularAudioProcessor::getSampleFilePath() const {
 	return sampleFilePath;
@@ -233,7 +235,7 @@ void Slicer_granularAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
 	const juce::SpinLock::ScopedTryLockType lock(audioBlockLock);
 	
 	if (!lock.isLocked()){
-		writeToLog("ProcessBlock: lock was not locked; exiting early.");
+//		writeToLog("ProcessBlock: lock was not locked; exiting early.");
 		return;
 	}
     auto totalNumInputChannels  = getTotalNumInputChannels();

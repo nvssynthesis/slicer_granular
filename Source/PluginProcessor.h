@@ -65,8 +65,8 @@ private:
 public:
 	juce::AudioProcessorValueTreeState apvts;
 	
-	void writeToLog(std::string const s);
-	void loadAudioFile(juce::File const f);
+	void writeToLog(juce::String const &s);
+	void loadAudioFile(juce::File const f, bool notifyEditor);
 	
 	void loadAudioFilesFolder(juce::File const folder);
 	
@@ -100,6 +100,7 @@ private:
 	float normalizationValue {1.f};	// a MULTIPLIER for the overall output, based on the inverse of the absolute max value for the current sample
 	juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
 	juce::AudioFormatManager formatManager;
+	void readInAudioFileToBuffer(juce::File const f);
 	const juce::String audioFilePathValueTreeStateIdentifier {"sampleFilePath"};
 	juce::String sampleFilePath;
 	
