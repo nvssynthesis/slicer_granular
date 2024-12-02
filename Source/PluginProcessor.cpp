@@ -177,6 +177,8 @@ void Slicer_granularAudioProcessor::loadAudioFilesFolder(juce::File const folder
 	fileLogger.logMessage("loadAudioFilesFolder is not implemented!");
 }
 void Slicer_granularAudioProcessor::readInAudioFileToBuffer(juce::File const f){
+	fileLogger.logMessage("                                          ...reading file" + f.getFullPathName());
+
 	juce::AudioFormatReader *reader = formatManager.createReaderFor(f);
 	if (!reader){
 		std::cerr << "could not read file: " << f.getFileName() << "\n";
@@ -207,11 +209,15 @@ void Slicer_granularAudioProcessor::readInAudioFileToBuffer(juce::File const f){
 				 0,							// int64 startSampleInSource
 				 lengthInSamps);	// int numSamplesToRead
 	delete reader;
+	fileLogger.logMessage("                                          ...file read successful");
+
 }
 void Slicer_granularAudioProcessor::loadAudioFile(juce::File const f, bool notifyEditor){
 	fileLogger.logMessage("Slicer_granularAudioProcessor::loadAudioFile");
 
 	const juce::SpinLock::ScopedLockType lock(audioBlockLock);
+	fileLogger.logMessage("                                          ...locked");
+
 	readInAudioFileToBuffer(f);
 	granular_synth_juce.setAudioBlock(audioBuffer);
 	{
@@ -235,35 +241,35 @@ void Slicer_granularAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
 	const juce::SpinLock::ScopedTryLockType lock(audioBlockLock);
 	
 	if (!lock.isLocked()){
-//		writeToLog("ProcessBlock: lock was not locked; exiting early.");
+		writeToLog("processBlock:        lock was not locked; exiting early.");
 		return;
 	}
-    auto totalNumInputChannels  = getTotalNumInputChannels();
-    auto totalNumOutputChannels = getTotalNumOutputChannels();
-
-	for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i){
+	for (auto i = getTotalNumInputChannels(); i < getTotalNumOutputChannels(); ++i){
 		buffer.clear (i, 0, buffer.getNumSamples());
 	}
 	
-	granular_synth_juce.granularMainParamSet<0, num_voices>(apvts);	// this just sets the params internal to the granular synth (effectively a voice)
-	granular_synth_juce.envelopeParamSet<0, num_voices>(apvts);
-	
 #pragma message("Is this really the best cautionary check we could do?")
 	if ( (!audioBuffer.getNumSamples()) || (!audioBuffer.getNumChannels())){
+		writeToLog("processBlock:              sample buffer empty; exiting early.");
 		return;
 	}
-	
+	granular_synth_juce.granularMainParamSet<0, num_voices>(apvts);	// this just sets the params internal to the granular synth (effectively a voice)
+	granular_synth_juce.envelopeParamSet<0, num_voices>(apvts);
+
 	granular_synth_juce.renderNextBlock(buffer,
 						  midiMessages,
 						  0,
 						  buffer.getNumSamples());
-	
-	// apply gain based on normalizationValue
-	// limit with jlimit?
-	
-	const auto rms_val = rms.query();
-	rmsInformant.val = rms_val;
-	rmsWAinformant.val = weightAvg(rms_val);
+	float rms = 0.f;
+	for (auto ch = 0; ch < buffer.getNumChannels(); ++ch){
+		rms += buffer.getRMSLevel(ch, 0, buffer.getNumSamples());
+	}
+	if (jrand.nextFloat() > 0.97f){
+		writeToLog("processBlock:                       processed as normal with energy " + juce::String(rms));
+		if (rms == 0.f){
+			writeToLog("                 HAD ZERO ENERGY!");
+		}
+	}
 }
 
 //==============================================================================

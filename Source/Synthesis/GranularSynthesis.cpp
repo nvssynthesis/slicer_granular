@@ -229,7 +229,9 @@ genGrain1::genGrain1(double const &sampleRate, juce::AudioBuffer<float> &waveBuf
 ,	skew_lgr(*_gaussian_rng_ptr, {0.5f, 0.f})
 ,	plateau_lgr(*_gaussian_rng_ptr, {1.f, 0.f})
 ,	pan_lgr(*_gaussian_rng_ptr, {0.5f, 0.23f})
-{}
+{
+	assert (gaussian_rng);
+}
 
 void genGrain1::setRatioBasedOnNote(float ratioForNote){
 	_ratioBasedOnNote = ratioForNote;
@@ -287,6 +289,7 @@ void genGrain1::setPanRand(float panRand){
 
 genGrain1::outs genGrain1::operator()(float trig_in){
 	outs o;
+	assert(_gaussian_rng_ptr != nullptr);
 	if (!_gaussian_rng_ptr){
 		o.audio = o.audio_R = 0.f;
 		return o;
@@ -331,6 +334,8 @@ genGrain1::outs genGrain1::operator()(float trig_in){
 	assert(_fileSampleRate > 0.0);
 	double const sampleReadRate = _fileSampleRate / _sampleRate;
 	
+	assert (_waveBlock.getNumChannels() > 0);
+	assert (_waveBlock.getNumSamples() > 0);
 #pragma message("need to test this skew-based sample index offset further")
 	double const  sampleIndex = (sampleReadRate * accumVal) + latch_position_result - (latch_skew_result * latch_duration_result);
 	float sample = gen::peek<float, gen::interpolationModes_e::hermite, gen::boundsModes_e::wrap>(
@@ -340,7 +345,8 @@ genGrain1::outs genGrain1::operator()(float trig_in){
 	double const windowIdx = memoryless::clamp(
 				   (accumVal * latch_duration_result) / latch_result_transposeEffectiveTotalMultiplier,
 													   0.0, 1.0);
-
+	assert (windowIdx == windowIdx);	// is not NaN
+	assert (!std::isinf(windowIdx));
 	
 	float win = nvs::gen::triangle<float, false>(static_cast<float>(windowIdx), latch_skew_result);
 	

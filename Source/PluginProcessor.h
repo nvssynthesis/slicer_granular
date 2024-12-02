@@ -11,7 +11,6 @@
 #include "misc_util.h"
 #include "params.h"
 
-
 //==============================================================================
 
 class Slicer_granularAudioProcessor  : 	public juce::AudioProcessor
@@ -81,6 +80,7 @@ public:
 	juce::String getSampleFilePath() const;
 private:
 	juce::SpinLock audioBlockLock;
+	juce::Random jrand;
 	
 	double lastSampleRate 	{ 0.0 };
 	int lastSamplesPerBlock { 0 };
@@ -103,10 +103,8 @@ private:
 	void readInAudioFileToBuffer(juce::File const f);
 	const juce::String audioFilePathValueTreeStateIdentifier {"sampleFilePath"};
 	juce::String sampleFilePath;
-	
-	nvs::util::RMS<float> rms;
-	nvs::util::WeightedAveragingBuffer<float, 3> weightAvg;
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Slicer_granularAudioProcessor)
 };
+
