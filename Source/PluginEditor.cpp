@@ -13,8 +13,8 @@
 Slicer_granularAudioProcessorEditor::Slicer_granularAudioProcessorEditor (Slicer_granularAudioProcessor& p)
     : AudioProcessorEditor (&p)
 ,	fileComp(p.getSampleFilePath(), "*.wav;*.aif;*.aiff", "", "Select file to open", false)
-,	tabbedPages(p.apvts)
-,	waveformAndPositionComponent(512, p.getAudioFormatManager(), p.apvts)
+,	tabbedPages(p.getAPVTS())
+,	waveformAndPositionComponent(512, p.getAudioFormatManager(), p.getAPVTS())
 ,	audioProcessor (p)
 {
 	audioProcessor.addChangeListener(this);

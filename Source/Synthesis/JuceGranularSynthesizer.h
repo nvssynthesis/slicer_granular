@@ -22,9 +22,7 @@ public:
 	
 	template <auto Start, auto End>
 	constexpr void granularMainParamSet(juce::AudioProcessorValueTreeState &apvts){
-
 		if constexpr (Start < End){
-			
 			juce::SynthesiserVoice* voice = getVoice(Start);
 			if (GranularVoice* granularVoice = dynamic_cast<GranularVoice*>(voice)){
 				granularVoice->granularMainParamSet<0, static_cast<int>(params_e::count_main_granular_params)>(apvts);
@@ -51,5 +49,7 @@ public:
 			envelopeParamSet<Start + 1, End>(apvts);
 		}
 	}
+	void setLogger(std::function<void(const juce::String&)> loggerFunction);
 private:
+	std::function<void(const juce::String&)> logger = nullptr;
 };

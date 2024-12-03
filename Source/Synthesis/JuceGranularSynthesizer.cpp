@@ -12,7 +12,6 @@
 #if defined(DEBUG_BUILD) | defined(DEBUG) | defined(_DEBUG)
 #include <fmt/core.h>
 #endif
-
 #include "./JuceGranularSynthSound.h"
 
 GranularSynthesizer::GranularSynthesizer(double const &sampleRate,
@@ -33,6 +32,7 @@ GranularSynthesizer::GranularSynthesizer(double const &sampleRate,
 	addSound(sound);
 }
 void GranularSynthesizer::setAudioBlock(juce::AudioBuffer<float> &waveBuffer){
+	logger("GranularSynthesizer: setAudioBlock");
 	for (int i = 0; i < getNumVoices(); i++)
 	{
 		if (auto voice = dynamic_cast<GranularVoice*>(getVoice(i)))
@@ -41,4 +41,12 @@ void GranularSynthesizer::setAudioBlock(juce::AudioBuffer<float> &waveBuffer){
 		}
 	}
 }
-
+void GranularSynthesizer::setLogger(std::function<void(const juce::String&)> loggerFunction)
+{
+	logger = loggerFunction;
+	for (int i = 0; i < getNumVoices(); i++){
+		if (auto voice = dynamic_cast<GranularVoice*>(getVoice(i))){
+			voice->setLogger(loggerFunction);
+		}
+	}
+}

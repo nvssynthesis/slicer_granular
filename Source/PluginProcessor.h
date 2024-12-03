@@ -57,37 +57,25 @@ public:
 	void getStateInformation (juce::MemoryBlock& destData) override;
 	void setStateInformation (const void* data, int sizeInBytes) override;
 	
-private:
-	//======logging=======================
-	juce::File logFile;
-	juce::FileLogger fileLogger;
-public:
-	juce::AudioProcessorValueTreeState apvts;
-	
 	void writeToLog(juce::String const &s);
 	void loadAudioFile(juce::File const f, bool notifyEditor);
 	
 	void loadAudioFilesFolder(juce::File const folder);
-	
-	bool triggerValFromEditor {false};
 
-	nvs::util::EditorInformant<float> rmsInformant;
-	nvs::util::EditorInformant<float> rmsWAinformant;
-	
-	juce::AudioFormatManager &getAudioFormatManager(){
-		return formatManager;
-	}
 	juce::String getSampleFilePath() const;
+	juce::AudioFormatManager &getAudioFormatManager();
+	juce::AudioProcessorValueTreeState &getAPVTS();
 private:
+	//======logging=======================
+	juce::File logFile;
+	juce::FileLogger fileLogger;
+	void logIfNaNOrInf(juce::AudioBuffer<float> buffer);
+	
+	juce::AudioProcessorValueTreeState apvts;
+	
 	juce::SpinLock audioBlockLock;
-	juce::Random jrand;
 	
 	double lastSampleRate 	{ 0.0 };
-	int lastSamplesPerBlock { 0 };
-	
-//	AudioBuffersChannels audioBuffersChannels;
-	juce::AudioBuffer<float> audioBuffer;
-	double lastFileSampleRate { 0.0 };
 	
 	GranularSynthesizer granular_synth_juce;
 	constexpr static int num_voices =
@@ -96,15 +84,37 @@ private:
 #else
 										16;
 #endif
-	
-	float normalizationValue {1.f};	// a MULTIPLIER for the overall output, based on the inverse of the absolute max value for the current sample
-	juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
-	juce::AudioFormatManager formatManager;
+	void loadAudioFileAsync(juce::File const file, bool notifyEditor);
 	void readInAudioFileToBuffer(juce::File const f);
 	const juce::String audioFilePathValueTreeStateIdentifier {"sampleFilePath"};
 	juce::String sampleFilePath;
-
+	juce::AudioBuffer<float> sampleBuffer;
+	double lastFileSampleRate { 0.0 };
+	float normalizationValue {1.f};	// a MULTIPLIER for the overall output, based on the inverse of the absolute max value for the current sample
+	
+	juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
+	juce::AudioFormatManager formatManager;
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Slicer_granularAudioProcessor)
 };
 
+class AudioFileLoaderThread : public juce::Thread
+{
+public:
+	AudioFileLoaderThread(Slicer_granularAudioProcessor& processor, juce::File fileToLoad, bool notify)
+		: juce::Thread("AudioFileLoader"),
+		  audioProcessor(processor),
+		  file(fileToLoad),
+		  notifyEditor(notify) {}
+
+	void run() override
+	{
+		// Perform the file loading operation
+		audioProcessor.loadAudioFile(file, notifyEditor);
+	}
+
+private:
+	Slicer_granularAudioProcessor& audioProcessor;
+	juce::File file;
+	bool notifyEditor;
+};

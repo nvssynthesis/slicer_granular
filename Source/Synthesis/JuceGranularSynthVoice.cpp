@@ -14,7 +14,11 @@
 void GranularVoice::setAudioBlock(juce::AudioBuffer<float>& audioBuffer){
 	granularSynthGuts->setAudioBlock(audioBuffer);
 }
-
+void GranularVoice::setLogger(std::function<void(const juce::String&)> loggerFunction)
+{
+	logger = loggerFunction;
+	granularSynthGuts->setLogger(loggerFunction);
+}
 void GranularVoice::prepareToPlay(double sampleRate, int samplesPerBlock)
  {
 	adsr.reset();
@@ -59,9 +63,12 @@ void GranularVoice::renderNextBlock (juce::AudioBuffer< float > &outputBuffer, i
 {
 	float trigger = 0.f;
 	auto totalNumOutputChannels = outputBuffer.getNumChannels();
-
+	
 	for (auto samp = startSample; samp < startSample + numSamples; ++samp){
 		double envelope = adsr.getNextSample();
+		if (envelope != envelope){
+			logger("ENVELOPE has NaN");
+		}
 		std::array<float, 2> output = (*granularSynthGuts)(trigger);
 		output[0] *= envelope;
 		output[1] *= envelope;
@@ -74,6 +81,16 @@ void GranularVoice::renderNextBlock (juce::AudioBuffer< float > &outputBuffer, i
 	if (!isVoiceActive()){
 		granularSynthGuts->clearNotes();
 		granularSynthGuts->noteOff(lastMidiNoteNumber);
+	}
+	float rms = 0.f;
+	for (auto ch = 0; ch < outputBuffer.getNumChannels(); ++ch){
+		rms += (outputBuffer.getRMSLevel(ch, 0, outputBuffer.getNumSamples()));
+		if (rms != rms){
+			logger("rms is NaN !!!!!");
+		}
+		if (std::isinf(rms)){
+			logger("rms is inf !!!!!");
+		}
 	}
 }
 void GranularVoice::pitchWheelMoved (int newPitchWheelValue) {

@@ -20,11 +20,16 @@ logFile(juce::File::getSpecialLocation(juce::File::SpecialLocationType::currentA
 		  getSiblingFile("log.txt"))
 , fileLogger(logFile, "slicer_granular logging")
 , apvts(*this, nullptr, "PARAMETERS", createParameterLayout())
-, granular_synth_juce(lastSampleRate, audioBuffer,
+, granular_synth_juce(lastSampleRate, sampleBuffer,
 					  lastFileSampleRate, num_voices)
 
 {
 	juce::Logger::setCurrentLogger (&fileLogger);
+	granular_synth_juce.setLogger([this](const juce::String& message)
+	{
+		if (fileLogger.getCurrentLogger())
+			fileLogger.logMessage(message);
+	});
 	formatManager.registerBasicFormats();
 	granular_synth_juce.setNoteStealingEnabled (true);
 }
@@ -100,8 +105,6 @@ void Slicer_granularAudioProcessor::changeProgramName (int index, const juce::St
 void Slicer_granularAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
 	lastSampleRate = sampleRate;
-	lastSamplesPerBlock = samplesPerBlock;
-	
 	granular_synth_juce.setCurrentPlaybackSampleRate (sampleRate);
 	for (int i = 0; i < granular_synth_juce.getNumVoices(); i++)
 	{
@@ -140,28 +143,25 @@ bool Slicer_granularAudioProcessor::isBusesLayoutSupported (const BusesLayout& l
 }
 #endif
 
-void Slicer_granularAudioProcessor::writeToLog(juce::String const &s){
+void Slicer_granularAudioProcessor::writeToLog(juce::String const &s) {
 	fileLogger.writeToLog (s);
 }
 
 void Slicer_granularAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
-	// You should use this method to store your parameters in the memory block.
-	// You could do that either as raw data, or use the XML or ValueTree classes
-	// as intermediaries to make it easy to save and load complex data.
+	// Store parameters in memory block
 	auto state = apvts.copyState();
 	std::unique_ptr<juce::XmlElement> xml (state.createXml());
-	fileLogger.logMessage("getStateInformation"); // + xml->toString()
+	fileLogger.logMessage("getStateInformation");
 	
 	copyXmlToBinary (*xml, destData);
 }
 
 void Slicer_granularAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
-	// You should use this method to restore your parameters from this memory block,
-	// whose contents will have been created by the getStateInformation() call.
+	// Restore parameters from memory block
 	std::unique_ptr<juce::XmlElement> xmlState (getXmlFromBinary (data, sizeInBytes));
-	fileLogger.logMessage("setStateInformation"); // + xmlState->toString()
+	fileLogger.logMessage("setStateInformation");
 	
 	if (xmlState.get() != nullptr){
 		if (xmlState->hasTagName (apvts.state.getType())){
@@ -189,8 +189,6 @@ void Slicer_granularAudioProcessor::readInAudioFileToBuffer(juce::File const f){
 	
 	std::array<juce::Range<float> , 1> normalizationRange;
 	reader->readMaxLevels(0, reader->lengthInSamples, &normalizationRange[0], 1);
-	
-	//#pragma message ("make use of normalization")
 	auto min = normalizationRange[0].getStart();
 	auto max = normalizationRange[0].getEnd();
 	
@@ -202,15 +200,20 @@ void Slicer_granularAudioProcessor::readInAudioFileToBuffer(juce::File const f){
 		normalizationValue = 1.f;
 	}
 	int lengthInSamps = static_cast<int>(reader->lengthInSamples);
-	audioBuffer.setSize(reader->numChannels, lengthInSamps);
+	sampleBuffer.setSize(reader->numChannels, lengthInSamps);
 	
-	reader->read(audioBuffer.getArrayOfWritePointers(),	// float *const *destChannels
+	reader->read(sampleBuffer.getArrayOfWritePointers(),	// float *const *destChannels
 				 reader->numChannels,		// int numDestChannels
 				 0,							// int64 startSampleInSource
 				 lengthInSamps);	// int numSamplesToRead
 	delete reader;
 	fileLogger.logMessage("                                          ...file read successful");
 
+}
+void Slicer_granularAudioProcessor::loadAudioFileAsync(juce::File const file, bool notifyEditor)
+{
+	auto* loader = new AudioFileLoaderThread(*this, file, notifyEditor);
+	loader->startThread(); // Starts the thread
 }
 void Slicer_granularAudioProcessor::loadAudioFile(juce::File const f, bool notifyEditor){
 	fileLogger.logMessage("Slicer_granularAudioProcessor::loadAudioFile");
@@ -219,7 +222,7 @@ void Slicer_granularAudioProcessor::loadAudioFile(juce::File const f, bool notif
 	fileLogger.logMessage("                                          ...locked");
 
 	readInAudioFileToBuffer(f);
-	granular_synth_juce.setAudioBlock(audioBuffer);
+	granular_synth_juce.setAudioBlock(sampleBuffer);
 	{
 		juce::Value sampleFilePathValue = apvts.state.getPropertyAsValue(audioFilePathValueTreeStateIdentifier, nullptr, true);
 		sampleFilePathValue.setValue(f.getFullPathName());
@@ -228,48 +231,51 @@ void Slicer_granularAudioProcessor::loadAudioFile(juce::File const f, bool notif
 	}
 	if (notifyEditor){
 		fileLogger.logMessage("Processor: sending change message from loadAudioFile");
-		sendChangeMessage();	// notify editor to draw thumbnail
+		juce::MessageManager::callAsync([this]() { sendChangeMessage(); });
 	}
 }
 juce::String Slicer_granularAudioProcessor::getSampleFilePath() const {
 	return sampleFilePath;
 }
-void Slicer_granularAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
-{
-//	writeToLog("Slicer_granularAudioProcessor::processBlock");
-    juce::ScopedNoDenormals noDenormals;
-	const juce::SpinLock::ScopedTryLockType lock(audioBlockLock);
-	
-	if (!lock.isLocked()){
-		writeToLog("processBlock:        lock was not locked; exiting early.");
-		return;
-	}
-	for (auto i = getTotalNumInputChannels(); i < getTotalNumOutputChannels(); ++i){
-		buffer.clear (i, 0, buffer.getNumSamples());
-	}
-	
-#pragma message("Is this really the best cautionary check we could do?")
-	if ( (!audioBuffer.getNumSamples()) || (!audioBuffer.getNumChannels())){
-		writeToLog("processBlock:              sample buffer empty; exiting early.");
-		return;
-	}
-	granular_synth_juce.granularMainParamSet<0, num_voices>(apvts);	// this just sets the params internal to the granular synth (effectively a voice)
-	granular_synth_juce.envelopeParamSet<0, num_voices>(apvts);
-
-	granular_synth_juce.renderNextBlock(buffer,
-						  midiMessages,
-						  0,
-						  buffer.getNumSamples());
+juce::AudioProcessorValueTreeState &Slicer_granularAudioProcessor::getAPVTS(){
+	return apvts;
+}
+juce::AudioFormatManager &Slicer_granularAudioProcessor::getAudioFormatManager(){
+	return formatManager;
+}
+void Slicer_granularAudioProcessor::logIfNaNOrInf(juce::AudioBuffer<float> buffer){
 	float rms = 0.f;
 	for (auto ch = 0; ch < buffer.getNumChannels(); ++ch){
 		rms += buffer.getRMSLevel(ch, 0, buffer.getNumSamples());
 	}
-	if (jrand.nextFloat() > 0.97f){
-		writeToLog("processBlock:                       processed as normal with energy " + juce::String(rms));
-		if (rms == 0.f){
-			writeToLog("                 HAD ZERO ENERGY!");
-		}
+	if (rms != rms) {
+		writeToLog("processBlock:						rms was NaN");
 	}
+	if (std::isinf(rms)) {
+		writeToLog("processBlock:						rms was Inf");
+	}
+}
+
+void Slicer_granularAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
+{
+    juce::ScopedNoDenormals noDenormals;
+	for (auto i = getTotalNumInputChannels(); i < getTotalNumOutputChannels(); ++i){
+		buffer.clear (i, 0, buffer.getNumSamples());
+	}
+	
+	const juce::SpinLock::ScopedTryLockType lock(audioBlockLock);
+	if (!lock.isLocked()){
+		writeToLog("processBlock:        lock was not locked; exiting early.");
+		return;
+	}
+
+	granular_synth_juce.granularMainParamSet<0, num_voices>(apvts);	// this just sets the params internal to the granular synth (effectively a voice)
+	granular_synth_juce.envelopeParamSet<0, num_voices>(apvts);
+	granular_synth_juce.renderNextBlock(buffer,
+						  midiMessages,
+						  0,
+						  buffer.getNumSamples());
+	logIfNaNOrInf(buffer);
 }
 
 //==============================================================================

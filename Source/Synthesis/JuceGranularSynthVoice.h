@@ -90,11 +90,15 @@ public:
 	nvs::gran::genGranPoly1* getGranularSynthGuts(){
 		return granularSynthGuts.get();
 	}
+	void setLogger(std::function<void(const juce::String&)> loggerFunction);
 private:
 	std::unique_ptr<nvs::gran::genGranPoly1> granularSynthGuts;
 	int lastMidiNoteNumber {0};
 	juce::ADSR adsr;
 	juce::ADSR::Parameters adsrParameters {0.1, 0.3, 0.5, 0.05};
+	
+	
+	std::function<void(const juce::String&)> logger = nullptr;
 
 	
 	float lastTranspose 	{getParamDefault(params_e::transpose)};

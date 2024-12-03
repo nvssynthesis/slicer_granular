@@ -68,6 +68,21 @@ private:
 	MuSigmaPair<float_t> _msp;
 };
 
+//inline void logIfNaN(float f, juce::String const &&description, std::function<void(const juce::String&)> const &loggerFunc){
+////	if (f != f){
+////		loggerFunc("  " + description + " NaN");
+////	}
+////	if (std::isinf(f)){
+////		loggerFunc("  " + description + " inf");
+////	}
+//}
+//template<typename T>
+//inline void logIfNull(T *t, juce::String const &&description, std::function<void(const juce::String&)> const &loggerFunc){
+////	if (t == nullptr){
+////		loggerFunc("  " + description + " nullptr");
+////	}
+//}
+
 inline double millisecondsToSamples(double ms, double sampleRate) {
 	return (ms / 1000.0) * sampleRate;
 }
@@ -163,7 +178,7 @@ public:
 	inline std::array<float, 2> operator()(float triggerIn){
 		return doProcess(triggerIn);
 	}
-	
+	void setLogger(std::function<void(const juce::String&)> loggerFunction);
 protected:
 	double const &_sampleRate;				// dependent on owning instantiator, subject to change value from above
 	juce::dsp::AudioBlock<float> _waveBlock;	// dependent on owning instantiator, subject to change address from above
@@ -206,6 +221,8 @@ private:
 	nvs::gen::ramp2trig<float> _ramp2trig;
 	
 	NoteHolder noteHolder {};
+	
+	std::function<void(const juce::String&)> logger = nullptr;
 };
 
 class genGrain1 {
@@ -237,6 +254,8 @@ public:
 	};
 	
 	outs operator()(float trig_in);
+	
+	void setLogger(std::function<void(const juce::String&)> loggerFunction);
 private:
 	double const &_sampleRate;
 	juce::dsp::AudioBlock<float> _waveBlock;
@@ -260,6 +279,8 @@ private:
 		
 	float _ratioBasedOnNote {1.f};	// =1.f. later this may change according to a settable concert pitch
 	float _amplitudeBasedOnNote {0.f};
+	
+	std::function<void(const juce::String&)> logger = nullptr;
 };
 
 }	// namespace granular
