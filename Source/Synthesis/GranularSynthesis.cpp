@@ -300,7 +300,6 @@ void genGrain1::setPanRand(float panRand){
 genGrain1::outs genGrain1::operator()(float trig_in){
 	outs o;
 	assert(_gaussian_rng_ptr != nullptr);
-//	logIfNull(_gaussian_rng_ptr, "_gaussian_rng_ptr", logger);
 	if (!_gaussian_rng_ptr){
 		o.audio = o.audio_R = 0.f;
 		return o;
@@ -319,14 +318,12 @@ genGrain1::outs genGrain1::operator()(float trig_in){
 	
 	o.next = gater[0];
 	float const  ratioBasedOnNote = _ratioForNoteLatch(_ratioBasedOnNote, gater[1]);
-//	logIfNaN(ratioBasedOnNote, "ratioBasedOnNote", logger);
 	float const  transpose_tmp = transpose_lgr(gater[1]);
 	float const  ratioBasedOnTranspose = fastSemitonesToRatio(transpose_tmp);
 	
 	float const  latch_result_transposeEffectiveTotalMultiplier = memoryless::clamp(
 													ratioBasedOnNote * ratioBasedOnTranspose,
 															0.001f, 1000.f);
-//	logIfNaN(latch_result_transposeEffectiveTotalMultiplier, "latch_result_transposeEffectiveTotalMultiplier", logger);
 
 	_accum(latch_result_transposeEffectiveTotalMultiplier, static_cast<bool>(gater[1]));
 
@@ -348,43 +345,35 @@ genGrain1::outs genGrain1::operator()(float trig_in){
 	assert(_sampleRate > 0.0);
 	assert(_fileSampleRate > 0.0);
 	double const sampleReadRate = _fileSampleRate / _sampleRate;
-//	logIfNaN(sampleReadRate, "sampleReadRate", logger);
 	
 	assert (_waveBlock.getNumChannels() > 0);
 	assert (_waveBlock.getNumSamples() > 0);
 #pragma message("need to test this skew-based sample index offset further")
 	double const  sampleIndex = (sampleReadRate * accumVal) + latch_position_result - (latch_skew_result * latch_duration_result);
-	float sample = gen::peek<float, gen::interpolationModes_e::hermite, gen::boundsModes_e::wrap>(
-												_waveBlock.getChannelPointer(0), sampleIndex, _waveBlock.getNumSamples());
-//	logIfNaN(sample, "sample", logger);
+	float sample = gen::peek<float, gen::interpolationModes_e::hermite, gen::boundsModes_e::wrap>(_waveBlock.getChannelPointer(0), sampleIndex, _waveBlock.getNumSamples());
+
 	assert(latch_result_transposeEffectiveTotalMultiplier > 0.f);
-	double const windowIdx = memoryless::clamp(
-				   (accumVal * latch_duration_result) / latch_result_transposeEffectiveTotalMultiplier,
-													   0.0, 1.0);
-//	logIfNaN(windowIdx, "windowIdx", logger);
+	double const windowIdx = memoryless::clamp((accumVal * latch_duration_result) / latch_result_transposeEffectiveTotalMultiplier,
+											   0.0, 1.0);
 	
 	float win = nvs::gen::triangle<float, false>(static_cast<float>(windowIdx), latch_skew_result);
 	
 	float plateau_latch_result = plateau_lgr(gater[1]);
 	assert (plateau_latch_result > 0.f);
-//	logIfNaN(plateau_latch_result, "plateau_latch_result", logger);
+	
 	win *= plateau_latch_result;
 	win = memoryless::clamp_high(win, 1.f);
 	win = gen::parzen(win);
 	win /= plateau_latch_result;
-//	logIfNaN(win, "win", logger);
 	sample *= win;
 	
 	float const  velAmplitude = _amplitudeForNoteLatch(_amplitudeBasedOnNote, gater[1]);
 	sample *= velAmplitude;
-//	logIfNaN(sample, "sample", logger);
 	float latch_pan_result = pan_lgr(gater[1]);
 	
 	latch_pan_result = memoryless::clamp<float>(latch_pan_result, 0.f, 1.f);
 	latch_pan_result *= 1.570796326794897f;
 	std::array<float, 2> const lr = gen::pol2car<float>(sample, latch_pan_result);
-//	logIfNaN(lr[0], "lr[0]", logger);
-//	logIfNaN(lr[1], "lr[1]", logger);
 	o.audio = 	lr[0];
 	o.audio_R = lr[1];
 	

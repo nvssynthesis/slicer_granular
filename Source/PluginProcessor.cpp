@@ -263,6 +263,23 @@ void Slicer_granularAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
 		buffer.clear (i, 0, buffer.getNumSamples());
 	}
 	
+	float* const*  wp = sampleBuffer.getArrayOfWritePointers();
+	auto const numSampChans = sampleBuffer.getNumChannels();
+	for (int i = 0; i < numSampChans; ++i){
+		if (!wp[i]){
+			writeToLog("processBlock:        sampleBuffer null; exiting early.");
+			return;
+		}
+	}
+	if (sampleBuffer.getNumSamples() == 0){
+		writeToLog("processBlock:        sampleBuffer has length 0; exiting early.");
+		return;
+	}
+	if (numSampChans == 0){
+		writeToLog("processBlock:        sampleBuffer has no channels; exiting early.");
+		return;
+	}
+	
 	const juce::SpinLock::ScopedTryLockType lock(audioBlockLock);
 	if (!lock.isLocked()){
 		writeToLog("processBlock:        lock was not locked; exiting early.");
