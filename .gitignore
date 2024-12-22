@@ -4,3 +4,4 @@ tracing/
 draw/
 JuceLibraryCode/
 ableton_nan_bug_test.sh
+*.trace
