@@ -21,7 +21,6 @@ class Slicer_granularAudioProcessor  : 	public juce::AudioProcessor
 public:
 	//==============================================================================
 	Slicer_granularAudioProcessor();
-	~Slicer_granularAudioProcessor() override;
 	
 	//==============================================================================
 	void prepareToPlay (double sampleRate, int samplesPerBlock) override;
@@ -65,34 +64,36 @@ public:
 	juce::AudioFormatManager &getAudioFormatManager();
 	juce::AudioProcessorValueTreeState &getAPVTS();
 private:
-	//======logging=======================
-	juce::File logFile;
-	juce::FileLogger fileLogger;
-	void logIfNaNOrInf(juce::AudioBuffer<float> buffer);
+	struct LoggingGuts {
+		LoggingGuts();
+		~LoggingGuts();
+		juce::File logFile;
+		juce::FileLogger fileLogger;
+		void logIfNaNOrInf(juce::AudioBuffer<float> buffer);
+	};
+	LoggingGuts loggingGuts;
+	
+	void readInAudioFileToBuffer(juce::File const f);
+	void loadAudioFileAsync(juce::File const file, bool notifyEditor);
+	struct SampleManagementGuts {
+		SampleManagementGuts();
+		~SampleManagementGuts();
+		juce::AudioFormatManager formatManager;
+		const juce::String audioFilePathValueTreeStateIdentifier {"sampleFilePath"};
+		juce::String sampleFilePath;
+		juce::AudioBuffer<float> sampleBuffer;
+		double lastFileSampleRate { 0.0 };
+		float normalizationValue { 1.f };	// a MULTIPLIER for the overall output, based on the inverse of the absolute max value for the current sample
+	};
+	SampleManagementGuts sampleManagementGuts;
 	
 	juce::AudioProcessorValueTreeState apvts;
-	
 	juce::SpinLock audioBlockLock;
 	
-	double lastSampleRate 	{ 0.0 };
-	
+
 	GranularSynthesizer granular_synth_juce;
-	constexpr static int num_voices =
-#if defined(DEBUG_BUILD) | defined(DEBUG) | defined(_DEBUG)
-										6;
-#else
-										16;
-#endif
-	void loadAudioFileAsync(juce::File const file, bool notifyEditor);
-	void readInAudioFileToBuffer(juce::File const f);
-	const juce::String audioFilePathValueTreeStateIdentifier {"sampleFilePath"};
-	juce::String sampleFilePath;
-	juce::AudioBuffer<float> sampleBuffer;
-	double lastFileSampleRate { 0.0 };
-	float normalizationValue {1.f};	// a MULTIPLIER for the overall output, based on the inverse of the absolute max value for the current sample
 	
 	juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
-	juce::AudioFormatManager formatManager;
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Slicer_granularAudioProcessor)
 };
@@ -106,8 +107,7 @@ public:
 		  file(fileToLoad),
 		  notifyEditor(notify) {}
 
-	void run() override
-	{
+	void run() override {
 		// Perform the file loading operation
 		audioProcessor.loadAudioFile(file, notifyEditor);
 	}

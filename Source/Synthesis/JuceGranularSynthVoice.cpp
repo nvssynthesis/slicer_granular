@@ -11,18 +11,24 @@
 #include "JuceGranularSynthVoice.h"
 
 
-void GranularVoice::setAudioBlock(juce::AudioBuffer<float>& audioBuffer){
-	granularSynthGuts->setAudioBlock(audioBuffer);
+void GranularVoice::setAudioBlock(juce::dsp::AudioBlock<float> audioBlock, double fileSampleRate){
+	granularSynthGuts->setAudioBlock(audioBlock, fileSampleRate);
 }
 void GranularVoice::setLogger(std::function<void(const juce::String&)> loggerFunction)
 {
 	logger = loggerFunction;
 	granularSynthGuts->setLogger(loggerFunction);
 }
-void GranularVoice::prepareToPlay(double sampleRate, int samplesPerBlock)
- {
+void GranularVoice::setCurrentPlaybackSampleRate(double sampleRate){
 	adsr.reset();
 	adsr.setSampleRate(sampleRate);
+	granularSynthGuts->setSampleRate(sampleRate);
+	this->SynthesiserVoice::setCurrentPlaybackSampleRate(sampleRate);
+}
+void GranularVoice::prepareToPlay(double sampleRate, int samplesPerBlock)
+{
+	juce::ignoreUnused(samplesPerBlock);
+	setCurrentPlaybackSampleRate(sampleRate);
 }
 
 void GranularVoice::startNote (int midiNoteNumber, float velocity, juce::SynthesiserSound *sound, int currentPitchWheelPosition)

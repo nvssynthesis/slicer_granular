@@ -68,21 +68,6 @@ private:
 	MuSigmaPair<float_t> _msp;
 };
 
-//inline void logIfNaN(float f, juce::String const &&description, std::function<void(const juce::String&)> const &loggerFunc){
-////	if (f != f){
-////		loggerFunc("  " + description + " NaN");
-////	}
-////	if (std::isinf(f)){
-////		loggerFunc("  " + description + " inf");
-////	}
-//}
-//template<typename T>
-//inline void logIfNull(T *t, juce::String const &&description, std::function<void(const juce::String&)> const &loggerFunc){
-////	if (t == nullptr){
-////		loggerFunc("  " + description + " nullptr");
-////	}
-//}
-
 inline double millisecondsToSamples(double ms, double sampleRate) {
 	return (ms / 1000.0) * sampleRate;
 }
@@ -111,10 +96,11 @@ inline double durationGaussianToProcessingSpace(double hertz, double sampleRate)
 
 class genGranPoly1 {
 public:
-	genGranPoly1(double const &sampleRate, juce::AudioBuffer<float>& waveBuffer, double const &fileSampleRate, unsigned long seed = 1234567890UL);
+	genGranPoly1(unsigned long seed = 1234567890UL);
 	virtual ~genGranPoly1() = default;
 	//====================================================================================
-	void setAudioBlock(juce::AudioBuffer<float>& waveBuffer);
+	void setAudioBlock(juce::dsp::AudioBlock<float> waveBlock, double fileSampleRate);
+	void setSampleRate(double sampleRate);
 	//====================================================================================
 	inline void noteOn(noteNumber_t note, velocity_t velocity){	// reassign to noteHolder
 		doNoteOn(note, velocity);
@@ -180,9 +166,7 @@ public:
 	}
 	void setLogger(std::function<void(const juce::String&)> loggerFunction);
 protected:
-	double const &_sampleRate;				// dependent on owning instantiator, subject to change value from above
 	juce::dsp::AudioBlock<float> _waveBlock;	// dependent on owning instantiator, subject to change address from above
-	double const &_fileSampleRate;
 	//================================================================================
 	virtual void doNoteOn(noteNumber_t note, velocity_t velocity);	// reassign to noteHolder
 	virtual void doNoteOff(noteNumber_t note);						// remove from noteHolder
@@ -227,11 +211,11 @@ private:
 
 class genGrain1 {
 public:
-	explicit genGrain1(double const &sampleRate, juce::AudioBuffer<float>& waveBuffer, double const &fileSampleRate,
-					   nvs::rand::BoxMuller *const gaussian_rng, int newId = -1);
+	explicit genGrain1(nvs::rand::BoxMuller *const gaussian_rng, int newId = -1);
 
 	void setId(int newId);
-	void setAudioBlock(juce::AudioBuffer<float>& audioBuffer);
+	void setAudioBlock(juce::dsp::AudioBlock<float> audioBlock, double fileSampleRate);
+	void setSampleRate(double sampleRate);
 	void setRatioBasedOnNote(float ratioForNote);
 	void setAmplitudeBasedOnNote(float velocity);
 	void setTranspose(float semitones);
@@ -257,9 +241,9 @@ public:
 	
 	void setLogger(std::function<void(const juce::String&)> loggerFunction);
 private:
-	double const &_sampleRate;
+	double _playbackSampleRate;
 	juce::dsp::AudioBlock<float> _waveBlock;
-	double const &_fileSampleRate;
+	double _fileSampleRate;
 	
 	nvs::rand::BoxMuller *const _gaussian_rng_ptr;
 	int grainId;

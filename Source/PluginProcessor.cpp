@@ -5,6 +5,39 @@
 #endif
 //==============================================================================
 
+Slicer_granularAudioProcessor::LoggingGuts::LoggingGuts()
+: logFile(juce::File::getSpecialLocation(juce::File::SpecialLocationType::currentApplicationFile).getSiblingFile("log.txt"))
+, fileLogger(logFile, "slicer_granular logging")
+{
+	juce::Logger::setCurrentLogger (&fileLogger);
+}
+Slicer_granularAudioProcessor::LoggingGuts::~LoggingGuts()
+{
+	fileLogger.trimFileSize(logFile , 64 * 1024);
+	juce::Logger::setCurrentLogger (nullptr);
+}
+void Slicer_granularAudioProcessor::LoggingGuts::logIfNaNOrInf(juce::AudioBuffer<float> buffer){
+	float rms = 0.f;
+	for (auto ch = 0; ch < buffer.getNumChannels(); ++ch){
+		rms += buffer.getRMSLevel(ch, 0, buffer.getNumSamples());
+	}
+	if (rms != rms) {
+		fileLogger.writeToLog("processBlock:						rms was NaN");
+	}
+	if (std::isinf(rms)) {
+		fileLogger.writeToLog("processBlock:						rms was Inf");
+	}
+}
+
+Slicer_granularAudioProcessor::SampleManagementGuts::SampleManagementGuts()
+{
+	formatManager.registerBasicFormats();
+}
+Slicer_granularAudioProcessor::SampleManagementGuts::~SampleManagementGuts()
+{
+	formatManager.clearFormats();
+}
+
 Slicer_granularAudioProcessor::Slicer_granularAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
      : AudioProcessor (BusesProperties()
@@ -16,29 +49,13 @@ Slicer_granularAudioProcessor::Slicer_granularAudioProcessor()
                      #endif
                        ),
 #endif
-logFile(juce::File::getSpecialLocation(juce::File::SpecialLocationType::currentApplicationFile).
-		  getSiblingFile("log.txt"))
-, fileLogger(logFile, "slicer_granular logging")
-, apvts(*this, nullptr, "PARAMETERS", createParameterLayout())
-, granular_synth_juce(lastSampleRate, sampleBuffer,
-					  lastFileSampleRate, num_voices)
-
+  apvts(*this, nullptr, "PARAMETERS", createParameterLayout())
 {
-	juce::Logger::setCurrentLogger (&fileLogger);
 	granular_synth_juce.setLogger([this](const juce::String& message)
 	{
-		if (fileLogger.getCurrentLogger())
-			fileLogger.logMessage(message);
+		if (loggingGuts.fileLogger.getCurrentLogger())
+			loggingGuts.fileLogger.logMessage(message);
 	});
-	formatManager.registerBasicFormats();
-	granular_synth_juce.setNoteStealingEnabled (true);
-}
-
-Slicer_granularAudioProcessor::~Slicer_granularAudioProcessor()
-{
-	fileLogger.trimFileSize(logFile , 64 * 1024);
-	juce::Logger::setCurrentLogger (nullptr);
-	formatManager.clearFormats();
 }
 
 //==============================================================================
@@ -104,7 +121,6 @@ void Slicer_granularAudioProcessor::changeProgramName (int index, const juce::St
 //==============================================================================
 void Slicer_granularAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-	lastSampleRate = sampleRate;
 	granular_synth_juce.setCurrentPlaybackSampleRate (sampleRate);
 	for (int i = 0; i < granular_synth_juce.getNumVoices(); i++)
 	{
@@ -144,7 +160,7 @@ bool Slicer_granularAudioProcessor::isBusesLayoutSupported (const BusesLayout& l
 #endif
 
 void Slicer_granularAudioProcessor::writeToLog(juce::String const &s) {
-	fileLogger.writeToLog (s);
+	loggingGuts.fileLogger.writeToLog (s);
 }
 
 void Slicer_granularAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
@@ -152,7 +168,7 @@ void Slicer_granularAudioProcessor::getStateInformation (juce::MemoryBlock& dest
 	// Store parameters in memory block
 	auto state = apvts.copyState();
 	std::unique_ptr<juce::XmlElement> xml (state.createXml());
-	fileLogger.logMessage("getStateInformation");
+	loggingGuts.fileLogger.logMessage("getStateInformation");
 	
 	copyXmlToBinary (*xml, destData);
 }
@@ -161,31 +177,31 @@ void Slicer_granularAudioProcessor::setStateInformation (const void* data, int s
 {
 	// Restore parameters from memory block
 	std::unique_ptr<juce::XmlElement> xmlState (getXmlFromBinary (data, sizeInBytes));
-	fileLogger.logMessage("setStateInformation");
+	loggingGuts.fileLogger.logMessage("setStateInformation");
 	
 	if (xmlState.get() != nullptr){
 		if (xmlState->hasTagName (apvts.state.getType())){
 			apvts.replaceState (juce::ValueTree::fromXml (*xmlState));
 			
-			juce::Value sampleFilePath = apvts.state.getPropertyAsValue(audioFilePathValueTreeStateIdentifier, nullptr, true);
+			juce::Value sampleFilePath = apvts.state.getPropertyAsValue(sampleManagementGuts.audioFilePathValueTreeStateIdentifier, nullptr, true);
 			juce::File const sampleFile = juce::File(sampleFilePath.toString());
 			loadAudioFile(sampleFile, true);
 		}
 	}
 }
 void Slicer_granularAudioProcessor::loadAudioFilesFolder(juce::File const folder){
-	fileLogger.logMessage("loadAudioFilesFolder is not implemented!");
+	loggingGuts.fileLogger.logMessage("loadAudioFilesFolder is not implemented!");
 }
 void Slicer_granularAudioProcessor::readInAudioFileToBuffer(juce::File const f){
-	fileLogger.logMessage("                                          ...reading file" + f.getFullPathName());
+	loggingGuts.fileLogger.logMessage("                                          ...reading file" + f.getFullPathName());
 
-	juce::AudioFormatReader *reader = formatManager.createReaderFor(f);
+	juce::AudioFormatReader *reader = sampleManagementGuts.formatManager.createReaderFor(f);
 	if (!reader){
 		std::cerr << "could not read file: " << f.getFileName() << "\n";
 		return;
 	}
 	
-	lastFileSampleRate = reader->sampleRate;
+	sampleManagementGuts.lastFileSampleRate = reader->sampleRate;
 	
 	std::array<juce::Range<float> , 1> normalizationRange;
 	reader->readMaxLevels(0, reader->lengthInSamples, &normalizationRange[0], 1);
@@ -194,20 +210,20 @@ void Slicer_granularAudioProcessor::readInAudioFileToBuffer(juce::File const f){
 	
 	auto normVal = std::max(std::abs(min), std::abs(max));
 	if (normVal > 0.f){
-		normalizationValue = 1.f / normVal;
+		sampleManagementGuts.normalizationValue = 1.f / normVal;
 	} else {
 		std::cerr << "either the sample is digital silence, or something's gone wrong\n";
-		normalizationValue = 1.f;
+		sampleManagementGuts.normalizationValue = 1.f;
 	}
 	int lengthInSamps = static_cast<int>(reader->lengthInSamples);
-	sampleBuffer.setSize(reader->numChannels, lengthInSamps);
+	sampleManagementGuts.sampleBuffer.setSize(reader->numChannels, lengthInSamps);
 	
-	reader->read(sampleBuffer.getArrayOfWritePointers(),	// float *const *destChannels
+	reader->read(sampleManagementGuts.sampleBuffer.getArrayOfWritePointers(),	// float *const *destChannels
 				 reader->numChannels,		// int numDestChannels
 				 0,							// int64 startSampleInSource
 				 lengthInSamps);	// int numSamplesToRead
 	delete reader;
-	fileLogger.logMessage("                                          ...file read successful");
+	loggingGuts.fileLogger.logMessage("                                          ...file read successful");
 
 }
 void Slicer_granularAudioProcessor::loadAudioFileAsync(juce::File const file, bool notifyEditor)
@@ -215,45 +231,34 @@ void Slicer_granularAudioProcessor::loadAudioFileAsync(juce::File const file, bo
 	auto* loader = new AudioFileLoaderThread(*this, file, notifyEditor);
 	loader->startThread(); // Starts the thread
 }
+
 void Slicer_granularAudioProcessor::loadAudioFile(juce::File const f, bool notifyEditor){
-	fileLogger.logMessage("Slicer_granularAudioProcessor::loadAudioFile");
+	loggingGuts.fileLogger.logMessage("Slicer_granularAudioProcessor::loadAudioFile");
 
 	const juce::SpinLock::ScopedLockType lock(audioBlockLock);
-	fileLogger.logMessage("                                          ...locked");
+	loggingGuts.fileLogger.logMessage("                                          ...locked");
 
 	readInAudioFileToBuffer(f);
-	granular_synth_juce.setAudioBlock(sampleBuffer);
+	granular_synth_juce.setAudioBlock(sampleManagementGuts.sampleBuffer, sampleManagementGuts.lastFileSampleRate);	// maybe this could just go inside readInAudioFileToBuffer()
 	{
-		juce::Value sampleFilePathValue = apvts.state.getPropertyAsValue(audioFilePathValueTreeStateIdentifier, nullptr, true);
+		juce::Value sampleFilePathValue = apvts.state.getPropertyAsValue(sampleManagementGuts.audioFilePathValueTreeStateIdentifier, nullptr, true);
 		sampleFilePathValue.setValue(f.getFullPathName());
-		sampleFilePath = sampleFilePathValue.toString();
-		apvts.state.setProperty(audioFilePathValueTreeStateIdentifier, sampleFilePathValue, nullptr);
+		sampleManagementGuts.sampleFilePath = sampleFilePathValue.toString();
+		apvts.state.setProperty(sampleManagementGuts.audioFilePathValueTreeStateIdentifier, sampleFilePathValue, nullptr);
 	}
 	if (notifyEditor){
-		fileLogger.logMessage("Processor: sending change message from loadAudioFile");
+		loggingGuts.fileLogger.logMessage("Processor: sending change message from loadAudioFile");
 		juce::MessageManager::callAsync([this]() { sendChangeMessage(); });
 	}
 }
 juce::String Slicer_granularAudioProcessor::getSampleFilePath() const {
-	return sampleFilePath;
+	return sampleManagementGuts.sampleFilePath;
 }
 juce::AudioProcessorValueTreeState &Slicer_granularAudioProcessor::getAPVTS(){
 	return apvts;
 }
 juce::AudioFormatManager &Slicer_granularAudioProcessor::getAudioFormatManager(){
-	return formatManager;
-}
-void Slicer_granularAudioProcessor::logIfNaNOrInf(juce::AudioBuffer<float> buffer){
-	float rms = 0.f;
-	for (auto ch = 0; ch < buffer.getNumChannels(); ++ch){
-		rms += buffer.getRMSLevel(ch, 0, buffer.getNumSamples());
-	}
-	if (rms != rms) {
-		writeToLog("processBlock:						rms was NaN");
-	}
-	if (std::isinf(rms)) {
-		writeToLog("processBlock:						rms was Inf");
-	}
+	return sampleManagementGuts.formatManager;
 }
 
 void Slicer_granularAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
@@ -263,15 +268,15 @@ void Slicer_granularAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
 		buffer.clear (i, 0, buffer.getNumSamples());
 	}
 	
-	float* const*  wp = sampleBuffer.getArrayOfWritePointers();
-	auto const numSampChans = sampleBuffer.getNumChannels();
+	float* const*  wp = sampleManagementGuts.sampleBuffer.getArrayOfWritePointers();
+	auto const numSampChans = sampleManagementGuts.sampleBuffer.getNumChannels();
 	for (int i = 0; i < numSampChans; ++i){
 		if (!wp[i]){
 			writeToLog("processBlock:        sampleBuffer null; exiting early.");
 			return;
 		}
 	}
-	if (sampleBuffer.getNumSamples() == 0){
+	if (sampleManagementGuts.sampleBuffer.getNumSamples() == 0){
 		writeToLog("processBlock:        sampleBuffer has length 0; exiting early.");
 		return;
 	}
@@ -286,13 +291,14 @@ void Slicer_granularAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
 		return;
 	}
 
-	granular_synth_juce.granularMainParamSet<0, num_voices>(apvts);	// this just sets the params internal to the granular synth (effectively a voice)
-	granular_synth_juce.envelopeParamSet<0, num_voices>(apvts);
+	
+	granular_synth_juce.granularMainParamSet<0, GranularSynthesizer::getNumVoices()>(apvts);	// this just sets the params internal to the granular synth (effectively a voice)
+	granular_synth_juce.envelopeParamSet<0, GranularSynthesizer::getNumVoices()>(apvts);
 	granular_synth_juce.renderNextBlock(buffer,
 						  midiMessages,
 						  0,
 						  buffer.getNumSamples());
-	logIfNaNOrInf(buffer);
+	loggingGuts.logIfNaNOrInf(buffer);
 }
 
 //==============================================================================
@@ -310,7 +316,7 @@ juce::AudioProcessorEditor* Slicer_granularAudioProcessor::createEditor()
 
 
 juce::AudioProcessorValueTreeState::ParameterLayout Slicer_granularAudioProcessor::createParameterLayout(){
-	fileLogger.logMessage("createParamLayout\n");
+	loggingGuts.fileLogger.logMessage("createParamLayout\n");
 	juce::AudioProcessorValueTreeState::ParameterLayout layout;
 	auto mainGranularParams = std::make_unique<juce::AudioProcessorParameterGroup>("Gran", "MainGranularParams", "|");
 	

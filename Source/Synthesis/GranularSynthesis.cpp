@@ -42,37 +42,37 @@ inline float fastSemitonesToRatio(float semitones){
 	return nvs::util::semitonesRatioTable(semitones);
 }
 
-genGranPoly1::genGranPoly1(double const &sampleRate,
-						   juce::AudioBuffer<float>& waveBuffer, double const &fileSampleRate,
-						   unsigned long seed)
+genGranPoly1::genGranPoly1(unsigned long seed)
 :
-_sampleRate(sampleRate),
-_waveBlock(waveBuffer),
-_fileSampleRate(fileSampleRate),
 _gaussian_rng(seed),
 _normalizer(1.f / std::sqrt(static_cast<float>(std::clamp(N_GRAINS, 1UL, 10000UL)))),
-_grains(N_GRAINS, genGrain1(_sampleRate, waveBuffer, fileSampleRate, &_gaussian_rng) ),
-_grainIndices(N_GRAINS),
-_phasorInternalTrig(_sampleRate)
+_grains(N_GRAINS, genGrain1(&_gaussian_rng) ),
+_grainIndices(N_GRAINS)
 {
 	for (int i = 0; i < N_GRAINS; ++i){
 		_grains[i].setId(i);
 	}
 	std::iota(_grainIndices.begin(), _grainIndices.end(), 0);
 }
-void genGranPoly1::setAudioBlock(juce::AudioBuffer<float>& waveBuffer){
-	_waveBlock = juce::dsp::AudioBlock<float>(waveBuffer);
+void genGranPoly1::setAudioBlock(juce::dsp::AudioBlock<float> waveBlock, double fileSampleRate){
+	_waveBlock = waveBlock;
 	for (auto &g : _grains){
-		g.setAudioBlock(waveBuffer);
+		g.setAudioBlock(_waveBlock, fileSampleRate);
 	}
 }
+void genGranPoly1::setSampleRate(double sampleRate){
+	_phasorInternalTrig.setSampleRate(sampleRate);
+	for (auto &g : _grains){
+		g.setSampleRate(sampleRate);
+	}
+}
+
 void genGranPoly1::setLogger(std::function<void(const juce::String&)> loggerFunction){
 	logger = loggerFunction;
 	for (auto &g : _grains){
 		g.setLogger(loggerFunction);
 	}
 }
-
 
 void genGranPoly1::doNoteOn(noteNumber_t note, velocity_t velocity){
 	// reassign to noteHolder
@@ -122,7 +122,7 @@ void genGranPoly1::doSetTranspose(float transpositionSemitones){
 		g.setTranspose(transpositionSemitones);
 }
 void genGranPoly1::doSetSpeed(float newSpeed){
-	newSpeed = nvs::memoryless::clamp<float>(newSpeed, 0.1f, _sampleRate/2.f);
+	newSpeed = nvs::memoryless::clamp<float>(newSpeed, 0.01f, 11025.f);
 	speed_lgr.setMu(newSpeed);
 }
 void genGranPoly1::doSetPosition(double positionNormalized){
@@ -223,12 +223,8 @@ std::array<float, 2> genGranPoly1::doProcess(float triggerIn){
 	return output;
 }
 //=====================================================================================
-genGrain1::genGrain1(double const &sampleRate, juce::AudioBuffer<float> &waveBuffer, double const &fileSampleRate,
-					 nvs::rand::BoxMuller *const gaussian_rng, int newId)
-:	_sampleRate(sampleRate)
-,	_waveBlock(waveBuffer)
-,	_fileSampleRate(fileSampleRate)
-,	_gaussian_rng_ptr(gaussian_rng)
+genGrain1::genGrain1(nvs::rand::BoxMuller *const gaussian_rng, int newId)
+:	_gaussian_rng_ptr(gaussian_rng)
 ,	grainId(newId)
 ,	transpose_lgr(*_gaussian_rng_ptr, {0.f, 0.f})
 ,	position_lgr(*_gaussian_rng_ptr, {0.0, 0.0})
@@ -243,6 +239,14 @@ genGrain1::genGrain1(double const &sampleRate, juce::AudioBuffer<float> &waveBuf
 void genGrain1::setLogger(std::function<void (const juce::String &)> loggerFunction){
 	logger = std::move(loggerFunction);
 }
+void genGrain1::setAudioBlock(juce::dsp::AudioBlock<float> audioBlock, double fileSampleRate){
+	_waveBlock = audioBlock;
+	_fileSampleRate = fileSampleRate;
+}
+void genGrain1::setSampleRate(double sampleRate) {
+	_playbackSampleRate = sampleRate;
+}
+
 
 void genGrain1::setRatioBasedOnNote(float ratioForNote){
 	_ratioBasedOnNote = ratioForNote;
@@ -255,15 +259,13 @@ void genGrain1::setAmplitudeBasedOnNote(float velocity){
 void genGrain1::setId(int newId){
 	grainId = newId;
 }
-void genGrain1::setAudioBlock(juce::AudioBuffer<float>& audioBuffer){
-	_waveBlock = juce::dsp::AudioBlock<float>(audioBuffer);
-}
+
 
 void genGrain1::setTranspose(float ratio){
 	transpose_lgr.setMu(ratio);
 }
 void genGrain1::setDuration(double duration){
-	double const dur_gaus_space = durationMsToGaussianSpace(duration, _sampleRate);
+	double const dur_gaus_space = durationMsToGaussianSpace(duration, _playbackSampleRate);
 	duration_lgr.setMu(dur_gaus_space);
 }
 void genGrain1::setPosition(double position){
@@ -339,12 +341,12 @@ genGrain1::outs genGrain1::operator()(float trig_in){
 	double constexpr leastDuration_hz = 0.05;
 	double constexpr greatestDuration_hz = 1000.f; //incorporate  static_cast<double>(waveSize)
 	double const duration_hz = memoryless::clamp(duration_lgr(gater[1]), leastDuration_hz, greatestDuration_hz);
-	double const  latch_duration_result = durationGaussianToProcessingSpace(duration_hz, _sampleRate);
+	double const  latch_duration_result = durationGaussianToProcessingSpace(duration_hz, _playbackSampleRate);
 	float const latch_skew_result = memoryless::clamp(skew_lgr(gater[1]), 0.001f, 0.999f);
 	
-	assert(_sampleRate > 0.0);
+	assert(_playbackSampleRate > 0.0);
 	assert(_fileSampleRate > 0.0);
-	double const sampleReadRate = _fileSampleRate / _sampleRate;
+	double const sampleReadRate = _fileSampleRate / _playbackSampleRate;
 	
 	assert (_waveBlock.getNumChannels() > 0);
 	assert (_waveBlock.getNumSamples() > 0);
