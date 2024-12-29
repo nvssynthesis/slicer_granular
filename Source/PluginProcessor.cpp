@@ -298,6 +298,9 @@ void Slicer_granularAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
 						  midiMessages,
 						  0,
 						  buffer.getNumSamples());
+	
+	std::vector<double> sampleIndices = granular_synth_juce.getSampleIndices();
+	
 	loggingGuts.logIfNaNOrInf(buffer);
 }
 

@@ -30,7 +30,6 @@ void GranularVoice::prepareToPlay(double sampleRate, int samplesPerBlock)
 	juce::ignoreUnused(samplesPerBlock);
 	setCurrentPlaybackSampleRate(sampleRate);
 }
-
 void GranularVoice::startNote (int midiNoteNumber, float velocity, juce::SynthesiserSound *sound, int currentPitchWheelPosition)
 {
 	int velIntegral = static_cast<int>(velocity * 127.f);
@@ -72,7 +71,7 @@ void GranularVoice::renderNextBlock (juce::AudioBuffer< float > &outputBuffer, i
 	
 	for (auto samp = startSample; samp < startSample + numSamples; ++samp){
 		double envelope = adsr.getNextSample();
-		if (envelope != envelope){
+		if (envelope != envelope) {
 			logger("ENVELOPE has NaN");
 		}
 		std::array<float, 2> output = (*granularSynthGuts)(trigger);
@@ -84,6 +83,9 @@ void GranularVoice::renderNextBlock (juce::AudioBuffer< float > &outputBuffer, i
 			*(channelData + samp) += output[channel];
 		}
 	}
+	// query grains for supposed beginning sample index (position)
+	_indices = granularSynthGuts->getSampleIndices();
+	
 	if (!isVoiceActive()){
 		granularSynthGuts->clearNotes();
 		granularSynthGuts->noteOff(lastMidiNoteNumber);

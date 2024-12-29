@@ -50,6 +50,10 @@ public:
 	void controllerMoved (int controllerNumber, int newControllerValue) override;
 	bool canPlaySound (juce::SynthesiserSound *) override ;
 	
+	inline std::vector<double> getSampleIndices() const {
+		return _indices;
+	}
+
 	template <auto Start, auto End>
 	constexpr void granularMainParamSet(juce::AudioProcessorValueTreeState &apvts) {
 		float tmp;
@@ -91,10 +95,14 @@ public:
 	nvs::gran::genGranPoly1* getGranularSynthGuts(){
 		return granularSynthGuts.get();
 	}
+	static size_t getNumGrains(){
+		return nvs::gran::genGranPoly1::getNumGrains();
+	}
 	void setLogger(std::function<void(const juce::String&)> loggerFunction);
 private:
 	std::unique_ptr<nvs::gran::genGranPoly1> granularSynthGuts;
 	int lastMidiNoteNumber {0};
+	std::vector<double> _indices;
 	juce::ADSR adsr;
 	juce::ADSR::Parameters adsrParameters {0.1, 0.3, 0.5, 0.05};
 	

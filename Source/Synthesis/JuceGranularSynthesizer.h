@@ -19,6 +19,7 @@ public:
 	
 	void setAudioBlock(juce::AudioBuffer<float> &waveBuffer, double newFileSampleRate);
 	static constexpr int getNumVoices(){ return num_voices; }
+	std::vector<double> getSampleIndices() const;
 	void setCurrentPlaybackSampleRate(double sampleRate) override;
 	
 	template <auto Start, auto End>
@@ -60,8 +61,9 @@ private:
 	
 	constexpr static int num_voices =
 #if defined(DEBUG_BUILD) | defined(DEBUG) | defined(_DEBUG)
-											6;
+											2;
 #else
 											16;
 #endif
+	size_t totalNumGrains_;
 };

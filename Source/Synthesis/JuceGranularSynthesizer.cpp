@@ -23,13 +23,30 @@ GranularSynthesizer::GranularSynthesizer()
 	addSound(sound);
 	setNoteStealingEnabled(true);
 }
+std::vector<double> GranularSynthesizer::getSampleIndices() const {
+	std::vector<double> indices;
+	indices.reserve(totalNumGrains_);
+
+	for (const auto &v : voices) {
+		if (GranularVoice const * const gv = dynamic_cast<GranularVoice * const>(v)){
+			std::vector<double> const theseIndices = gv->getSampleIndices();
+			indices.insert(indices.end(), theseIndices.begin(), theseIndices.end());
+		}
+		else {
+			assert(false);
+		}
+	}
+	return indices;
+}
 void GranularSynthesizer::initializeVoices() {
 	clearVoices();
 	unsigned long seed = 1234567890UL;
+	totalNumGrains_ = 0;
 	for (int i = 0; i < num_voices; ++i) {
 
 		auto voice = new GranularVoice(std::make_unique<nvs::gran::genGranPoly1>(seed));
 		addVoice(voice);
+		totalNumGrains_ += voice->getNumGrains();
 		++seed;
 	}
 	// previously, addSound occured here

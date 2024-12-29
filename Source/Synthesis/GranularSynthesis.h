@@ -22,6 +22,13 @@
  -add automatic traversal
 */
 
+static constexpr size_t N_GRAINS =
+#if defined(DEBUG_BUILD) | defined(DEBUG) | defined(_DEBUG)
+								10;
+#else
+								30;
+#endif
+
 namespace nvs {
 namespace gran {
 
@@ -102,6 +109,9 @@ public:
 	void setAudioBlock(juce::dsp::AudioBlock<float> waveBlock, double fileSampleRate);
 	void setSampleRate(double sampleRate);
 	//====================================================================================
+	static constexpr size_t getNumGrains(){
+		return N_GRAINS;
+	}
 	inline void noteOn(noteNumber_t note, velocity_t velocity){	// reassign to noteHolder
 		doNoteOn(note, velocity);
 	}
@@ -164,6 +174,7 @@ public:
 	inline std::array<float, 2> operator()(float triggerIn){
 		return doProcess(triggerIn);
 	}
+	std::vector<double> getSampleIndices() const;
 	void setLogger(std::function<void(const juce::String&)> loggerFunction);
 protected:
 	juce::dsp::AudioBlock<float> _waveBlock;	// dependent on owning instantiator, subject to change address from above
@@ -212,7 +223,7 @@ private:
 class genGrain1 {
 public:
 	explicit genGrain1(nvs::rand::BoxMuller *const gaussian_rng, int newId = -1);
-
+	
 	void setId(int newId);
 	void setAudioBlock(juce::dsp::AudioBlock<float> audioBlock, double fileSampleRate);
 	void setSampleRate(double sampleRate);
@@ -231,15 +242,19 @@ public:
 	void setPlateauRand(float plateauRand);
 	void setPanRand(float panRand);
 	struct outs {
-		float next;
-		float busy;
-		float audio;
-		float audio_R;
+		float next 		{0.f};
+		float busy 		{0.f};
+		float audio_L	{0.f};
+		float audio_R 	{0.f};
 	};
 	
-	outs operator()(float trig_in);
+	outs operator()(float const trig_in);
+	double getCurrentSampleIndex() const {
+		return _sampleIndex;
+	}
 	
 	void setLogger(std::function<void(const juce::String&)> loggerFunction);
+
 private:
 	double _playbackSampleRate;
 	juce::dsp::AudioBlock<float> _waveBlock;
@@ -258,9 +273,10 @@ private:
 	LatchedGaussianRandom<float> skew_lgr;
 	LatchedGaussianRandom<float> plateau_lgr;
 	LatchedGaussianRandom<float> pan_lgr;
-		
+	
 	nvs::gen::accum<double> _accum;	// accumulates samplewise and resets from gate on, goes to windowing and sample lookup!
-		
+	
+	double _sampleIndex {0.0};
 	float _ratioBasedOnNote {1.f};	// =1.f. later this may change according to a settable concert pitch
 	float _amplitudeBasedOnNote {0.f};
 	
