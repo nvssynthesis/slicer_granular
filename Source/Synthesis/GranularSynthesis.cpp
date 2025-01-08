@@ -304,9 +304,10 @@ float calculateWindow(double const accum, double const duration, float const tra
 	
 	assert (plateau > 0.f);
 	win *= plateau;
-	win = memoryless::clamp_high(win, 1.f);
-	win = gen::parzen(win);
-	win /= plateau;
+	win = gen::parzen(tanh(win)) / gen::parzen(tanh(plateau));
+	if (plateau < 1.0){
+		win = pow(win, 1.0 / plateau);
+	}
 	return win;
 }
 double calculateCenterPosition(size_t const wave_size, double const position_latch_val){
@@ -357,10 +358,8 @@ genGrain1::outs genGrain1::operator()(float const trig_in){
 	
 	size_t const wave_size = _waveBlock.getNumSamples();
 	
-//	std::array<float, 2> gater = _busyHisto.val ? std::array<float, 2>{trig_in, 0.f} : std::array<float, 2>{0.f, trig_in};
-	o.next = _busyHisto.val  ? trig_in : 0.f;
-	bool const should_open_latches = _busyHisto.val  ? false : static_cast<bool>(trig_in);
-	
+	o.next = _busyHisto.val ? trig_in : 0.f;
+	bool const should_open_latches = _busyHisto.val ? false : static_cast<bool>(trig_in);
 	
 	float const transpose_multiplier = calculateTransposeMultiplier(_ratioForNoteLatch(_ratioBasedOnNote, should_open_latches), 							fastSemitonesToRatio(transpose_lgr(should_open_latches)));
 
