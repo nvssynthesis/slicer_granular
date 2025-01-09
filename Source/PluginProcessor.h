@@ -13,7 +13,6 @@
 //==============================================================================
 
 class Slicer_granularAudioProcessor  : 	public juce::AudioProcessor
-,										public juce::ChangeBroadcaster
                             #if JucePlugin_Enable_ARA
                              , public juce::AudioProcessorARAExtension
                             #endif
@@ -63,6 +62,23 @@ public:
 	juce::String getSampleFilePath() const;
 	juce::AudioFormatManager &getAudioFormatManager();
 	juce::AudioProcessorValueTreeState &getAPVTS();
+
+	void writeGrainPositionData(const std::vector<double> &newData);
+	void readGrainPositionData(std::vector<double> &outData);
+	
+	// change broadcasters
+	void addSampleManagementGutsListener(juce::ChangeListener *newListener){
+		sampleManagementGuts.addChangeListener(newListener);
+	}
+	void addMeasuredGrainPositionsListener(juce::ChangeListener *newListener){
+		measuredGrainPositions.addChangeListener(newListener);
+	}
+	void removeSampleManagementGutsListener(juce::ChangeListener *newListener){
+		sampleManagementGuts.removeChangeListener(newListener);
+	}
+	void removeMeasuredGrainPositionsListener(juce::ChangeListener *newListener){
+		measuredGrainPositions.removeChangeListener(newListener);
+	}
 private:
 	struct LoggingGuts {
 		LoggingGuts();
@@ -75,7 +91,9 @@ private:
 	
 	void readInAudioFileToBuffer(juce::File const f);
 	void loadAudioFileAsync(juce::File const file, bool notifyEditor);
-	struct SampleManagementGuts {
+public:
+	struct SampleManagementGuts : public juce::ChangeBroadcaster
+	{
 		SampleManagementGuts();
 		~SampleManagementGuts();
 		juce::AudioFormatManager formatManager;
@@ -85,13 +103,24 @@ private:
 		double lastFileSampleRate { 0.0 };
 		float normalizationValue { 1.f };	// a MULTIPLIER for the overall output, based on the inverse of the absolute max value for the current sample
 	};
+private:
 	SampleManagementGuts sampleManagementGuts;
 	
 	juce::AudioProcessorValueTreeState apvts;
 	juce::SpinLock audioBlockLock;
 	
-
 	GranularSynthesizer granular_synth_juce;
+	
+public:
+	struct MeasuredData : public juce::ChangeBroadcaster
+	{
+		std::vector<double> data0;
+		std::vector<double> data1;
+		std::atomic<bool> dataReady {false};
+		std::atomic<int> activeBufferIdx {0};
+	};
+private:
+	MeasuredData measuredGrainPositions;
 	
 	juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
     //==============================================================================

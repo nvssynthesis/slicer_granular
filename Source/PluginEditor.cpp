@@ -17,11 +17,13 @@ Slicer_granularAudioProcessorEditor::Slicer_granularAudioProcessorEditor (Slicer
 ,	waveformAndPositionComponent(512, p.getAudioFormatManager(), p.getAPVTS())
 ,	audioProcessor (p)
 {
-	audioProcessor.addChangeListener(this);
+	audioProcessor.addSampleManagementGutsListener(this);
+	audioProcessor.addMeasuredGrainPositionsListener(this);
 //	auto const fp = audioProcessor.getSampleFilePath();
 //	fileComp.setCurrentFile(fp, false);
-	notateFileComp();
-	drawThumbnail();
+	auto const fileToRead = audioProcessor.getSampleFilePath();
+	notateFileComp(fileToRead);
+	drawThumbnail(fileToRead);
 	startTimer(100);
 	
 	addAndMakeVisible (fileComp);
@@ -42,13 +44,15 @@ Slicer_granularAudioProcessorEditor::Slicer_granularAudioProcessorEditor (Slicer
 void Slicer_granularAudioProcessorEditor::timerCallback() {
 	// this is a workaround for now to address the behavior of the file comp notating the DAW's path
 	audioProcessor.writeToLog("Timer callback notating file comp");
-	notateFileComp();
+	notateFileComp(audioProcessor.getSampleFilePath());
 	stopTimer();
 }
+
 Slicer_granularAudioProcessorEditor::~Slicer_granularAudioProcessorEditor()
 {
 	fileComp.pushRecentFilesToFile();
-	audioProcessor.removeChangeListener(this);
+	audioProcessor.removeSampleManagementGutsListener(this);
+	audioProcessor.removeMeasuredGrainPositionsListener(this);
 }
 //==============================================================================
 void Slicer_granularAudioProcessorEditor::updateToggleState (juce::Button* button, juce::String name, bool &valToAffect)
@@ -130,34 +134,35 @@ void Slicer_granularAudioProcessorEditor::readFile (const juce::File& fileToRead
 
 	audioProcessor.writeToLog("fileToRead: " + fn);
 	audioProcessor.loadAudioFile(fileToRead, false);
-	notateFileComp();
-	drawThumbnail();
+	notateFileComp(fn);
+	drawThumbnail(fn);
 }
 
-void Slicer_granularAudioProcessorEditor::notateFileComp(){
-	auto const s = audioProcessor.getSampleFilePath();
-	audioProcessor.writeToLog("Notating fileComp with " + s);
-	fileComp.setCurrentFile(s, true, juce::dontSendNotification);
+void Slicer_granularAudioProcessorEditor::notateFileComp(juce::String const &sampleFilePath){
+	audioProcessor.writeToLog("Notating fileComp with " + sampleFilePath);
+	fileComp.setCurrentFile(sampleFilePath, true, juce::dontSendNotification);
 }
-void Slicer_granularAudioProcessorEditor::drawThumbnail(){
-	auto fileToRead = audioProcessor.getSampleFilePath();
+void Slicer_granularAudioProcessorEditor::drawThumbnail(juce::String const &sampleFilePath){
 	auto thumbnail = waveformAndPositionComponent.wc.getThumbnail();
 	if (thumbnail){
-		thumbnail->setSource (new juce::FileInputSource (fileToRead));	// owned by thumbnail, no worry about delete
+		thumbnail->setSource (new juce::FileInputSource (sampleFilePath));	// owned by thumbnail, no worry about delete
 	}
 }
-/*
- THIS DOESN'T SOLVE A PROBLEM:
- processor needs to now actually inform fileComp of the fileToRead
- */
+
 void Slicer_granularAudioProcessorEditor::changeListenerCallback (juce::ChangeBroadcaster* source){
 	audioProcessor.writeToLog("editor: changeListenerCallback.\n\n\n");
-	if (source == &audioProcessor){
-		audioProcessor.writeToLog("changeListenerCallback: source is audioProcessor. Notating fileComp and drawing thumbnail...");
-//		juce::MessageManager::callAsync([this]() {
-		notateFileComp();
-		drawThumbnail();
-//		});
+	if (dynamic_cast<Slicer_granularAudioProcessor::SampleManagementGuts*>(source)){
+		audioProcessor.writeToLog("changeListenerCallback: source is sampleManagementGuts. Notating fileComp and drawing thumbnail...");
+		auto const fileToRead = audioProcessor.getSampleFilePath();
+		notateFileComp(fileToRead);
+		drawThumbnail(fileToRead);
+	}
+	else if (dynamic_cast<Slicer_granularAudioProcessor::MeasuredData*>(source)) {
+		audioProcessor.writeToLog("changeListenerCallback: source is measuredData (grain positions). Reading grain positions for draw...");
+		audioProcessor.readGrainPositionData(grainPositions);
+	}
+	else {
+		audioProcessor.writeToLog("no match for listener.\n");
 	}
 }
 void Slicer_granularAudioProcessorEditor::filenameComponentChanged (juce::FilenameComponent* fileComponentThatHasChanged)
@@ -169,8 +174,9 @@ void Slicer_granularAudioProcessorEditor::filenameComponentChanged (juce::Filena
 		if (file.existsAsFile()) {
 			audioProcessor.writeToLog(file.getFullPathName() + " exists as file.");
 			audioProcessor.loadAudioFile(file, false);  // Ensure this is thread-safe
-			notateFileComp();
-			drawThumbnail();
+			auto const fileToRead = audioProcessor.getSampleFilePath();
+			notateFileComp(fileToRead);
+			drawThumbnail(fileToRead);
 	   }
 	}
 }

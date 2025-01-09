@@ -248,7 +248,7 @@ void Slicer_granularAudioProcessor::loadAudioFile(juce::File const f, bool notif
 	}
 	if (notifyEditor){
 		loggingGuts.fileLogger.logMessage("Processor: sending change message from loadAudioFile");
-		juce::MessageManager::callAsync([this]() { sendChangeMessage(); });
+		juce::MessageManager::callAsync([this]() { sampleManagementGuts.sendChangeMessage(); });
 	}
 }
 juce::String Slicer_granularAudioProcessor::getSampleFilePath() const {
@@ -299,9 +299,31 @@ void Slicer_granularAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
 						  0,
 						  buffer.getNumSamples());
 	
-	std::vector<double> sampleIndices = granular_synth_juce.getSampleIndices();
+	std::vector<double> sampleIndices = granular_synth_juce.getSampleIndices(); // really i want to write this to measuredGrainPositions.data
+	writeGrainPositionData(sampleIndices);
 	
 	loggingGuts.logIfNaNOrInf(buffer);
+}
+
+void Slicer_granularAudioProcessor::writeGrainPositionData(const std::vector<double> &newData){
+	int inactiveBuffer = measuredGrainPositions.activeBufferIdx.load() == 0 ? 1 : 0; // flip the buffer index
+	if (inactiveBuffer == 0){
+		measuredGrainPositions.data0 = newData;
+	}
+	else {
+		measuredGrainPositions.data1 = newData;
+	}
+	measuredGrainPositions.dataReady.store(true);
+	measuredGrainPositions.activeBufferIdx.store(inactiveBuffer, std::memory_order_release);
+	measuredGrainPositions.sendChangeMessage();
+}
+void Slicer_granularAudioProcessor::readGrainPositionData(std::vector<double> &outData){
+	if (measuredGrainPositions.dataReady.load(std::memory_order_acquire)) {
+		int activeBuffer = measuredGrainPositions.activeBufferIdx.load();
+		const std::vector<double>& data = (activeBuffer == 0) ? measuredGrainPositions.data0 : measuredGrainPositions.data1;
+		outData = data; // Copy data to output parameter
+		measuredGrainPositions.dataReady.store(false, std::memory_order_release);
+	}
 }
 
 //==============================================================================
