@@ -150,7 +150,7 @@ void Slicer_granularAudioProcessorEditor::drawThumbnail(juce::String const &samp
 }
 
 void Slicer_granularAudioProcessorEditor::changeListenerCallback (juce::ChangeBroadcaster* source){
-	audioProcessor.writeToLog("editor: changeListenerCallback.\n\n\n");
+	audioProcessor.writeToLog("editor: changeListenerCallback.\n");
 	if (dynamic_cast<Slicer_granularAudioProcessor::SampleManagementGuts*>(source)){
 		audioProcessor.writeToLog("changeListenerCallback: source is sampleManagementGuts. Notating fileComp and drawing thumbnail...");
 		auto const fileToRead = audioProcessor.getSampleFilePath();
@@ -160,6 +160,7 @@ void Slicer_granularAudioProcessorEditor::changeListenerCallback (juce::ChangeBr
 	else if (dynamic_cast<Slicer_granularAudioProcessor::MeasuredData*>(source)) {
 		audioProcessor.writeToLog("changeListenerCallback: source is measuredData (grain positions). Reading grain positions for draw...");
 		audioProcessor.readGrainPositionData(grainPositions);
+//		waveformAndPositionComponent.wc.drawMarker(juce::Graphics &g, juce::Rectangle<int> bounds, double pos)
 	}
 	else {
 		audioProcessor.writeToLog("no match for listener.\n");

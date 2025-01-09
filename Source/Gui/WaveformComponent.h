@@ -47,27 +47,31 @@ public:
 		}
 	}
 	
-	void drawMarker(juce::Graphics& g, juce::Rectangle<int> bounds, double pos){
+	void drawMarker(juce::Graphics& g, double pos){
 		
 		g.setColour(juce::Colours::blue);
 		
-		int xPos = (bounds.getWidth() * pos) + bounds.getX();
+		int xPos = getWidth() * pos;
 		
-		g.drawLine(xPos, bounds.getY(), xPos, bounds.getBottom(), 2.f);
+		g.drawLine(xPos, getY(), xPos, getBottom(), 2.f);
 	}
 	
 	void paint(juce::Graphics& g) override
 	{
-		juce::Rectangle<int> thumbnailBounds (10, 10, getWidth() - 20, getHeight() - 20);
-
-		if (thumbnail.getNumChannels() == 0)
-			paintIfNoFileLoaded (g, thumbnailBounds);
-		else
-			paintIfFileLoaded (g, thumbnailBounds);
+		g.setColour (juce::Colours::white);
+		auto const bounds = getLocalBounds();
+		g.drawRect(bounds);
+		
+		if (thumbnail.getNumChannels() == 0) {
+			paintContentsIfNoFileLoaded (g);
+		}
+		else {
+			paintContentsIfFileLoaded (g);
+		}
 		
 		for (auto i = 0; i < markerList.getNumMarkers(); ++i){
 			double pos = markerList.getMarkerPosition(*markerList.getMarker(i), this);
-			drawMarker(g, thumbnailBounds, pos);
+			drawMarker(g, pos);
 		}
 	}
 	void resized() override {}
@@ -97,26 +101,20 @@ private:
 	{
 		repaint();
 	}
-	void paintIfNoFileLoaded (juce::Graphics& g, const juce::Rectangle<int>& thumbnailBounds)
+	void paintContentsIfNoFileLoaded (juce::Graphics& g)
 	{
 		g.setColour (juce::Colours::darkgrey);
-		g.drawRect(thumbnailBounds);
-		g.drawFittedText ("No File Loaded", thumbnailBounds, juce::Justification::centred, 1);
+		g.drawFittedText ("No File Loaded", getLocalBounds(), juce::Justification::centred, 1);
 	}
-	void paintIfFileLoaded (juce::Graphics& g, const juce::Rectangle<int>& thumbnailBounds)
+	void paintContentsIfFileLoaded (juce::Graphics& g)
 	{
-		g.setColour (juce::Colours::darkgrey);
-		g.drawRect(thumbnailBounds);
-		
 		g.setColour (juce::Colours::black);
-
 		thumbnail.drawChannels (g,
-								thumbnailBounds,
+								getLocalBounds(),
 								0.0,                                    // start time
 								thumbnail.getTotalLength(),             // end time
 								1.0f);                                  // vertical zoom
 	}
-	
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(WaveformComponent);
 };
 
@@ -137,13 +135,6 @@ public:
 	,	positionSlider(apvts, params_e::position, juce::Slider::SliderStyle::LinearHorizontal, juce::Slider::NoTextBox)
 	{
 		positionSlider._slider.addListener(this);
-		
-		addAndMakeVisible(positionQuantizedReadOnlySlider);
-		positionQuantizedReadOnlySlider.setRange(0.0, 1.0);
-		positionQuantizedReadOnlySlider.setValue(0.0);
-		positionQuantizedReadOnlySlider.setTextBoxStyle(juce::Slider::NoTextBox, true, 100, 100);
-		positionQuantizedReadOnlySlider.setEnabled(false);
-		positionQuantizedReadOnlySlider.setColour(juce::Slider::ColourIds::thumbColourId, juce::Colours::white);
 		addAndMakeVisible(wc);
 		addAndMakeVisible(&positionSlider._slider);
 	}
@@ -153,18 +144,39 @@ public:
 		auto const localBounds = getLocalBounds();
 		
 		auto const totalHeight = localBounds.getHeight();
-		auto const waveformHeight = totalHeight * 0.8f;
-		auto const sliderHeight = totalHeight - waveformHeight;
+		auto const reservedHeight = totalHeight * 0.9;
+
+		juce::Rectangle<int> const wcRect = [&]{	// limit scope via instantly-called lambda
+			auto const heightDiff = totalHeight - reservedHeight;
+			auto const waveformY = localBounds.getY() + (heightDiff * 0.5);
+			auto const waveformHeight = reservedHeight * 0.8f;
+			
+			auto const waveformWidth = localBounds.getWidth() * 1.0;
+			auto const waveformWidthDiff = localBounds.getWidth() - waveformWidth;
+			auto const waveformX = localBounds.getX() + (waveformWidthDiff * 0.5);
+
+			auto const wcRect = juce::Rectangle<int>(waveformX, waveformY, waveformWidth, waveformHeight);
+			wc.setBounds(wcRect);
+			return wcRect;	// return rectangle as that's all we need from this scope
+		}();
 		
-		wc.setBounds(localBounds.getX(), localBounds.getY(), localBounds.getWidth(), waveformHeight);
-		positionSlider._slider.setBounds(localBounds.getX(), wc.getBottom(), localBounds.getWidth(), sliderHeight);
-		positionQuantizedReadOnlySlider.setBounds(positionSlider._slider.getX(), positionSlider._slider.getY(), positionSlider._slider.getWidth(), positionSlider._slider.getHeight());
+		{	// limit scope for drawing slider
+			auto const sliderHeight = reservedHeight - wcRect.getHeight();
+			int const widthIncrease = 14;
+			auto const sliderWidth = wcRect.getWidth() + widthIncrease;
+			auto const sliderX = wcRect.getX() - (widthIncrease*0.5);
+			auto const sliderY = wcRect.getBottom();
+			auto const sliderRect = juce::Rectangle<int>(sliderX, sliderY, sliderWidth, sliderHeight);
+			positionSlider._slider.setBounds(sliderRect);
+		}
 	}
-	void paint (juce::Graphics& g) override {}
+	void paint (juce::Graphics& g) override {
+		
+	}
 	
 	void sliderValueChanged (juce::Slider *slider) override {
 		if (slider == &positionSlider._slider){
-			positionQuantizedReadOnlySlider.setValue(positionSlider._slider.getValue());
+			// this used to set the position of the read-only slider
 		}
 	}
 
@@ -172,7 +184,6 @@ public:
 	WaveformComponent wc;
 private:
 	AttachedSlider positionSlider;
-	juce::Slider positionQuantizedReadOnlySlider;
 	std::atomic<double> position;
 	
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(WaveformAndPositionComponent);
