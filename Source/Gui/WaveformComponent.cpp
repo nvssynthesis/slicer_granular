@@ -36,21 +36,23 @@ void WaveformComponent::drawMarker(juce::Graphics& g, double pos, MarkerType mar
 	auto const line = [&]
 	{
 		float const xPos = getWidth() * pos;
-		float y0 = getY();
-		float y1 = getBottom();
+		float y0 = getLocalBounds().getY();
+		float y1 = getLocalBounds().getBottom();
 		auto l = juce::Line<float>(juce::Point<float>{xPos, y0}, juce::Point<float>{xPos, y1});
 		if (markerType == MarkerType::Onset){
 			g.setColour(juce::Colours::blue);
 
 		}
 		else if (markerType == MarkerType::CurrentPosition){
-			g.setColour(juce::Colours::white);
-			l = l.withShortenedStart(0.2).withShortenedEnd(.2);
+			g.setColour(juce::Colours::lightgreen);
+			auto const shortenBy = l.getLength() * 0.15;
+			l = l.withShortenedStart(shortenBy);
+			l = l.withShortenedEnd(shortenBy);
 		}
 		return l;
 	}();
 	
-	g.drawLine(line, 2.f);
+	g.drawLine(line, 1.f);
 }
 void WaveformComponent::drawMarkers(juce::Graphics& g, MarkerType markerType){
 	auto markerList = markerListMap.at(markerType);
