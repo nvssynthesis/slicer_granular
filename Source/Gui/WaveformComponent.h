@@ -28,23 +28,31 @@ class WaveformComponent		:	public juce::Component
 public:
 	WaveformComponent(int sourceSamplesPerThumbnailSample, juce::AudioFormatManager &formatManagerToUse);
 	
-	int getNumMarkers();
-	void addMarker(double pos);
-	void removeMarkers();
-	
-	void drawMarker(juce::Graphics& g, double pos);
-	
+	enum class MarkerType {
+		Onset = 0,
+		CurrentPosition
+	};
+	int getNumMarkers(MarkerType markerType);
+	void addMarker(double pos, MarkerType markerType);
+	void removeMarkers(MarkerType markerType);
+	void drawMarker(juce::Graphics& g, double pos, MarkerType markerType);
+	void drawMarkers(juce::Graphics& g, MarkerType markerType);
+
 	void paint(juce::Graphics& g) override;
 	void resized() override {}
 	void changeListenerCallback (juce::ChangeBroadcaster* source) override;
 	
 	juce::AudioThumbnail *const getThumbnail();
-	
 private:
 	juce::AudioThumbnailCache thumbnailCache;
 	juce::AudioThumbnail thumbnail;
 	
-	juce::MarkerList markerList;
+	juce::MarkerList onsetMarkerList;
+	juce::MarkerList currentPositionMarkerList;
+	std::map<MarkerType, juce::MarkerList> markerListMap {
+		{MarkerType::Onset, onsetMarkerList},
+		{MarkerType::CurrentPosition, currentPositionMarkerList}
+	};
 	
 	void thumbnailChanged()
 	{
@@ -75,7 +83,7 @@ public:
 	
 	void sliderValueChanged (juce::Slider *slider) override;
 
-	WaveformComponent wc; // externally accessible so there's no need for a bunch of forwarding methods
+	WaveformComponent wc; // externally accessible 
 private:
 	AttachedSlider positionSlider;
 	std::atomic<double> position;

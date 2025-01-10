@@ -160,7 +160,8 @@ void Slicer_granularAudioProcessorEditor::changeListenerCallback (juce::ChangeBr
 	else if (dynamic_cast<Slicer_granularAudioProcessor::MeasuredData*>(source)) {
 		audioProcessor.writeToLog("changeListenerCallback: source is measuredData (grain positions). Reading grain positions for draw...");
 		audioProcessor.readGrainPositionData(grainPositions);
-//		waveformAndPositionComponent.wc.drawMarker(juce::Graphics &g, juce::Rectangle<int> bounds, double pos)
+		waveformAndPositionComponent.wc.addMarker(0.23, WaveformComponent::MarkerType::CurrentPosition);
+		waveformAndPositionComponent.wc.repaint();
 	}
 	else {
 		audioProcessor.writeToLog("no match for listener.\n");

@@ -17,29 +17,49 @@ WaveformComponent::WaveformComponent(int sourceSamplesPerThumbnailSample, juce::
 	thumbnail.addChangeListener(this);	// thumbnail is a ChangeBroadcaster
 }
 	
-int WaveformComponent::getNumMarkers(){
-	return markerList.getNumMarkers();
+int WaveformComponent::getNumMarkers(MarkerType markerType){
+	return markerListMap.at(markerType).getNumMarkers();
 }
-void WaveformComponent::addMarker(double pos){
+void WaveformComponent::addMarker(double pos, MarkerType markerType){
 	juce::String name(pos);
-	markerList.setMarker(name, juce::RelativeCoordinate(pos));
+	markerListMap.at(markerType).setMarker(name, juce::RelativeCoordinate(pos));
 }
-void WaveformComponent::removeMarkers(){
+void WaveformComponent::removeMarkers(MarkerType markerType){
+	juce::MarkerList markerList = markerListMap.at(markerType);
 	auto numMarkers = markerList.getNumMarkers();
 	for (auto i = numMarkers - 1; i >= 0 ; --i){
 		markerList.removeMarker(i);
 	}
 }
+
+void WaveformComponent::drawMarker(juce::Graphics& g, double pos, MarkerType markerType){
+	auto const line = [&]
+	{
+		float const xPos = getWidth() * pos;
+		float y0 = getY();
+		float y1 = getBottom();
+		auto l = juce::Line<float>(juce::Point<float>{xPos, y0}, juce::Point<float>{xPos, y1});
+		if (markerType == MarkerType::Onset){
+			g.setColour(juce::Colours::blue);
+
+		}
+		else if (markerType == MarkerType::CurrentPosition){
+			g.setColour(juce::Colours::white);
+			l = l.withShortenedStart(0.2).withShortenedEnd(.2);
+		}
+		return l;
+	}();
 	
-void WaveformComponent::drawMarker(juce::Graphics& g, double pos){
-	
-	g.setColour(juce::Colours::blue);
-	
-	int xPos = getWidth() * pos;
-	
-	g.drawLine(xPos, getY(), xPos, getBottom(), 2.f);
+	g.drawLine(line, 2.f);
 }
-	
+void WaveformComponent::drawMarkers(juce::Graphics& g, MarkerType markerType){
+	auto markerList = markerListMap.at(markerType);
+	for (auto i = 0; i < markerList.getNumMarkers(); ++i){
+		double pos = markerList.getMarkerPosition(*markerList.getMarker(i), this);
+		drawMarker(g, pos, markerType);
+	}
+}
+
 void WaveformComponent::paint(juce::Graphics& g)
 {
 	g.setColour (juce::Colours::darkgrey);
@@ -52,11 +72,8 @@ void WaveformComponent::paint(juce::Graphics& g)
 	else {
 		paintContentsIfFileLoaded (g);
 	}
-	
-	for (auto i = 0; i < markerList.getNumMarkers(); ++i){
-		double pos = markerList.getMarkerPosition(*markerList.getMarker(i), this);
-		drawMarker(g, pos);
-	}
+	drawMarkers(g, MarkerType::Onset);
+	drawMarkers(g, MarkerType::CurrentPosition);
 }
 
 void WaveformComponent::changeListenerCallback (juce::ChangeBroadcaster* source)
@@ -90,6 +107,7 @@ void WaveformComponent::paintContentsIfFileLoaded (juce::Graphics& g)
 							1.0f);                                  // vertical zoom
 }
 
+//================================================================================================================================================
 /**
  The trick to implement:
  Levels of position quantization
