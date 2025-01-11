@@ -25,11 +25,12 @@ void WaveformComponent::addMarker(double pos, MarkerType markerType){
 	markerListMap.at(markerType).setMarker(name, juce::RelativeCoordinate(pos));
 }
 void WaveformComponent::removeMarkers(MarkerType markerType){
-	juce::MarkerList markerList = markerListMap.at(markerType);
+	juce::MarkerList &markerList = markerListMap.at(markerType);
 	auto numMarkers = markerList.getNumMarkers();
 	for (auto i = numMarkers - 1; i >= 0 ; --i){
 		markerList.removeMarker(i);
 	}
+	assert (markerList.getNumMarkers() == 0);
 }
 
 void WaveformComponent::drawMarker(juce::Graphics& g, double pos, MarkerType markerType){
@@ -55,7 +56,7 @@ void WaveformComponent::drawMarker(juce::Graphics& g, double pos, MarkerType mar
 	g.drawLine(line, 1.f);
 }
 void WaveformComponent::drawMarkers(juce::Graphics& g, MarkerType markerType){
-	auto markerList = markerListMap.at(markerType);
+	auto const &markerList = markerListMap.at(markerType);
 	for (auto i = 0; i < markerList.getNumMarkers(); ++i){
 		double pos = markerList.getMarkerPosition(*markerList.getMarker(i), this);
 		drawMarker(g, pos, markerType);

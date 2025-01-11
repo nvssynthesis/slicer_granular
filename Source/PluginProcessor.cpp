@@ -299,8 +299,15 @@ void Slicer_granularAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
 						  0,
 						  buffer.getNumSamples());
 	
-	std::vector<double> sampleIndices = granular_synth_juce.getSampleIndices(); // really i want to write this to measuredGrainPositions.data
-	writeGrainPositionData(sampleIndices);
+	std::vector<double> positions = granular_synth_juce.getSampleIndices();
+	assert (sampleManagementGuts.sampleBuffer.getNumSamples() > 0);
+	double invLength = 1.0 / sampleManagementGuts.sampleBuffer.getNumSamples();
+	for (auto &pos : positions){
+		pos *= invLength;
+//		assert (pos >= 0.0);
+//		assert (pos <= 1.0);
+	}
+	writeGrainPositionData(positions);
 	
 	loggingGuts.logIfNaNOrInf(buffer);
 }

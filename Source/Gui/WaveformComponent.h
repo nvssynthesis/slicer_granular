@@ -49,7 +49,7 @@ private:
 	
 	juce::MarkerList onsetMarkerList;
 	juce::MarkerList currentPositionMarkerList;
-	std::map<MarkerType, juce::MarkerList> markerListMap {
+	std::map<MarkerType, juce::MarkerList &> markerListMap {
 		{MarkerType::Onset, onsetMarkerList},
 		{MarkerType::CurrentPosition, currentPositionMarkerList}
 	};
