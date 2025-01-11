@@ -103,6 +103,8 @@ inline double durationGaussianToProcessingSpace(double hertz, double sampleRate)
 struct GrainDescription {
 	// a struct to communicate upstream about the coarse description of a given grain's current state
 	double position;
+	double sample_playback_rate;
+	float window;
 };
 
 class genGranPoly1 {
@@ -280,6 +282,9 @@ private:
 	nvs::gen::accum<double> _accum;	// accumulates samplewise and resets from gate on, goes to windowing and sample lookup!
 	
 	double _sampleIndex {0.0};
+	float _sample_playback_rate {0.0};
+	float _window {0.f};
+	
 	float _ratioBasedOnNote {1.f};	// =1.f. later this may change according to a settable concert pitch
 	float _amplitudeBasedOnNote {0.f};
 	
