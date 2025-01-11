@@ -41,28 +41,28 @@ genGranPoly1::genGranPoly1(unsigned long seed)
 _gaussian_rng(seed),
 _normalizer(1.f / std::sqrt(static_cast<float>(std::clamp(N_GRAINS, 1UL, 10000UL)))),
 _grains(N_GRAINS, genGrain1(&_gaussian_rng) ),
-_grainIndices(N_GRAINS)
+_grain_indices(N_GRAINS)
 {
 	for (int i = 0; i < N_GRAINS; ++i){
 		_grains[i].setId(i);
 	}
-	std::iota(_grainIndices.begin(), _grainIndices.end(), 0);
+	std::iota(_grain_indices.begin(), _grain_indices.end(), 0);
 }
 void genGranPoly1::setAudioBlock(juce::dsp::AudioBlock<float> wave_block, double file_sample_rate){
-	_waveBlock = wave_block;
+	_wave_block = wave_block;
 	for (auto &g : _grains){
-		g.setAudioBlock(_waveBlock, file_sample_rate);
+		g.setAudioBlock(_wave_block, file_sample_rate);
 	}
 }
 void genGranPoly1::setSampleRate(double sample_rate){
-	_phasorInternalTrig.setSampleRate(sample_rate);
+	_phasor_internal_trig.setSampleRate(sample_rate);
 	for (auto &g : _grains){
 		g.setSampleRate(sample_rate);
 	}
 }
 
 void genGranPoly1::setLogger(std::function<void(const juce::String&)> logger_function){
-	logger = logger_function;
+	_logger = logger_function;
 	for (auto &g : _grains){
 		g.setLogger(logger_function);
 	}
@@ -72,25 +72,25 @@ void genGranPoly1::doNoteOn(noteNumber_t note, velocity_t velocity){
 	// reassign to noteHolder
 	auto p = std::make_pair(note, velocity);
 
-	noteHolder.insert(p);
+	_note_holder.insert(p);
 	updateNotes();
-	_phasorInternalTrig.reset();
+	_phasor_internal_trig.reset();
 }
 void genGranPoly1::doNoteOff(noteNumber_t note){
 	// remove from noteHolder
 //	auto p = std::make_pair(note, 0);
-	noteHolder[note] = 0;
+	_note_holder[note] = 0;
 	updateNotes();
-	noteHolder.erase(note);
+	_note_holder.erase(note);
 	updateNotes();
 }
 void genGranPoly1::doUpdateNotes(){
-	size_t num_notes = noteHolder.size();
+	size_t num_notes = _note_holder.size();
 	float grainsPerNoteFloor = N_GRAINS / static_cast<float>(num_notes);
 
 	auto begin = _grains.begin();
 	float fractional_right_side = 0.f;
-	for (auto e : noteHolder){
+	for (auto e : _note_holder){
 		auto left = begin + static_cast<size_t>(fractional_right_side);
 		fractional_right_side += grainsPerNoteFloor;
 		auto right = begin + static_cast<size_t>(fractional_right_side);
@@ -105,10 +105,10 @@ void genGranPoly1::doUpdateNotes(){
 	}
 }
 void genGranPoly1::doClearNotes(){
-	noteHolder.clear();
+	_note_holder.clear();
 }
 void genGranPoly1::doShuffleIndices(){
-	std::shuffle(_grainIndices.begin(), _grainIndices.end(), _gaussian_rng.getGenerator());
+	std::shuffle(_grain_indices.begin(), _grain_indices.end(), _gaussian_rng.getGenerator());
 }
 
 void genGranPoly1::doSetTranspose(float transposition_semitones){
@@ -116,11 +116,11 @@ void genGranPoly1::doSetTranspose(float transposition_semitones){
 		g.setTranspose(transposition_semitones);
 }
 void genGranPoly1::doSetSpeed(float new_speed){
-	speed_lgr.setMu(nvs::memoryless::clamp<float>(new_speed, 0.01f, 11025.f));
+	_speed_lgr.setMu(nvs::memoryless::clamp<float>(new_speed, 0.01f, 11025.f));
 }
 void genGranPoly1::doSetPosition(double position_normalized){
 	//	position_normalized = nvs::memoryless::clamp<double>(position_normalized, 0.0, 1.0);
-	double pos = position_normalized * static_cast<double>(_waveBlock.getNumSamples());
+	double pos = position_normalized * static_cast<double>(_wave_block.getNumSamples());
 	for (auto &g : _grains)
 		g.setPosition(pos);
 }
@@ -148,7 +148,7 @@ void genGranPoly1::doSetTransposeRandomness(float randomness){
 		g.setTransposeRand(randomness);
 }
 void genGranPoly1::doSetPositionRandomness(double randomness){
-	randomness = randomness * static_cast<double>(_waveBlock.getNumSamples());
+	randomness = randomness * static_cast<double>(_wave_block.getNumSamples());
 	for (auto &g : _grains)
 		g.setPositionRand(randomness);
 }
@@ -157,8 +157,8 @@ void genGranPoly1::doSetDurationRandomness(double randomness){
 		g.setDurationRand(randomness);
 }
 void genGranPoly1::doSetSpeedRandomness(float randomness){
-	randomness *= speed_lgr.getMu();
-	speed_lgr.setSigma(randomness);
+	randomness *= _speed_lgr.getMu();
+	_speed_lgr.setSigma(randomness);
 }
 void genGranPoly1::doSetSkewRandomness(float randomness){
 	for (auto &g : _grains)
@@ -178,25 +178,25 @@ std::array<float, 2> genGranPoly1::doProcess(float trigger_in){
 	
 	// update phasor's frequency only if _triggerHisto.val is true
 	float const freq_tmp = nvs::memoryless::clamp_low(
-							speed_lgr(static_cast<bool>(_triggerHisto.val)),  speed_lgr.getMu() * 0.125f);
-	_phasorInternalTrig.setFrequency(freq_tmp);
-	++_phasorInternalTrig;
+							_speed_lgr(static_cast<bool>(_trigger_histo.val)),  _speed_lgr.getMu() * 0.125f);
+	_phasor_internal_trig.setFrequency(freq_tmp);
+	++_phasor_internal_trig;
 	
-	float trig = _ramp2trig(_phasorInternalTrig.getPhase());
-	_triggerHisto(trig);
+	float trig = _ramp2trig(_phasor_internal_trig.getPhase());
+	_trigger_histo(trig);
 	trig = (trig == 0.f && trigger_in == 0.f) ? 0.f : 1.f;
 	
 	std::array<genGrain1::outs, N_GRAINS> _outs;
 
-	size_t idx = _grainIndices[0];
+	size_t idx = _grain_indices[0];
 	_outs[idx] = _grains[idx](trig);
 	float audio_out_L = _outs[idx].audio_L;
 	float audio_out_R = _outs[idx].audio_R;
 	float voices_active = _outs[idx].busy;
 	
 	for (size_t i = 1; i < N_GRAINS; ++i){
-		idx = _grainIndices.data()[i];
-		size_t prevIdx = _grainIndices.data()[i - 1];
+		idx = _grain_indices.data()[i];
+		size_t prevIdx = _grain_indices.data()[i - 1];
 		
 		float currentTrig = _outs[prevIdx].next;
 		_outs[idx] = _grains[idx](currentTrig);
@@ -221,81 +221,83 @@ std::vector<GrainDescription> genGranPoly1::getGrainDescriptions() const {
 //=====================================================================================
 genGrain1::genGrain1(nvs::rand::BoxMuller *const gaussian_rng, int newId)
 :	_gaussian_rng_ptr(gaussian_rng)
-,	grainId(newId)
-,	transpose_lgr(*_gaussian_rng_ptr, {0.f, 0.f})
-,	position_lgr(*_gaussian_rng_ptr, {0.0, 0.0})
-,	duration_lgr(*_gaussian_rng_ptr, {durationMsToGaussianSpace(500.0, 44100.0), 0.f})
-,	skew_lgr(*_gaussian_rng_ptr, {0.5f, 0.f})
-,	plateau_lgr(*_gaussian_rng_ptr, {1.f, 0.f})
-,	pan_lgr(*_gaussian_rng_ptr, {0.5f, 0.23f})
+,	_grain_id(newId)
+,	_transpose_lgr(*_gaussian_rng_ptr, {0.f, 0.f})
+,	_position_lgr(*_gaussian_rng_ptr, {0.0, 0.0})
+,	_duration_lgr(*_gaussian_rng_ptr, {durationMsToGaussianSpace(500.0, 44100.0), 0.f})
+,	_skew_lgr(*_gaussian_rng_ptr, {0.5f, 0.f})
+,	_plateau_lgr(*_gaussian_rng_ptr, {1.f, 0.f})
+,	_pan_lgr(*_gaussian_rng_ptr, {0.5f, 0.23f})
 {
 	assert (gaussian_rng);
 }
 
 void genGrain1::setLogger(std::function<void (const juce::String &)> logger_function){
-	logger = std::move(logger_function);
+	_logger = std::move(logger_function);
 }
 void genGrain1::setAudioBlock(juce::dsp::AudioBlock<float> audio_block, double file_sample_rate){
-	_waveBlock = audio_block;
-	_fileSampleRate = file_sample_rate;
+	_wave_block = audio_block;
+	_file_sample_rate = file_sample_rate;
 }
 void genGrain1::setSampleRate(double sample_rate) {
-	_playbackSampleRate = sample_rate;
+	_playback_sample_rate = sample_rate;
 }
 
 void genGrain1::setRatioBasedOnNote(float ratioForNote){
-	_ratioBasedOnNote = ratioForNote;
+	_ratio_based_on_note = ratioForNote;
 }
 void genGrain1::setAmplitudeBasedOnNote(float velocity){
 	assert(velocity <= 2.f);
 	assert(velocity >= 0.f);
-	_amplitudeBasedOnNote = velocity;
+	_amplitude_based_on_note = velocity;
 }
 void genGrain1::setId(int newId){
-	grainId = newId;
+	_grain_id = newId;
 }
 void genGrain1::setTranspose(float ratio){
-	transpose_lgr.setMu(ratio);
+	_transpose_lgr.setMu(ratio);
 }
 void genGrain1::setDuration(double duration){
-	double const dur_gaus_space = durationMsToGaussianSpace(duration, _playbackSampleRate);
-	duration_lgr.setMu(dur_gaus_space);
+	double const dur_gaus_space = durationMsToGaussianSpace(duration, _playback_sample_rate);
+	_duration_lgr.setMu(dur_gaus_space);
 }
 void genGrain1::setPosition(double position){
-	position_lgr.setMu(position);
+	_position_lgr.setMu(position);
 }
 void genGrain1::setSkew(float skew){
-	skew_lgr.setMu(skew);
+	_skew_lgr.setMu(skew);
 }
 void genGrain1::setPlateau(float plateau){
-	plateau_lgr.setMu(plateau);
+	_plateau_lgr.setMu(plateau);
 }
 void genGrain1::setPan(float pan){
-	pan_lgr.setMu(pan);
+	_pan_lgr.setMu(pan);
 }
 void genGrain1::setTransposeRand(float transposeRand){
-	transpose_lgr.setSigma(transposeRand);
+	_transpose_lgr.setSigma(transposeRand);
 }
 void genGrain1::setDurationRand(double durationRand){
-	durationRand *= duration_lgr.getMu();
-	duration_lgr.setSigma(durationRand);
+	durationRand *= _duration_lgr.getMu();
+	_duration_lgr.setSigma(durationRand);
 }
 void genGrain1::setPositionRand(double positionRand){
-	position_lgr.setSigma(positionRand);
+	_position_lgr.setSigma(positionRand);
 }
 void genGrain1::setSkewRand(float skewRand){
-	skew_lgr.setSigma(skewRand);
+	_skew_lgr.setSigma(skewRand);
 }
 void genGrain1::setPlateauRand(float plateauRand){
-	plateau_lgr.setSigma(plateauRand);
+	_plateau_lgr.setSigma(plateauRand);
 }
 void genGrain1::setPanRand(float panRand){
-	pan_lgr.setSigma(panRand);
+	_pan_lgr.setSigma(panRand);
 }
 
 GrainDescription genGrain1::getGrainDescription() const {
 	GrainDescription gd;
-	gd.position = nvs::gen::wrap01(_sampleIndex / _waveBlock.getNumSamples());
+	gd.position = nvs::gen::wrap01(_sample_index / _wave_block.getNumSamples());
+	gd.sample_playback_rate = _sample_playback_rate;
+	gd.window = _window;
 	return gd;
 }
 
@@ -353,31 +355,31 @@ genGrain1::outs genGrain1::operator()(float const trig_in){
 	outs o;
 	assert(_gaussian_rng_ptr != nullptr);
 	
-	size_t const wave_size = _waveBlock.getNumSamples();
+	size_t const wave_size = _wave_block.getNumSamples();
 	
-	o.next = _busyHisto.val ? trig_in : 0.f;
-	bool const should_open_latches = _busyHisto.val ? false : static_cast<bool>(trig_in);
+	o.next = _busy_histo.val ? trig_in : 0.f;
+	bool const should_open_latches = _busy_histo.val ? false : static_cast<bool>(trig_in);
 	
-	float const transpose_multiplier = calculateTransposeMultiplier(_ratioForNoteLatch(_ratioBasedOnNote, should_open_latches), 							fastSemitonesToRatio(transpose_lgr(should_open_latches)));
+	_sample_playback_rate = calculateTransposeMultiplier(_ratio_for_note_latch(_ratio_based_on_note, should_open_latches), 							fastSemitonesToRatio(_transpose_lgr(should_open_latches)));
 
-	double const center_position_in_samps = position_lgr(should_open_latches);
-	double const  latch_duration_result = calculateDuration(duration_lgr(should_open_latches), _playbackSampleRate);
-	float const latch_skew_result = memoryless::clamp(skew_lgr(should_open_latches), 0.001f, 0.999f);
+	double const center_position_in_samps = _position_lgr(should_open_latches);
+	double const  latch_duration_result = calculateDuration(_duration_lgr(should_open_latches), _playback_sample_rate);
+	float const latch_skew_result = memoryless::clamp(_skew_lgr(should_open_latches), 0.001f, 0.999f);
 	
-	double const sample_read_rate = calculateSampleReadRate(_playbackSampleRate, _fileSampleRate);
+	double const sample_read_rate = calculateSampleReadRate(_playback_sample_rate, _file_sample_rate);
 	
 #pragma message("need to test this skew-based sample index offset further")
-	_accum(transpose_multiplier, static_cast<bool>(should_open_latches));
-	_sampleIndex = (sample_read_rate * _accum.val) + center_position_in_samps - (latch_skew_result * latch_duration_result);
-	float const win = calculateWindow(_accum.val, latch_duration_result, transpose_multiplier, latch_skew_result, plateau_lgr(should_open_latches));
-	float const vel_amplitude = _amplitudeForNoteLatch(_amplitudeBasedOnNote, should_open_latches);
+	_accum(_sample_playback_rate, static_cast<bool>(should_open_latches));
+	_sample_index = (sample_read_rate * _accum.val) + center_position_in_samps - (latch_skew_result * latch_duration_result);
+	_window = calculateWindow(_accum.val, latch_duration_result, _sample_playback_rate, latch_skew_result, _plateau_lgr(should_open_latches));
+	float const vel_amplitude = _amplitude_for_note_latch(_amplitude_based_on_note, should_open_latches);
 
-	float const sample = calculateSample(_waveBlock, _sampleIndex, win, vel_amplitude);
-	float const latch_pan_result = calculatePan(pan_lgr(should_open_latches));
+	float const sample = calculateSample(_wave_block, _sample_index, _window, vel_amplitude);
+	float const latch_pan_result = calculatePan(_pan_lgr(should_open_latches));
 	
 	writeAudioToOuts(sample, latch_pan_result, o);
 	
-	processBusyness(win, _busyHisto, o);
+	processBusyness(_window, _busy_histo, o);
 	return o;
 }
 
