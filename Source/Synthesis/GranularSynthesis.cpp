@@ -316,15 +316,6 @@ float calculateWindow(double const accum, double const duration, float const tra
 	}
 	return win;
 }
-double calculateCenterPosition(size_t const wave_size, double const position_latch_val){
-	double const wave_size_d = memoryless::clamp_low(static_cast<double>(wave_size), 0.00001);
-	double pos_rand_norm = position_latch_val / wave_size_d;
-	// tried to use util::get_closest to quantize position, but it chokes up the cpu
-	pos_rand_norm *= wave_size_d;
-	double const  center_position_in_samps = memoryless::clamp(position_latch_val,
-															   0.0, wave_size_d);
-	return center_position_in_samps;
-}
 double calculateDuration(double const duration_latch_val, double const playback_sample_rate){
 	double const duration_hz = memoryless::clamp(duration_latch_val, 0.05, 1000.0);	// incorporate  static_cast<double>(wave_size)
 	double const  latch_duration_result = durationGaussianToProcessingSpace(duration_hz, playback_sample_rate);
@@ -369,7 +360,7 @@ genGrain1::outs genGrain1::operator()(float const trig_in){
 	
 	float const transpose_multiplier = calculateTransposeMultiplier(_ratioForNoteLatch(_ratioBasedOnNote, should_open_latches), 							fastSemitonesToRatio(transpose_lgr(should_open_latches)));
 
-	double const center_position_in_samps = calculateCenterPosition(wave_size, position_lgr(should_open_latches));
+	double const center_position_in_samps = position_lgr(should_open_latches);
 	double const  latch_duration_result = calculateDuration(duration_lgr(should_open_latches), _playbackSampleRate);
 	float const latch_skew_result = memoryless::clamp(skew_lgr(should_open_latches), 0.001f, 0.999f);
 	

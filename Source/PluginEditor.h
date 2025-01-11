@@ -51,7 +51,7 @@ private:
 	WaveformAndPositionComponent waveformAndPositionComponent;
 	
 	// to get from processor to draw onto gui
-	std::vector<double> grainPositions;
+	std::vector<nvs::gran::GrainDescription> grainDescriptions;
 	
 	
 	std::array<juce::Colour, 5> gradientColors {

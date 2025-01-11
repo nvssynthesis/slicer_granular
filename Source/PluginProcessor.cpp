@@ -300,31 +300,29 @@ void Slicer_granularAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
 						  buffer.getNumSamples());
 	
 	std::vector<nvs::gran::GrainDescription> descriptions = granular_synth_juce.getGrainDescriptions();
-	std::vector<double> positions(descriptions.size());
-	std::ranges::transform(descriptions, positions.begin(), &nvs::gran::GrainDescription::position);
-	writeGrainPositionData(positions);
+	writeGrainDescriptionData(descriptions);
 	
 	loggingGuts.logIfNaNOrInf(buffer);
 }
 
-void Slicer_granularAudioProcessor::writeGrainPositionData(const std::vector<double> &newData){
-	int inactiveBuffer = measuredGrainPositions.activeBufferIdx.load() == 0 ? 1 : 0; // flip the buffer index
+void Slicer_granularAudioProcessor::writeGrainDescriptionData(const std::vector<nvs::gran::GrainDescription> &newData){
+	int inactiveBuffer = measuredGrainDescriptions.activeBufferIdx.load() == 0 ? 1 : 0; // flip the buffer index
 	if (inactiveBuffer == 0){
-		measuredGrainPositions.data0 = newData;
+		measuredGrainDescriptions.data0 = newData;
 	}
 	else {
-		measuredGrainPositions.data1 = newData;
+		measuredGrainDescriptions.data1 = newData;
 	}
-	measuredGrainPositions.dataReady.store(true);
-	measuredGrainPositions.activeBufferIdx.store(inactiveBuffer, std::memory_order_release);
-	measuredGrainPositions.sendChangeMessage();
+	measuredGrainDescriptions.dataReady.store(true);
+	measuredGrainDescriptions.activeBufferIdx.store(inactiveBuffer, std::memory_order_release);
+	measuredGrainDescriptions.sendChangeMessage();
 }
-void Slicer_granularAudioProcessor::readGrainPositionData(std::vector<double> &outData){
-	if (measuredGrainPositions.dataReady.load(std::memory_order_acquire)) {
-		int activeBuffer = measuredGrainPositions.activeBufferIdx.load();
-		const std::vector<double>& data = (activeBuffer == 0) ? measuredGrainPositions.data0 : measuredGrainPositions.data1;
+void Slicer_granularAudioProcessor::readGrainDescriptionData(std::vector<nvs::gran::GrainDescription> &outData){
+	if (measuredGrainDescriptions.dataReady.load(std::memory_order_acquire)) {
+		int activeBuffer = measuredGrainDescriptions.activeBufferIdx.load();
+		const std::vector<nvs::gran::GrainDescription>& data = (activeBuffer == 0) ? measuredGrainDescriptions.data0 : measuredGrainDescriptions.data1;
 		outData = data; // Copy data to output parameter
-		measuredGrainPositions.dataReady.store(false, std::memory_order_release);
+		measuredGrainDescriptions.dataReady.store(false, std::memory_order_release);
 	}
 }
 

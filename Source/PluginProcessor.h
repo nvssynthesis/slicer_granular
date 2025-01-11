@@ -63,21 +63,21 @@ public:
 	juce::AudioFormatManager &getAudioFormatManager();
 	juce::AudioProcessorValueTreeState &getAPVTS();
 
-	void writeGrainPositionData(const std::vector<double> &newData);
-	void readGrainPositionData(std::vector<double> &outData);
+	void writeGrainDescriptionData(const std::vector<nvs::gran::GrainDescription> &newData);
+	void readGrainDescriptionData(std::vector<nvs::gran::GrainDescription> &outData);
 	
 	// change broadcasters
 	void addSampleManagementGutsListener(juce::ChangeListener *newListener){
 		sampleManagementGuts.addChangeListener(newListener);
 	}
-	void addMeasuredGrainPositionsListener(juce::ChangeListener *newListener){
-		measuredGrainPositions.addChangeListener(newListener);
+	void addMeasuredGrainDescriptionsListener(juce::ChangeListener *newListener){
+		measuredGrainDescriptions.addChangeListener(newListener);
 	}
 	void removeSampleManagementGutsListener(juce::ChangeListener *newListener){
 		sampleManagementGuts.removeChangeListener(newListener);
 	}
-	void removeMeasuredGrainPositionsListener(juce::ChangeListener *newListener){
-		measuredGrainPositions.removeChangeListener(newListener);
+	void removeMeasuredGrainDescriptionsListener(juce::ChangeListener *newListener){
+		measuredGrainDescriptions.removeChangeListener(newListener);
 	}
 private:
 	struct LoggingGuts {
@@ -114,13 +114,13 @@ private:
 public:
 	struct MeasuredData : public juce::ChangeBroadcaster
 	{
-		std::vector<double> data0;
-		std::vector<double> data1;
+		std::vector<nvs::gran::GrainDescription> data0;
+		std::vector<nvs::gran::GrainDescription> data1;
 		std::atomic<bool> dataReady {false};
 		std::atomic<int> activeBufferIdx {0};
 	};
 private:
-	MeasuredData measuredGrainPositions;
+	MeasuredData measuredGrainDescriptions;
 	
 	juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
     //==============================================================================

@@ -18,7 +18,7 @@ Slicer_granularAudioProcessorEditor::Slicer_granularAudioProcessorEditor (Slicer
 ,	audioProcessor (p)
 {
 	audioProcessor.addSampleManagementGutsListener(this);
-	audioProcessor.addMeasuredGrainPositionsListener(this);
+	audioProcessor.addMeasuredGrainDescriptionsListener(this);
 //	auto const fp = audioProcessor.getSampleFilePath();
 //	fileComp.setCurrentFile(fp, false);
 	auto const fileToRead = audioProcessor.getSampleFilePath();
@@ -52,7 +52,7 @@ Slicer_granularAudioProcessorEditor::~Slicer_granularAudioProcessorEditor()
 {
 	fileComp.pushRecentFilesToFile();
 	audioProcessor.removeSampleManagementGutsListener(this);
-	audioProcessor.removeMeasuredGrainPositionsListener(this);
+	audioProcessor.removeMeasuredGrainDescriptionsListener(this);
 }
 //==============================================================================
 void Slicer_granularAudioProcessorEditor::updateToggleState (juce::Button* button, juce::String name, bool &valToAffect)
@@ -148,23 +148,19 @@ void Slicer_granularAudioProcessorEditor::drawThumbnail(juce::String const &samp
 		thumbnail->setSource (new juce::FileInputSource (sampleFilePath));	// owned by thumbnail, no worry about delete
 	}
 }
-
 void Slicer_granularAudioProcessorEditor::changeListenerCallback (juce::ChangeBroadcaster* source){
 	audioProcessor.writeToLog("editor: changeListenerCallback.\n");
 	if (dynamic_cast<Slicer_granularAudioProcessor::SampleManagementGuts*>(source)){
-		audioProcessor.writeToLog("changeListenerCallback: source is sampleManagementGuts. Notating fileComp and drawing thumbnail...");
 		auto const fileToRead = audioProcessor.getSampleFilePath();
 		notateFileComp(fileToRead);
 		drawThumbnail(fileToRead);
 	}
 	else if (dynamic_cast<Slicer_granularAudioProcessor::MeasuredData*>(source)) {
-		audioProcessor.writeToLog("changeListenerCallback: source is measuredData (grain positions). Reading grain positions for draw...");
-		audioProcessor.readGrainPositionData(grainPositions);
+		audioProcessor.readGrainDescriptionData(grainDescriptions);
 		waveformAndPositionComponent.wc.removeMarkers(WaveformComponent::MarkerType::CurrentPosition);
-		for (auto p : grainPositions){
-			waveformAndPositionComponent.wc.addMarker(p, WaveformComponent::MarkerType::CurrentPosition);
+		for (auto p : grainDescriptions){
+			waveformAndPositionComponent.wc.addMarker(p.position, WaveformComponent::MarkerType::CurrentPosition);
 		}
-		
 		waveformAndPositionComponent.wc.repaint();
 	}
 	else {
