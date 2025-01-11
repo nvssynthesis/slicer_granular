@@ -83,8 +83,8 @@ void GranularVoice::renderNextBlock (juce::AudioBuffer< float > &outputBuffer, i
 			*(channelData + samp) += output[channel];
 		}
 	}
-	// query grains for supposed beginning sample index (position)
-	_indices = granularSynthGuts->getSampleIndices();
+	// query grains for descriptions
+	_grainDescriptions = granularSynthGuts->getGrainDescriptions();
 	
 	if (!isVoiceActive()){
 		granularSynthGuts->clearNotes();

@@ -209,13 +209,13 @@ std::array<float, 2> genGranPoly1::doProcess(float trigger_in){
 	return output;
 }
 
-std::vector<double> genGranPoly1::getSampleIndices() const {
-	std::vector<double> indices(N_GRAINS);
+std::vector<GrainDescription> genGranPoly1::getGrainDescriptions() const {
+	std::vector<GrainDescription> gds(N_GRAINS);
 	for (size_t i = 0; i < N_GRAINS; ++i){
-		indices[i] = _grains[i].getCurrentSampleIndex();
+		gds[i] = _grains[i].getGrainDescription();
 	}
-	assert(indices.size() == N_GRAINS);
-	return indices;
+	assert(gds.size() == N_GRAINS);
+	return gds;
 }
 
 //=====================================================================================
@@ -293,6 +293,12 @@ void genGrain1::setPanRand(float panRand){
 	pan_lgr.setSigma(panRand);
 }
 
+GrainDescription genGrain1::getGrainDescription() const {
+	GrainDescription gd;
+	gd.position = nvs::gen::wrap01(_sampleIndex / _waveBlock.getNumSamples());
+	return gd;
+}
+
 namespace {	// anonymous namespace for local helper functions
 float calculateTransposeMultiplier(float const ratioBasedOnNote, float const ratioBasedOnTranspose){
 	return memoryless::clamp(ratioBasedOnNote * ratioBasedOnTranspose, 0.001f, 1000.f);
@@ -362,7 +368,6 @@ genGrain1::outs genGrain1::operator()(float const trig_in){
 	bool const should_open_latches = _busyHisto.val ? false : static_cast<bool>(trig_in);
 	
 	float const transpose_multiplier = calculateTransposeMultiplier(_ratioForNoteLatch(_ratioBasedOnNote, should_open_latches), 							fastSemitonesToRatio(transpose_lgr(should_open_latches)));
-
 
 	double const center_position_in_samps = calculateCenterPosition(wave_size, position_lgr(should_open_latches));
 	double const  latch_duration_result = calculateDuration(duration_lgr(should_open_latches), _playbackSampleRate);

@@ -23,20 +23,20 @@ GranularSynthesizer::GranularSynthesizer()
 	addSound(sound);
 	setNoteStealingEnabled(true);
 }
-std::vector<double> GranularSynthesizer::getSampleIndices() const {
-	std::vector<double> indices;
-	indices.reserve(totalNumGrains_);
+std::vector<nvs::gran::GrainDescription> GranularSynthesizer::getGrainDescriptions() const {
+	std::vector<nvs::gran::GrainDescription> grainDescriptions;
+	grainDescriptions.reserve(totalNumGrains_);
 
 	for (const auto &v : voices) {
 		if (GranularVoice const * const gv = dynamic_cast<GranularVoice * const>(v)){
-			std::vector<double> const theseIndices = gv->getSampleIndices();
-			indices.insert(indices.end(), theseIndices.begin(), theseIndices.end());
+			std::vector<nvs::gran::GrainDescription> const theseDescriptions = gv->getGrainDescriptions();
+			grainDescriptions.insert(grainDescriptions.end(), theseDescriptions.begin(), theseDescriptions.end());
 		}
 		else {
 			assert(false);
 		}
 	}
-	return indices;
+	return grainDescriptions;
 }
 void GranularSynthesizer::initializeVoices() {
 	clearVoices();

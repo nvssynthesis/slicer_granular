@@ -100,6 +100,10 @@ inline double durationGaussianToProcessingSpace(double hertz, double sampleRate)
 	return hertz / sampleRate;
 }
 
+struct GrainDescription {
+	// a struct to communicate upstream about the coarse description of a given grain's current state
+	double position;
+};
 
 class genGranPoly1 {
 public:
@@ -174,7 +178,7 @@ public:
 	inline std::array<float, 2> operator()(float triggerIn){
 		return doProcess(triggerIn);
 	}
-	std::vector<double> getSampleIndices() const;
+	std::vector<GrainDescription> getGrainDescriptions() const;
 	void setLogger(std::function<void(const juce::String&)> loggerFunction);
 protected:
 	juce::dsp::AudioBlock<float> _waveBlock;	// dependent on owning instantiator, subject to change address from above
@@ -249,9 +253,8 @@ public:
 	};
 	
 	outs operator()(float const trig_in);
-	double getCurrentSampleIndex() const {
-		return _sampleIndex;
-	}
+	
+	GrainDescription getGrainDescription() const;
 	
 	void setLogger(std::function<void(const juce::String&)> loggerFunction);
 

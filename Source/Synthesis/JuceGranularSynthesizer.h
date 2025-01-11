@@ -19,7 +19,7 @@ public:
 	
 	void setAudioBlock(juce::AudioBuffer<float> &waveBuffer, double newFileSampleRate);
 	static constexpr int getNumVoices(){ return num_voices; }
-	std::vector<double> getSampleIndices() const;
+	std::vector<nvs::gran::GrainDescription> getGrainDescriptions() const;
 	void setCurrentPlaybackSampleRate(double sampleRate) override;
 	
 	template <auto Start, auto End>
