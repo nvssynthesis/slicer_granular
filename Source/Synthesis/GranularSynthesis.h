@@ -105,6 +105,7 @@ struct GrainDescription {
 	double position;
 	double sample_playback_rate;
 	float window;
+	float pan;
 };
 
 class genGranPoly1 {
@@ -284,6 +285,7 @@ private:
     double _sample_index {0.0};
     float _sample_playback_rate {0.0};
     float _window {0.f};
+	float _pan {0.f};
     
     float _ratio_based_on_note {1.f}; // =1.f. later this may change according to a settable concert pitch
     float _amplitude_based_on_note {0.f};

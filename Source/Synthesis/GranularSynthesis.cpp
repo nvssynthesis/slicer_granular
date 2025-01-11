@@ -298,6 +298,7 @@ GrainDescription genGrain1::getGrainDescription() const {
 	gd.position = nvs::gen::wrap01(_sample_index / _wave_block.getNumSamples());
 	gd.sample_playback_rate = _sample_playback_rate;
 	gd.window = _window;
+	gd.pan = _pan;
 	return gd;
 }
 
@@ -375,9 +376,9 @@ genGrain1::outs genGrain1::operator()(float const trig_in){
 	float const vel_amplitude = _amplitude_for_note_latch(_amplitude_based_on_note, should_open_latches);
 
 	float const sample = calculateSample(_wave_block, _sample_index, _window, vel_amplitude);
-	float const latch_pan_result = calculatePan(_pan_lgr(should_open_latches));
+	_pan = calculatePan(_pan_lgr(should_open_latches));
 	
-	writeAudioToOuts(sample, latch_pan_result, o);
+	writeAudioToOuts(sample, _pan, o);
 	
 	processBusyness(_window, _busy_histo, o);
 	return o;
