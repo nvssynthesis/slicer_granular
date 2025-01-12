@@ -26,6 +26,8 @@
       <FILE id="AcOWtc" name="nvs_gen.h" compile="0" resource="0" file="nvs_libraries/nvs_libraries/include/nvs_gen.h"/>
       <FILE id="DcXofS" name="plotting.h" compile="0" resource="0" file="Source/plotting.h"/>
       <GROUP id="{BC0357AF-85B3-3B4A-11BC-B4C71511F210}" name="Synthesis">
+        <FILE id="jndSe6" name="GrainDescription.h" compile="0" resource="0"
+              file="Source/Synthesis/GrainDescription.h"/>
         <FILE id="FxjJzF" name="GranularSynthesis.cpp" compile="1" resource="0"
               file="Source/Synthesis/GranularSynthesis.cpp"/>
         <FILE id="uydM2T" name="GranularSynthesis.h" compile="0" resource="0"

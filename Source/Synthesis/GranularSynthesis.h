@@ -15,6 +15,7 @@
 
 #include "../Random.h"
 #include "../../nvs_libraries/nvs_libraries/include/nvs_gen.h"
+#include "GrainDescription.h"
 #include <JuceHeader.h>
 
 /*** TODO:
@@ -26,7 +27,7 @@ static constexpr size_t N_GRAINS =
 #if defined(DEBUG_BUILD) | defined(DEBUG) | defined(_DEBUG)
 								10;
 #else
-								30;
+								15;
 #endif
 
 namespace nvs {
@@ -99,14 +100,6 @@ inline double durationGaussianToProcessingSpace(double hertz, double sampleRate)
 	// samples per second:
 	return hertz / sampleRate;
 }
-
-struct GrainDescription {
-	// a struct to communicate upstream about the coarse description of a given grain's current state
-	double position;
-	double sample_playback_rate;
-	float window;
-	float pan;
-};
 
 class genGranPoly1 {
 public:

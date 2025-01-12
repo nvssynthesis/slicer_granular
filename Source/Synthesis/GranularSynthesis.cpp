@@ -298,7 +298,7 @@ GrainDescription genGrain1::getGrainDescription() const {
 	gd.position = nvs::gen::wrap01(_sample_index / _wave_block.getNumSamples());
 	gd.sample_playback_rate = _sample_playback_rate;
 	gd.window = _window;
-	gd.pan = _pan;
+	gd.pan = _pan / (std::numbers::pi * 0.5f);
 	return gd;
 }
 
@@ -372,7 +372,7 @@ genGrain1::outs genGrain1::operator()(float const trig_in){
 #pragma message("need to test this skew-based sample index offset further")
 	_accum(_sample_playback_rate, static_cast<bool>(should_open_latches));
 	_sample_index = (sample_read_rate * _accum.val) + center_position_in_samps - (latch_skew_result * latch_duration_result);
-	_window = calculateWindow(_accum.val, latch_duration_result, _sample_playback_rate, latch_skew_result, _plateau_lgr(should_open_latches));
+	_window = calculateWindow(_accum.val, latch_duration_result, _sample_playback_rate, latch_skew_result, memoryless::clamp_low(_plateau_lgr(should_open_latches), 0.000001f));
 	float const vel_amplitude = _amplitude_for_note_latch(_amplitude_based_on_note, should_open_latches);
 
 	float const sample = calculateSample(_wave_block, _sample_index, _window, vel_amplitude);

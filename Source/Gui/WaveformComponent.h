@@ -21,6 +21,7 @@
 #include <atomic>
 #include "AttachedSlider.h"
 #include "fmt/core.h"
+#include "../Synthesis/GrainDescription.h"
 
 class WaveformComponent		:	public juce::Component
 ,								private juce::ChangeListener
@@ -32,28 +33,44 @@ public:
 		Onset = 0,
 		CurrentPosition
 	};
-	int getNumMarkers(MarkerType markerType);
-	void addMarker(double pos, MarkerType markerType);
+	size_t getNumMarkers(MarkerType markerType);
+	void addMarker(double onsetPosition);							// adds an OnsetMarker
+	void addMarker(nvs::gran::GrainDescription grainDescription);	// adds a PositionMarker
 	void removeMarkers(MarkerType markerType);
-	void drawMarker(juce::Graphics& g, double pos, MarkerType markerType);
-	void drawMarkers(juce::Graphics& g, MarkerType markerType);
 
 	void paint(juce::Graphics& g) override;
 	void resized() override {}
 	void changeListenerCallback (juce::ChangeBroadcaster* source) override;
 	
 	juce::AudioThumbnail *const getThumbnail();
+public:
+	struct OnsetMarker {
+		double position;
+	};
+	struct PositionMarker {
+		double position;
+		double sample_playback_rate;
+		float window;
+		float pan;
+		static PositionMarker fromGrainDescription(nvs::gran::GrainDescription const &gd){
+			return PositionMarker{gd.position, gd.sample_playback_rate, gd.window, gd.pan};
+		}
+	};
 private:
 	juce::AudioThumbnailCache thumbnailCache;
 	juce::AudioThumbnail thumbnail;
 	
-	juce::MarkerList onsetMarkerList;
-	juce::MarkerList currentPositionMarkerList;
-	std::map<MarkerType, juce::MarkerList &> markerListMap {
-		{MarkerType::Onset, onsetMarkerList},
-		{MarkerType::CurrentPosition, currentPositionMarkerList}
+	std::vector<OnsetMarker> onsetMarkerList;
+	std::vector<PositionMarker> currentPositionMarkerList;
+	using MarkerListVariant = std::variant<std::vector<OnsetMarker>*, std::vector<PositionMarker>*>;
+	std::map<MarkerType, MarkerListVariant> markerListMap {
+		{MarkerType::Onset, MarkerListVariant(&onsetMarkerList)},
+		{MarkerType::CurrentPosition, MarkerListVariant(&currentPositionMarkerList)}
 	};
-	
+	void drawMarkers(juce::Graphics& g, MarkerType markerType);
+	using MarkerVariant = std::variant<OnsetMarker, PositionMarker>;
+	void drawMarker(juce::Graphics& g, MarkerVariant marker);
+
 	void thumbnailChanged()
 	{
 		repaint();

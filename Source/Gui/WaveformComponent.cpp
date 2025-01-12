@@ -17,52 +17,74 @@ WaveformComponent::WaveformComponent(int sourceSamplesPerThumbnailSample, juce::
 	thumbnail.addChangeListener(this);	// thumbnail is a ChangeBroadcaster
 }
 	
-int WaveformComponent::getNumMarkers(MarkerType markerType){
-	return markerListMap.at(markerType).getNumMarkers();
+size_t WaveformComponent::getNumMarkers(MarkerType markerType) {
+	const auto& markerListVariant = markerListMap.at(markerType);
+	return std::visit([](auto* markerList) { return markerList->size(); }, markerListVariant);
 }
-void WaveformComponent::addMarker(double pos, MarkerType markerType){
-	juce::String name(pos);
-	markerListMap.at(markerType).setMarker(name, juce::RelativeCoordinate(pos));
-}
-void WaveformComponent::removeMarkers(MarkerType markerType){
-	juce::MarkerList &markerList = markerListMap.at(markerType);
-	auto numMarkers = markerList.getNumMarkers();
-	for (auto i = numMarkers - 1; i >= 0 ; --i){
-		markerList.removeMarker(i);
-	}
-	assert (markerList.getNumMarkers() == 0);
-}
+void WaveformComponent::addMarker(double onsetPosition) {
+	auto it = std::lower_bound(onsetMarkerList.begin(), onsetMarkerList.end(), onsetPosition,
+							   [](const OnsetMarker& marker, double position) {
+								   return marker.position < position;
+							   });
 
-void WaveformComponent::drawMarker(juce::Graphics& g, double pos, MarkerType markerType){
+	onsetMarkerList.insert(it, OnsetMarker{onsetPosition});
+}
+void WaveformComponent::addMarker(nvs::gran::GrainDescription gd){
+	auto it = std::lower_bound(currentPositionMarkerList.begin(), currentPositionMarkerList.end(), gd,
+							   [](const PositionMarker& marker, nvs::gran::GrainDescription gd) {
+									return marker.position < gd.position;
+							   });
+	currentPositionMarkerList.insert(it, PositionMarker::fromGrainDescription(gd));
+}
+void WaveformComponent::removeMarkers(MarkerType markerType) {
+	auto& markerListVariant = markerListMap.at(markerType);
+
+	std::visit([](auto* markerList) {
+		markerList->clear();
+		assert(markerList->empty());
+	}, markerListVariant);
+}
+void WaveformComponent::drawMarkers(juce::Graphics& g, MarkerType markerType){
+	auto const &markerListVariant = markerListMap.at(markerType);
+	std::visit([&](auto const& markerList) {
+		for (auto const& marker : *markerList) {
+			drawMarker(g, marker);
+		}
+	}, markerListVariant);
+}
+void WaveformComponent::drawMarker(juce::Graphics& g, MarkerVariant marker)
+{
 	auto const line = [&]
 	{
-		float const xPos = getWidth() * pos;
+		double position = std::visit([](const auto& marker) {
+			return marker.position; // position is a common member to all alternatives
+		}, marker);
+		float const xPos = getWidth() * position;
 		float y0 = getLocalBounds().getY();
 		float y1 = getLocalBounds().getBottom();
 		auto l = juce::Line<float>(juce::Point<float>{xPos, y0}, juce::Point<float>{xPos, y1});
-		if (markerType == MarkerType::Onset){
-			g.setColour(juce::Colours::blue);
-
-		}
-		else if (markerType == MarkerType::CurrentPosition){
-			g.setColour(juce::Colours::lightgreen);
-			auto const shortenBy = l.getLength() * 0.15;
-			l = l.withShortenedStart(shortenBy);
-			l = l.withShortenedEnd(shortenBy);
-		}
+		std::visit([&](const auto &marker) {
+			if constexpr (std::is_same_v<std::decay_t<decltype(marker)>, OnsetMarker>) {
+				g.setColour(juce::Colours::blue);
+			} else if constexpr (std::is_same_v<std::decay_t<decltype(marker)>, PositionMarker>) {
+				g.setColour(juce::Colours::lightgreen);
+				[[maybe_unused]] auto p = (marker.pan * 2.0) - 1.0;					// affect y-center position
+				[[maybe_unused]] auto r = marker.sample_playback_rate;
+				[[maybe_unused]] auto w = marker.window;
+				g.setOpacity(sqrt(w));
+				auto const shortenBy = l.getLength() * 0.25;
+				l = l.withShortenedStart(shortenBy);
+				l = l.withShortenedEnd(shortenBy);
+				l.applyTransform(juce::AffineTransform::translation(0.0f, p * shortenBy));
+//				juce::Point<float> start = transform.translation(l.getStartX(), l.getStartY());
+//				l = juce::Line<float>(start, juce::Point<float>(l.getEnd()));
+			}
+		}, marker);
 		return l;
 	}();
 	
 	g.drawLine(line, 1.f);
 }
-void WaveformComponent::drawMarkers(juce::Graphics& g, MarkerType markerType){
-	auto const &markerList = markerListMap.at(markerType);
-	for (auto i = 0; i < markerList.getNumMarkers(); ++i){
-		double pos = markerList.getMarkerPosition(*markerList.getMarker(i), this);
-		drawMarker(g, pos, markerType);
-	}
-}
-
 void WaveformComponent::paint(juce::Graphics& g)
 {
 	g.setColour (juce::Colours::darkgrey);
