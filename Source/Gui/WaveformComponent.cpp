@@ -62,22 +62,23 @@ void WaveformComponent::drawMarker(juce::Graphics& g, MarkerVariant marker)
 		float const xPos = getWidth() * position;
 		float y0 = getLocalBounds().getY();
 		float y1 = getLocalBounds().getBottom();
+		assert (y1 > y0);
+		float const regionHeight = y1 - y0;
 		auto l = juce::Line<float>(juce::Point<float>{xPos, y0}, juce::Point<float>{xPos, y1});
 		std::visit([&](const auto &marker) {
 			if constexpr (std::is_same_v<std::decay_t<decltype(marker)>, OnsetMarker>) {
 				g.setColour(juce::Colours::blue);
 			} else if constexpr (std::is_same_v<std::decay_t<decltype(marker)>, PositionMarker>) {
-				g.setColour(juce::Colours::lightgreen);
-				[[maybe_unused]] auto p = (marker.pan * 2.0) - 1.0;					// affect y-center position
-				[[maybe_unused]] auto r = marker.sample_playback_rate;
-				[[maybe_unused]] auto w = marker.window;
-				g.setOpacity(sqrt(w));
-				auto const shortenBy = l.getLength() * 0.25;
-				l = l.withShortenedStart(shortenBy);
-				l = l.withShortenedEnd(shortenBy);
-				l.applyTransform(juce::AffineTransform::translation(0.0f, p * shortenBy));
-//				juce::Point<float> start = transform.translation(l.getStartX(), l.getStartY());
-//				l = juce::Line<float>(start, juce::Point<float>(l.getEnd()));
+				[[maybe_unused]] int const g_id = marker.grain_id;
+				auto const r = marker.sample_playback_rate;
+				auto const p = marker.pan;
+				auto const w = marker.window;
+				juce::Colour colour = juce::Colour(juce::Colours::lightgreen);
+				colour = colour.withRotatedHue(log2(r) / 20.f);									// pitch affects hue
+				g.setColour(colour);
+				g.setOpacity(sqrt(w));															// envelope (window) affects opacity
+				l.applyTransform(juce::AffineTransform::translation(0.0f, p * (regionHeight)));	// panning affects y position
+				l.applyTransform(juce::AffineTransform::scale(1.f, 0.5f));						// make line take up just 1 channel's worth of space (half the height)
 			}
 		}, marker);
 		return l;

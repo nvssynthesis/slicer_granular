@@ -149,7 +149,6 @@ void Slicer_granularAudioProcessorEditor::drawThumbnail(juce::String const &samp
 	}
 }
 void Slicer_granularAudioProcessorEditor::changeListenerCallback (juce::ChangeBroadcaster* source){
-	audioProcessor.writeToLog("editor: changeListenerCallback.\n");
 	if (dynamic_cast<Slicer_granularAudioProcessor::SampleManagementGuts*>(source)){
 		auto const fileToRead = audioProcessor.getSampleFilePath();
 		notateFileComp(fileToRead);

@@ -271,7 +271,9 @@ void genGrain1::setPlateau(float plateau){
 	_plateau_lgr.setMu(plateau);
 }
 void genGrain1::setPan(float pan){
-	_pan_lgr.setMu(pan);
+	assert ((pan >= 0.f) and (pan <= 1.f));
+	// reverse effective control to correspond better with gui representation
+	_pan_lgr.setMu(1.f - pan);
 }
 void genGrain1::setTransposeRand(float transposeRand){
 	_transpose_lgr.setSigma(transposeRand);
@@ -295,6 +297,7 @@ void genGrain1::setPanRand(float panRand){
 
 GrainDescription genGrain1::getGrainDescription() const {
 	GrainDescription gd;
+	gd.grain_id = _grain_id;
 	gd.position = nvs::gen::wrap01(_sample_index / _wave_block.getNumSamples());
 	gd.sample_playback_rate = _sample_playback_rate;
 	gd.window = _window;

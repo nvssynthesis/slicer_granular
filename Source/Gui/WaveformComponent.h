@@ -48,12 +48,13 @@ public:
 		double position;
 	};
 	struct PositionMarker {
+		int grain_id;
 		double position;
 		double sample_playback_rate;
 		float window;
 		float pan;
 		static PositionMarker fromGrainDescription(nvs::gran::GrainDescription const &gd){
-			return PositionMarker{gd.position, gd.sample_playback_rate, gd.window, gd.pan};
+			return PositionMarker{gd.grain_id, gd.position, gd.sample_playback_rate, gd.window, gd.pan};
 		}
 	};
 private:
