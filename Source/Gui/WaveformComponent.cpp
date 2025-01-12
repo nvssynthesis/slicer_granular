@@ -52,6 +52,24 @@ void WaveformComponent::drawMarkers(juce::Graphics& g, MarkerType markerType){
 		}
 	}, markerListVariant);
 }
+namespace {
+void processLine(juce::Graphics& g, juce::Line<float> &, WaveformComponent::OnsetMarker const &){
+	g.setColour(juce::Colours::blue);
+}
+void processLine(juce::Graphics& g, juce::Line<float> &l, WaveformComponent::PositionMarker const &marker){
+	auto const regionHeight = l.getLength();
+	[[maybe_unused]] int const g_id = marker.grain_id;
+	auto const r = marker.sample_playback_rate;
+	auto const p = marker.pan;
+	auto const w = marker.window;
+	juce::Colour colour = juce::Colour(juce::Colours::lightgreen);
+	colour = colour.withRotatedHue(log2(r) / 20.f);									// pitch affects hue
+	g.setColour(colour);
+	g.setOpacity(sqrt(w));															// envelope (window) affects opacity
+	l.applyTransform(juce::AffineTransform::translation(0.0f, p * (regionHeight)));	// panning affects y position
+	l.applyTransform(juce::AffineTransform::scale(1.f, 0.5f));						// make line take up just 1 channel's worth of space (half the height)}
+}
+}
 void WaveformComponent::drawMarker(juce::Graphics& g, MarkerVariant marker)
 {
 	auto const line = [&]
@@ -66,20 +84,7 @@ void WaveformComponent::drawMarker(juce::Graphics& g, MarkerVariant marker)
 		float const regionHeight = y1 - y0;
 		auto l = juce::Line<float>(juce::Point<float>{xPos, y0}, juce::Point<float>{xPos, y1});
 		std::visit([&](const auto &marker) {
-			if constexpr (std::is_same_v<std::decay_t<decltype(marker)>, OnsetMarker>) {
-				g.setColour(juce::Colours::blue);
-			} else if constexpr (std::is_same_v<std::decay_t<decltype(marker)>, PositionMarker>) {
-				[[maybe_unused]] int const g_id = marker.grain_id;
-				auto const r = marker.sample_playback_rate;
-				auto const p = marker.pan;
-				auto const w = marker.window;
-				juce::Colour colour = juce::Colour(juce::Colours::lightgreen);
-				colour = colour.withRotatedHue(log2(r) / 20.f);									// pitch affects hue
-				g.setColour(colour);
-				g.setOpacity(sqrt(w));															// envelope (window) affects opacity
-				l.applyTransform(juce::AffineTransform::translation(0.0f, p * (regionHeight)));	// panning affects y position
-				l.applyTransform(juce::AffineTransform::scale(1.f, 0.5f));						// make line take up just 1 channel's worth of space (half the height)
-			}
+			processLine(g, l, marker);
 		}, marker);
 		return l;
 	}();
