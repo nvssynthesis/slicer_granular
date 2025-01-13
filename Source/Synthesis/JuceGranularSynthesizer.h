@@ -15,10 +15,12 @@
 class GranularSynthesizer	:	public juce::Synthesiser
 {
 public:
-	GranularSynthesizer(double const &sampleRate,
-						juce::AudioBuffer<float> &waveBuffer, double const &fileSampleRate,
-						unsigned int num_voices);
-	void setAudioBlock(juce::AudioBuffer<float> &waveBuffer);
+	GranularSynthesizer();
+	
+	void setAudioBlock(juce::AudioBuffer<float> &waveBuffer, double newFileSampleRate);
+	static constexpr int getNumVoices(){ return num_voices; }
+	std::vector<nvs::gran::GrainDescription> getGrainDescriptions() const;
+	void setCurrentPlaybackSampleRate(double sampleRate) override;
 	
 	template <auto Start, auto End>
 	constexpr void granularMainParamSet(juce::AudioProcessorValueTreeState &apvts){
@@ -51,5 +53,17 @@ public:
 	}
 	void setLogger(std::function<void(const juce::String&)> loggerFunction);
 private:
-	std::function<void(const juce::String&)> logger = nullptr;
+	std::function<void(const juce::String&)> logger_ = nullptr;
+	juce::dsp::AudioBlock<float> audioBlock_;
+	double fileSampleRate_;
+	void setVoicesAudioBlock();
+	void initializeVoices();
+	
+	constexpr static int num_voices =
+#if defined(DEBUG_BUILD) | defined(DEBUG) | defined(_DEBUG)
+											2;
+#else
+											16;
+#endif
+	size_t totalNumGrains_;
 };

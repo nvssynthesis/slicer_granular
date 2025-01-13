@@ -40,8 +40,8 @@ public:
 private:
 	//===============================================================================
 	void readFile (const juce::File& fileToRead);
-	void drawThumbnail();
-	void notateFileComp();
+	void drawThumbnail(juce::String const &sampleFilePath);
+	void notateFileComp(juce::String const &sampleFilePath);
 	//===============================================================================
 private:
 	juce::ComponentBoundsConstrainer constrainer;
@@ -49,7 +49,11 @@ private:
 	FileSelectorComponent fileComp;
 	TabbedPagesComponent tabbedPages;
 	WaveformAndPositionComponent waveformAndPositionComponent;
-
+	
+	// to get from processor to draw onto gui
+	std::vector<nvs::gran::GrainDescription> grainDescriptions;
+	
+	
 	std::array<juce::Colour, 5> gradientColors {
 		juce::Colours::darkred,
 		juce::Colours::darkred,

@@ -15,12 +15,20 @@
 
 #include "../Random.h"
 #include "../../nvs_libraries/nvs_libraries/include/nvs_gen.h"
+#include "GrainDescription.h"
 #include <JuceHeader.h>
 
 /*** TODO:
  -envelopes shall have secondary parameter, plateau, which clips the window before parzen
  -add automatic traversal
 */
+
+static constexpr size_t N_GRAINS =
+#if defined(DEBUG_BUILD) | defined(DEBUG) | defined(_DEBUG)
+								10;
+#else
+								15;
+#endif
 
 namespace nvs {
 namespace gran {
@@ -68,21 +76,6 @@ private:
 	MuSigmaPair<float_t> _msp;
 };
 
-//inline void logIfNaN(float f, juce::String const &&description, std::function<void(const juce::String&)> const &loggerFunc){
-////	if (f != f){
-////		loggerFunc("  " + description + " NaN");
-////	}
-////	if (std::isinf(f)){
-////		loggerFunc("  " + description + " inf");
-////	}
-//}
-//template<typename T>
-//inline void logIfNull(T *t, juce::String const &&description, std::function<void(const juce::String&)> const &loggerFunc){
-////	if (t == nullptr){
-////		loggerFunc("  " + description + " nullptr");
-////	}
-//}
-
 inline double millisecondsToSamples(double ms, double sampleRate) {
 	return (ms / 1000.0) * sampleRate;
 }
@@ -108,14 +101,17 @@ inline double durationGaussianToProcessingSpace(double hertz, double sampleRate)
 	return hertz / sampleRate;
 }
 
-
 class genGranPoly1 {
 public:
-	genGranPoly1(double const &sampleRate, juce::AudioBuffer<float>& waveBuffer, double const &fileSampleRate, unsigned long seed = 1234567890UL);
+	genGranPoly1(unsigned long seed = 1234567890UL);
 	virtual ~genGranPoly1() = default;
 	//====================================================================================
-	void setAudioBlock(juce::AudioBuffer<float>& waveBuffer);
+	void setAudioBlock(juce::dsp::AudioBlock<float> waveBlock, double fileSampleRate);
+	void setSampleRate(double sampleRate);
 	//====================================================================================
+	static constexpr size_t getNumGrains(){
+		return N_GRAINS;
+	}
 	inline void noteOn(noteNumber_t note, velocity_t velocity){	// reassign to noteHolder
 		doNoteOn(note, velocity);
 	}
@@ -178,11 +174,10 @@ public:
 	inline std::array<float, 2> operator()(float triggerIn){
 		return doProcess(triggerIn);
 	}
+	std::vector<GrainDescription> getGrainDescriptions() const;
 	void setLogger(std::function<void(const juce::String&)> loggerFunction);
 protected:
-	double const &_sampleRate;				// dependent on owning instantiator, subject to change value from above
-	juce::dsp::AudioBlock<float> _waveBlock;	// dependent on owning instantiator, subject to change address from above
-	double const &_fileSampleRate;
+	juce::dsp::AudioBlock<float> _wave_block;	// dependent on owning instantiator, subject to change address from above
 	//================================================================================
 	virtual void doNoteOn(noteNumber_t note, velocity_t velocity);	// reassign to noteHolder
 	virtual void doNoteOff(noteNumber_t note);						// remove from noteHolder
@@ -208,30 +203,30 @@ protected:
 	std::array<float, 2> doProcess(float triggerIn);
 	
 private:
-	nvs::rand::BoxMuller _gaussian_rng;
+    nvs::rand::BoxMuller _gaussian_rng;
 
-	float _normalizer {1.f};
-	std::vector<genGrain1> _grains;
-	std::vector<size_t> _grainIndices;	// used to index grains in random order
-	gen::phasor<double> _phasorInternalTrig;
+    float _normalizer {1.f};
+    std::vector<genGrain1> _grains;
+    std::vector<size_t> _grain_indices;	// used to index grains in random order
+    gen::phasor<double> _phasor_internal_trig;
 
-	LatchedGaussianRandom<float> speed_lgr {_gaussian_rng, {1.f, 0.f}};
-	
-	nvs::gen::history<float> _triggerHisto;
-	nvs::gen::ramp2trig<float> _ramp2trig;
-	
-	NoteHolder noteHolder {};
-	
-	std::function<void(const juce::String&)> logger = nullptr;
+    LatchedGaussianRandom<float> _speed_lgr {_gaussian_rng, {1.f, 0.f}};
+    
+    nvs::gen::history<float> _trigger_histo;
+    nvs::gen::ramp2trig<float> _ramp2trig;
+    
+    NoteHolder _note_holder {};
+    
+    std::function<void(const juce::String&)> _logger = nullptr;
 };
 
 class genGrain1 {
 public:
-	explicit genGrain1(double const &sampleRate, juce::AudioBuffer<float>& waveBuffer, double const &fileSampleRate,
-					   nvs::rand::BoxMuller *const gaussian_rng, int newId = -1);
-
+	explicit genGrain1(nvs::rand::BoxMuller *const gaussian_rng, int newId = -1);
+	
 	void setId(int newId);
-	void setAudioBlock(juce::AudioBuffer<float>& audioBuffer);
+	void setAudioBlock(juce::dsp::AudioBlock<float> audioBlock, double fileSampleRate);
+	void setSampleRate(double sampleRate);
 	void setRatioBasedOnNote(float ratioForNote);
 	void setAmplitudeBasedOnNote(float velocity);
 	void setTranspose(float semitones);
@@ -247,40 +242,48 @@ public:
 	void setPlateauRand(float plateauRand);
 	void setPanRand(float panRand);
 	struct outs {
-		float next;
-		float busy;
-		float audio;
-		float audio_R;
+		float next 		{0.f};
+		float busy 		{0.f};
+		float audio_L	{0.f};
+		float audio_R 	{0.f};
 	};
 	
-	outs operator()(float trig_in);
+	outs operator()(float const trig_in);
+	
+	GrainDescription getGrainDescription() const;
 	
 	void setLogger(std::function<void(const juce::String&)> loggerFunction);
+
 private:
-	double const &_sampleRate;
-	juce::dsp::AudioBlock<float> _waveBlock;
-	double const &_fileSampleRate;
-	
-	nvs::rand::BoxMuller *const _gaussian_rng_ptr;
-	int grainId;
-	
-	nvs::gen::history<float> _busyHisto;// history of 'busy' boolean signal, goes to [switch 1 2]
-	nvs::gen::latch<float> _ratioForNoteLatch {1.f};
-	nvs::gen::latch<float> _amplitudeForNoteLatch {0.f};
-	
-	LatchedGaussianRandom<float> transpose_lgr;
-	LatchedGaussianRandom<double> position_lgr;		// latches position from gate on, goes toward dest windowing
-	LatchedGaussianRandom<double> duration_lgr;	// latches duration from gate on, goes toward dest windowing
-	LatchedGaussianRandom<float> skew_lgr;
-	LatchedGaussianRandom<float> plateau_lgr;
-	LatchedGaussianRandom<float> pan_lgr;
-		
-	nvs::gen::accum<double> _accum;	// accumulates samplewise and resets from gate on, goes to windowing and sample lookup!
-		
-	float _ratioBasedOnNote {1.f};	// =1.f. later this may change according to a settable concert pitch
-	float _amplitudeBasedOnNote {0.f};
-	
-	std::function<void(const juce::String&)> logger = nullptr;
+    double _playback_sample_rate;
+    juce::dsp::AudioBlock<float> _wave_block;
+    double _file_sample_rate;
+    
+    nvs::rand::BoxMuller *const _gaussian_rng_ptr;
+    int _grain_id;
+    
+    nvs::gen::history<float> _busy_histo; // history of 'busy' boolean signal, goes to [switch 1 2]
+    nvs::gen::latch<float> _ratio_for_note_latch {1.f};
+    nvs::gen::latch<float> _amplitude_for_note_latch {0.f};
+    
+    LatchedGaussianRandom<float> _transpose_lgr;
+    LatchedGaussianRandom<double> _position_lgr; // latches position from gate on, goes toward dest windowing
+    LatchedGaussianRandom<double> _duration_lgr; // latches duration from gate on, goes toward dest windowing
+    LatchedGaussianRandom<float> _skew_lgr;
+    LatchedGaussianRandom<float> _plateau_lgr;
+    LatchedGaussianRandom<float> _pan_lgr;
+    
+    nvs::gen::accum<double> _accum; // accumulates samplewise and resets from gate on, goes to windowing and sample lookup!
+    
+    double _sample_index {0.0};
+    float _sample_playback_rate {0.0};
+    float _window {0.f};
+	float _pan {0.f};
+    
+    float _ratio_based_on_note {1.f}; // =1.f. later this may change according to a settable concert pitch
+    float _amplitude_based_on_note {0.f};
+    
+    std::function<void(const juce::String&)> _logger = nullptr;
 };
 
 }	// namespace granular

@@ -36,7 +36,8 @@ public:
 	GranularVoice(std::unique_ptr<nvs::gran::genGranPoly1> synthGuts)
 	:	granularSynthGuts{std::move(synthGuts)}
 	{}
-	void setAudioBlock(juce::AudioBuffer<float>& audioBuffer);
+	void setAudioBlock(juce::dsp::AudioBlock<float> audioBlock, double fileSampleRate);
+	void setCurrentPlaybackSampleRate(double sampleRate) override;
 
 	void prepareToPlay(double sampleRate, int samplesPerBlock);	// why not override??
 	
@@ -49,6 +50,10 @@ public:
 	void controllerMoved (int controllerNumber, int newControllerValue) override;
 	bool canPlaySound (juce::SynthesiserSound *) override ;
 	
+	inline std::vector<nvs::gran::GrainDescription> getGrainDescriptions() const {
+		return _grainDescriptions;
+	}
+
 	template <auto Start, auto End>
 	constexpr void granularMainParamSet(juce::AudioProcessorValueTreeState &apvts) {
 		float tmp;
@@ -90,10 +95,14 @@ public:
 	nvs::gran::genGranPoly1* getGranularSynthGuts(){
 		return granularSynthGuts.get();
 	}
+	static size_t getNumGrains(){
+		return nvs::gran::genGranPoly1::getNumGrains();
+	}
 	void setLogger(std::function<void(const juce::String&)> loggerFunction);
 private:
 	std::unique_ptr<nvs::gran::genGranPoly1> granularSynthGuts;
 	int lastMidiNoteNumber {0};
+	std::vector<nvs::gran::GrainDescription> _grainDescriptions;
 	juce::ADSR adsr;
 	juce::ADSR::Parameters adsrParameters {0.1, 0.3, 0.5, 0.05};
 	

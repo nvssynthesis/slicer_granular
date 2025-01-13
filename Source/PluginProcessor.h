@@ -6,7 +6,6 @@
 #include <JuceHeader.h>
 #include "Synthesis/GranularSynthesis.h"
 #include "Synthesis/JuceGranularSynthesizer.h"
-#include "AudioBuffersChannels.h"
 #include "dsp_util.h"
 #include "misc_util.h"
 #include "params.h"
@@ -14,7 +13,6 @@
 //==============================================================================
 
 class Slicer_granularAudioProcessor  : 	public juce::AudioProcessor
-,										public juce::ChangeBroadcaster
                             #if JucePlugin_Enable_ARA
                              , public juce::AudioProcessorARAExtension
                             #endif
@@ -22,7 +20,6 @@ class Slicer_granularAudioProcessor  : 	public juce::AudioProcessor
 public:
 	//==============================================================================
 	Slicer_granularAudioProcessor();
-	~Slicer_granularAudioProcessor() override;
 	
 	//==============================================================================
 	void prepareToPlay (double sampleRate, int samplesPerBlock) override;
@@ -65,35 +62,67 @@ public:
 	juce::String getSampleFilePath() const;
 	juce::AudioFormatManager &getAudioFormatManager();
 	juce::AudioProcessorValueTreeState &getAPVTS();
+
+	void writeGrainDescriptionData(const std::vector<nvs::gran::GrainDescription> &newData);
+	void readGrainDescriptionData(std::vector<nvs::gran::GrainDescription> &outData);
+	
+	// change broadcasters
+	void addSampleManagementGutsListener(juce::ChangeListener *newListener){
+		sampleManagementGuts.addChangeListener(newListener);
+	}
+	void addMeasuredGrainDescriptionsListener(juce::ChangeListener *newListener){
+		measuredGrainDescriptions.addChangeListener(newListener);
+	}
+	void removeSampleManagementGutsListener(juce::ChangeListener *newListener){
+		sampleManagementGuts.removeChangeListener(newListener);
+	}
+	void removeMeasuredGrainDescriptionsListener(juce::ChangeListener *newListener){
+		measuredGrainDescriptions.removeChangeListener(newListener);
+	}
 private:
-	//======logging=======================
-	juce::File logFile;
-	juce::FileLogger fileLogger;
-	void logIfNaNOrInf(juce::AudioBuffer<float> buffer);
+	struct LoggingGuts {
+		LoggingGuts();
+		~LoggingGuts();
+		juce::File logFile;
+		juce::FileLogger fileLogger;
+		void logIfNaNOrInf(juce::AudioBuffer<float> buffer);
+	};
+	LoggingGuts loggingGuts;
+	
+	void readInAudioFileToBuffer(juce::File const f);
+	void loadAudioFileAsync(juce::File const file, bool notifyEditor);
+public:
+	struct SampleManagementGuts : public juce::ChangeBroadcaster
+	{
+		SampleManagementGuts();
+		~SampleManagementGuts();
+		juce::AudioFormatManager formatManager;
+		const juce::String audioFilePathValueTreeStateIdentifier {"sampleFilePath"};
+		juce::String sampleFilePath;
+		juce::AudioBuffer<float> sampleBuffer;
+		double lastFileSampleRate { 0.0 };
+		float normalizationValue { 1.f };	// a MULTIPLIER for the overall output, based on the inverse of the absolute max value for the current sample
+	};
+private:
+	SampleManagementGuts sampleManagementGuts;
 	
 	juce::AudioProcessorValueTreeState apvts;
-	
 	juce::SpinLock audioBlockLock;
 	
-	double lastSampleRate 	{ 0.0 };
-	
 	GranularSynthesizer granular_synth_juce;
-	constexpr static int num_voices =
-#if defined(DEBUG_BUILD) | defined(DEBUG) | defined(_DEBUG)
-										6;
-#else
-										16;
-#endif
-	void loadAudioFileAsync(juce::File const file, bool notifyEditor);
-	void readInAudioFileToBuffer(juce::File const f);
-	const juce::String audioFilePathValueTreeStateIdentifier {"sampleFilePath"};
-	juce::String sampleFilePath;
-	juce::AudioBuffer<float> sampleBuffer;
-	double lastFileSampleRate { 0.0 };
-	float normalizationValue {1.f};	// a MULTIPLIER for the overall output, based on the inverse of the absolute max value for the current sample
+	
+public:
+	struct MeasuredData : public juce::ChangeBroadcaster
+	{
+		std::vector<nvs::gran::GrainDescription> data0;
+		std::vector<nvs::gran::GrainDescription> data1;
+		std::atomic<bool> dataReady {false};
+		std::atomic<int> activeBufferIdx {0};
+	};
+private:
+	MeasuredData measuredGrainDescriptions;
 	
 	juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
-	juce::AudioFormatManager formatManager;
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Slicer_granularAudioProcessor)
 };
@@ -107,8 +136,7 @@ public:
 		  file(fileToLoad),
 		  notifyEditor(notify) {}
 
-	void run() override
-	{
+	void run() override {
 		// Perform the file loading operation
 		audioProcessor.loadAudioFile(file, notifyEditor);
 	}
