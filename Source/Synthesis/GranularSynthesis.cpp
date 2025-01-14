@@ -39,8 +39,9 @@ inline float fastSemitonesToRatio(float semitones){
 genGranPoly1::genGranPoly1(unsigned long seed)
 :
 _gaussian_rng(seed),
+_expo_rng(seed),
 _normalizer(1.f / std::sqrt(static_cast<float>(std::clamp(N_GRAINS, 1UL, 10000UL)))),
-_grains(N_GRAINS, genGrain1(&_gaussian_rng) ),
+_grains(N_GRAINS, genGrain1(&_gaussian_rng, &_expo_rng) ),
 _grain_indices(N_GRAINS)
 {
 	for (int i = 0; i < N_GRAINS; ++i){
@@ -218,17 +219,18 @@ std::vector<GrainDescription> genGranPoly1::getGrainDescriptions() const {
 }
 
 //=====================================================================================
-genGrain1::genGrain1(nvs::rand::BoxMuller *const gaussian_rng, int newId)
+genGrain1::genGrain1(nvs::rand::BoxMuller *const gaussian_rng, ExponentialRandomNumberGenerator *const expo_rng, int newId)
 :	_gaussian_rng_ptr(gaussian_rng)
 ,	_grain_id(newId)
 ,	_transpose_lgr(*_gaussian_rng_ptr, {0.f, 0.f})
 ,	_position_lgr(*_gaussian_rng_ptr, {0.0, 0.0})
-,	_duration_lgr(*_gaussian_rng_ptr, {0.5f, 0.f})
+,	_duration_lgr(*expo_rng, {0.5f, 0.f})
 ,	_skew_lgr(*_gaussian_rng_ptr, {0.5f, 0.f})
 ,	_plateau_lgr(*_gaussian_rng_ptr, {1.f, 0.f})
 ,	_pan_lgr(*_gaussian_rng_ptr, {0.5f, 0.23f})
 {
 	assert (gaussian_rng);
+	assert (expo_rng);
 }
 
 void genGrain1::setLogger(std::function<void (const juce::String &)> logger_function){
@@ -257,6 +259,8 @@ void genGrain1::setTranspose(float ratio){
 	_transpose_lgr.setMu(ratio);
 }
 void genGrain1::setDuration(double dur_norm){
+	assert (dur_norm <= 1.0);
+	assert (dur_norm >= 0.0);
 	_duration_lgr.setMu(dur_norm);
 }
 void genGrain1::setPosition(double position){

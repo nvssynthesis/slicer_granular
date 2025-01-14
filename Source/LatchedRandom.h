@@ -70,7 +70,12 @@ struct LatchedExponentialRandomWithSigma {
 	LatchedExponentialRandomWithSigma(ExponentialRandomNumberGeneratorWithVariance &rng, MuSigmaPair<float_t> msp)
 	:	_rng(rng), _val(msp.mu), _msp(msp)
 	{}
-	float_t operator()(bool gate){ return 0.0; /*TODO*/}
+	float_t operator()(bool gate){
+		if (gate){
+			_val = static_cast<float_t>(_rng(static_cast<double>(_msp.mu), static_cast<double>(_msp.sigma)));
+		}
+		return _val;
+	}
 	void setMu(float_t mu){
 		_msp.mu = mu;
 	}

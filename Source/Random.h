@@ -57,8 +57,8 @@ struct ExponentialRandomNumberGeneratorWithVariance {
 public:
 	ExponentialRandomNumberGeneratorWithVariance(unsigned long seed = 1234567890UL)
 	: rng(seed) {}
-	double operator()(double lambda, double variance) {
-		auto const mu = 1.0 / lambda;
+	double operator()(double mu, double variance) {
+		auto const lambda = 1.0 / mu;
 		auto const expRandom = rng(lambda);
 		return (variance * expRandom) + ((1.0 - variance) * mu);
 	}
