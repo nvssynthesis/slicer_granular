@@ -256,9 +256,8 @@ void genGrain1::setId(int newId){
 void genGrain1::setTranspose(float ratio){
 	_transpose_lgr.setMu(ratio);
 }
-void genGrain1::setDuration(double duration){
-	double const dur_gaus_space = durationMsToGaussianSpace(duration, _playback_sample_rate);
-	_duration_lgr.setMu(dur_gaus_space);
+void genGrain1::setDuration(double dur_norm){
+	_duration_lgr.setMu(dur_norm);
 }
 void genGrain1::setPosition(double position){
 	_position_lgr.setMu(position);
@@ -278,7 +277,7 @@ void genGrain1::setTransposeRand(float transposeRand){
 	_transpose_lgr.setSigma(transposeRand);
 }
 void genGrain1::setDurationRand(double durationRand){
-	durationRand *= _duration_lgr.getMu();
+//	durationRand *= _duration_lgr.getMu();
 	_duration_lgr.setSigma(durationRand);
 }
 void genGrain1::setPositionRand(double positionRand){
@@ -310,7 +309,8 @@ float calculateTransposeMultiplier(float const ratioBasedOnNote, float const rat
 }
 float calculateWindow(double const accum, double const duration, float const transpositionMultiplier, float const skew, float const plateau){
 	assert(transpositionMultiplier > 0.f);
-	double const windowIdx = nvs::memoryless::clamp((accum * duration) / transpositionMultiplier, 0.0, 1.0);
+	double const v = (accum * duration);
+	double const windowIdx = nvs::memoryless::clamp(v / transpositionMultiplier, 0.0, 1.0);
 	float win = nvs::gen::triangle<float, false>(static_cast<float>(windowIdx), skew);
 	
 	assert (plateau > 0.f);
@@ -321,11 +321,6 @@ float calculateWindow(double const accum, double const duration, float const tra
 	}
 	return win;
 }
-double calculateDuration(double const duration_latch_val, double const playback_sample_rate){
-	double const duration_hz = memoryless::clamp(duration_latch_val, 0.05, 1000.0);	// incorporate  static_cast<double>(wave_size)
-	double const  latch_duration_result = durationGaussianToProcessingSpace(duration_hz, playback_sample_rate);
-	return latch_duration_result;
-}
 double calculateSampleReadRate(double const playback_sample_rate, double const file_sample_rate){
 	assert(playback_sample_rate > 0.0);
 	assert(file_sample_rate > 0.0);
@@ -334,10 +329,11 @@ double calculateSampleReadRate(double const playback_sample_rate, double const f
 float calculateSample(juce::dsp::AudioBlock<float> const wave_block, double const sample_index, float const win, float const velocity_amplitude){
 	assert(wave_block.getNumChannels() > 0);
 	assert(wave_block.getNumSamples() > 0);
-	return win * velocity_amplitude * gen::peek<float,
-												gen::interpolationModes_e::hermite,
-												gen::boundsModes_e::wrap
-												>(wave_block.getChannelPointer(0), sample_index, wave_block.getNumSamples());
+	auto const samp = gen::peek<float,
+						gen::interpolationModes_e::hermite,
+						gen::boundsModes_e::wrap
+						>(wave_block.getChannelPointer(0), sample_index, wave_block.getNumSamples());
+	return win * velocity_amplitude * samp;
 }
 float calculatePan(float pan_latch_val){
 	return memoryless::clamp(pan_latch_val, 0.f, 1.f) * std::numbers::pi * 0.5f;
@@ -365,14 +361,16 @@ genGrain1::outs genGrain1::operator()(float const trig_in){
 
 	size_t const length = static_cast<double>(_wave_block.getNumSamples());
 	double const center_position_in_samps = _position_lgr(should_open_latches) * length;
-	double const  latch_duration_result = calculateDuration(_duration_lgr(should_open_latches) * length, _playback_sample_rate);
+	double const latch_duration_result = _duration_lgr(should_open_latches) / length;
 	float const latch_skew_result = memoryless::clamp(_skew_lgr(should_open_latches), 0.001f, 0.999f);
 	
 	double const sample_read_rate = calculateSampleReadRate(_playback_sample_rate, _file_sample_rate);
 	
-#pragma message("need to test this skew-based sample index offset further")
 	_accum(_sample_playback_rate, static_cast<bool>(should_open_latches));
-	_sample_index = (sample_read_rate * _accum.val) + center_position_in_samps - (latch_skew_result * latch_duration_result);
+	
+#pragma message("need to test this skew-based sample index offset further")
+	_sample_index = (sample_read_rate * _accum.val) + center_position_in_samps;// - (latch_skew_result * latch_duration_result);
+	
 	_window = calculateWindow(_accum.val, latch_duration_result, _sample_playback_rate, latch_skew_result, memoryless::clamp_low(_plateau_lgr(should_open_latches), 0.000001f));
 	float const vel_amplitude = _amplitude_for_note_latch(_amplitude_based_on_note, should_open_latches);
 

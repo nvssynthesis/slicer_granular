@@ -346,7 +346,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout Slicer_granularAudioProcesso
 	auto mainGranularParams = std::make_unique<juce::AudioProcessorParameterGroup>("Gran", "MainGranularParams", "|");
 	
 	auto stringFromValue = [&](float value, int maximumStringLength){
-		return juce::String (value, 2);	//getNumDecimalPlacesToDisplay()
+		return juce::String (value, 3);	//getNumDecimalPlacesToDisplay()
 	};
 	
 	auto a = [&](params_e p){

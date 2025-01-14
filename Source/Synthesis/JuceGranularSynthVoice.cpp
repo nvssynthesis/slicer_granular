@@ -34,7 +34,9 @@ void GranularVoice::startNote (int midiNoteNumber, float velocity, juce::Synthes
 {
 	int velIntegral = static_cast<int>(velocity * 127.f);
 	
-	if (adsr.isActive()){}
+	if (adsr.isActive()){
+//		trigger = 1.f;
+	}
 	else {
 		granularSynthGuts->clearNotes();
 		granularSynthGuts->noteOn(midiNoteNumber, velIntegral);
@@ -75,6 +77,7 @@ void GranularVoice::renderNextBlock (juce::AudioBuffer< float > &outputBuffer, i
 			logger("ENVELOPE has NaN");
 		}
 		std::array<float, 2> output = (*granularSynthGuts)(trigger);
+//		trigger = 0.f;
 		output[0] *= envelope;
 		output[1] *= envelope;
 		for (int channel = 0; channel < totalNumOutputChannels; ++channel)
