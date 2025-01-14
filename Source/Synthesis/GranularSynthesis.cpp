@@ -223,7 +223,7 @@ genGrain1::genGrain1(nvs::rand::BoxMuller *const gaussian_rng, int newId)
 ,	_grain_id(newId)
 ,	_transpose_lgr(*_gaussian_rng_ptr, {0.f, 0.f})
 ,	_position_lgr(*_gaussian_rng_ptr, {0.0, 0.0})
-,	_duration_lgr(*_gaussian_rng_ptr, {durationMsToGaussianSpace(0.5, 44100.0), 0.f})
+,	_duration_lgr(*_gaussian_rng_ptr, {0.5f, 0.f})
 ,	_skew_lgr(*_gaussian_rng_ptr, {0.5f, 0.f})
 ,	_plateau_lgr(*_gaussian_rng_ptr, {1.f, 0.f})
 ,	_pan_lgr(*_gaussian_rng_ptr, {0.5f, 0.23f})
@@ -309,7 +309,8 @@ float calculateTransposeMultiplier(float const ratioBasedOnNote, float const rat
 }
 float calculateWindow(double const accum, double const duration, float const transpositionMultiplier, float const skew, float const plateau){
 	assert(transpositionMultiplier > 0.f);
-	double const v = (accum * duration);
+	assert (duration > 0.0);
+	double const v = (accum / duration);
 	double const windowIdx = nvs::memoryless::clamp(v / transpositionMultiplier, 0.0, 1.0);
 	float win = nvs::gen::triangle<float, false>(static_cast<float>(windowIdx), skew);
 	
@@ -361,7 +362,7 @@ genGrain1::outs genGrain1::operator()(float const trig_in){
 
 	size_t const length = static_cast<double>(_wave_block.getNumSamples());
 	double const center_position_in_samps = _position_lgr(should_open_latches) * length;
-	double const latch_duration_result = _duration_lgr(should_open_latches) / length;
+	double const latch_duration_result = _duration_lgr(should_open_latches) * length;
 	float const latch_skew_result = memoryless::clamp(_skew_lgr(should_open_latches), 0.001f, 0.999f);
 	
 	double const sample_read_rate = calculateSampleReadRate(_playback_sample_rate, _file_sample_rate);
