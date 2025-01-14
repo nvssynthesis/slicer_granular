@@ -70,6 +70,7 @@ void GranularVoice::renderNextBlock (juce::AudioBuffer< float > &outputBuffer, i
 {
 	float trigger = 0.f;
 	auto totalNumOutputChannels = outputBuffer.getNumChannels();
+
 	
 	for (auto samp = startSample; samp < startSample + numSamples; ++samp){
 		double envelope = adsr.getNextSample();

@@ -111,7 +111,14 @@ void genGranPoly1::doClearNotes(){
 void genGranPoly1::doShuffleIndices(){
 	std::shuffle(_grain_indices.begin(), _grain_indices.end(), _gaussian_rng.getGenerator());
 }
-
+std::vector<float> genGranPoly1::getBusyStatuses() const {
+	std::vector<float> busyStatuses;
+	busyStatuses.reserve(N_GRAINS);
+	for (auto const &g : _grains){
+		busyStatuses.push_back(g.getBusyStatus());
+	}
+	return busyStatuses;
+}
 void genGranPoly1::doSetTranspose(float transposition_semitones){
 	for (auto &g : _grains)
 		g.setTranspose(transposition_semitones);
@@ -296,6 +303,9 @@ void genGrain1::setPlateauRand(float plateauRand){
 void genGrain1::setPanRand(float panRand){
 	_pan_lgr.setSigma(panRand);
 }
+float genGrain1::getBusyStatus() const{
+	return _busy_histo.val;
+}
 
 GrainDescription genGrain1::getGrainDescription() const {
 	GrainDescription gd;
@@ -331,6 +341,12 @@ double calculateSampleReadRate(double const playback_sample_rate, double const f
 	assert(file_sample_rate > 0.0);
 	return file_sample_rate / playback_sample_rate;
 }
+double calculateSampleIndex(double sample_rate_compensate_ratio, double accum, double position, double duration, float skew, float sample_playback_rate){
+	double const a = sample_rate_compensate_ratio * accum;
+	double const center_of_env = skew * duration * sample_playback_rate;
+	double const sample_index = a + position - center_of_env;
+	return sample_index;
+}
 float calculateSample(juce::dsp::AudioBlock<float> const wave_block, double const sample_index, float const win, float const velocity_amplitude){
 	assert(wave_block.getNumChannels() > 0);
 	assert(wave_block.getNumSamples() > 0);
@@ -365,17 +381,14 @@ genGrain1::outs genGrain1::operator()(float const trig_in){
 	_sample_playback_rate = calculateTransposeMultiplier(_ratio_for_note_latch(_ratio_based_on_note, should_open_latches), 							fastSemitonesToRatio(_transpose_lgr(should_open_latches)));
 
 	size_t const length = static_cast<double>(_wave_block.getNumSamples());
-	double const center_position_in_samps = _position_lgr(should_open_latches) * length;
+	double const position_in_samps = _position_lgr(should_open_latches) * length;
 	double const latch_duration_result = _duration_lgr(should_open_latches) * length;
 	float const latch_skew_result = memoryless::clamp(_skew_lgr(should_open_latches), 0.001f, 0.999f);
 	
-	double const sample_read_rate = calculateSampleReadRate(_playback_sample_rate, _file_sample_rate);
+	double const sample_rate_compensate_ratio = calculateSampleReadRate(_playback_sample_rate, _file_sample_rate);
 	
 	_accum(_sample_playback_rate, static_cast<bool>(should_open_latches));
-	
-#pragma message("need to test this skew-based sample index offset further")
-	_sample_index = (sample_read_rate * _accum.val) + center_position_in_samps;// - (latch_skew_result * latch_duration_result);
-	
+	_sample_index = calculateSampleIndex(sample_rate_compensate_ratio, _accum.val, position_in_samps, latch_duration_result, latch_skew_result, _sample_playback_rate);
 	_window = calculateWindow(_accum.val, latch_duration_result, _sample_playback_rate, latch_skew_result, memoryless::clamp_low(_plateau_lgr(should_open_latches), 0.000001f));
 	float const vel_amplitude = _amplitude_for_note_latch(_amplitude_based_on_note, should_open_latches);
 
