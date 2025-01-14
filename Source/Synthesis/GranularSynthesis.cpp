@@ -120,13 +120,12 @@ void genGranPoly1::doSetSpeed(float new_speed){
 }
 void genGranPoly1::doSetPosition(double position_normalized){
 	//	position_normalized = nvs::memoryless::clamp<double>(position_normalized, 0.0, 1.0);
-	double pos = position_normalized * static_cast<double>(_wave_block.getNumSamples());
 	for (auto &g : _grains)
-		g.setPosition(pos);
+		g.setPosition(position_normalized);
 }
-void genGranPoly1::doSetDuration(double dur_ms){
+void genGranPoly1::doSetDuration(double dur_norm){
 	for (auto &g : _grains)
-		g.setDuration(dur_ms);
+		g.setDuration(dur_norm);
 }
 void genGranPoly1::doSetSkew(float skew){
 	skew = nvs::memoryless::clamp<float>(skew, 0.001, 0.999);
@@ -224,7 +223,7 @@ genGrain1::genGrain1(nvs::rand::BoxMuller *const gaussian_rng, int newId)
 ,	_grain_id(newId)
 ,	_transpose_lgr(*_gaussian_rng_ptr, {0.f, 0.f})
 ,	_position_lgr(*_gaussian_rng_ptr, {0.0, 0.0})
-,	_duration_lgr(*_gaussian_rng_ptr, {durationMsToGaussianSpace(500.0, 44100.0), 0.f})
+,	_duration_lgr(*_gaussian_rng_ptr, {durationMsToGaussianSpace(0.5, 44100.0), 0.f})
 ,	_skew_lgr(*_gaussian_rng_ptr, {0.5f, 0.f})
 ,	_plateau_lgr(*_gaussian_rng_ptr, {1.f, 0.f})
 ,	_pan_lgr(*_gaussian_rng_ptr, {0.5f, 0.23f})
@@ -359,15 +358,14 @@ genGrain1::outs genGrain1::operator()(float const trig_in){
 	outs o;
 	assert(_gaussian_rng_ptr != nullptr);
 	
-	size_t const wave_size = _wave_block.getNumSamples();
-	
 	o.next = _busy_histo.val ? trig_in : 0.f;
 	bool const should_open_latches = _busy_histo.val ? false : static_cast<bool>(trig_in);
 	
 	_sample_playback_rate = calculateTransposeMultiplier(_ratio_for_note_latch(_ratio_based_on_note, should_open_latches), 							fastSemitonesToRatio(_transpose_lgr(should_open_latches)));
 
-	double const center_position_in_samps = _position_lgr(should_open_latches);
-	double const  latch_duration_result = calculateDuration(_duration_lgr(should_open_latches), _playback_sample_rate);
+	size_t const length = static_cast<double>(_wave_block.getNumSamples());
+	double const center_position_in_samps = _position_lgr(should_open_latches) * length;
+	double const  latch_duration_result = calculateDuration(_duration_lgr(should_open_latches) * length, _playback_sample_rate);
 	float const latch_skew_result = memoryless::clamp(_skew_lgr(should_open_latches), 0.001f, 0.999f);
 	
 	double const sample_read_rate = calculateSampleReadRate(_playback_sample_rate, _file_sample_rate);

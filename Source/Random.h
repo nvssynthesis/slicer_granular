@@ -10,8 +10,7 @@
 
 #pragma once
 #include "XoshiroCpp.hpp"
-namespace nvs {
-namespace rand {
+namespace nvs::rand {
 
 struct RandomNumberGenerator {
 public:
@@ -27,10 +26,52 @@ public:
 private:
 	XoshiroCpp::Xoshiro256Plus xosh;
 };
-struct BoxMuller {
-	BoxMuller(unsigned long seed = 1234567890UL)	:	rng(seed)	{
+
+struct ExponentialRandomNumberGenerator {
+public:
+	ExponentialRandomNumberGenerator(unsigned long seed = 1234567890UL)
+		: rng(seed) {}
+
+	double operator()(double lambda) {
+		double uniformRandom = rng();
+		if (uniformRandom == 0.0) {
+			uniformRandom = std::numeric_limits<double>::min(); // Smallest positive double
+		}
 		
+		// Inverse transform sampling to get exponentially distributed random number
+		double expRandom = -std::log(1.0 - uniformRandom) / lambda;
+		
+		return expRandom;
 	}
+
+	XoshiroCpp::Xoshiro256Plus &getGenerator() {
+		return rng.getGenerator();
+	}
+
+private:
+	double lambda;  // Rate parameter for the exponential distribution
+	RandomNumberGenerator rng;  // Underlying uniform RNG
+};
+
+struct ExponentialRandomNumberGeneratorWithVariance {
+public:
+	ExponentialRandomNumberGeneratorWithVariance(unsigned long seed = 1234567890UL)
+	: rng(seed) {}
+	double operator()(double lambda, double variance) {
+		auto const mu = 1.0 / lambda;
+		auto const expRandom = rng(lambda);
+		return (variance * expRandom) + ((1.0 - variance) * mu);
+	}
+	XoshiroCpp::Xoshiro256Plus &getGenerator() {
+		return rng.getGenerator();
+	}
+private:
+	ExponentialRandomNumberGenerator rng;
+};
+
+struct BoxMuller {
+	BoxMuller(unsigned long seed = 1234567890UL)
+	:	rng(seed){}
 	double operator()(double mu, double sigma){
 		return polar(mu, sigma).first;
 //		return nowaste_pol(mu, sigma);
@@ -106,5 +147,4 @@ private:
 	}
 };
 
-}	// namespace rand
-}	// namespace nvs
+}	// namespace nvs::rand

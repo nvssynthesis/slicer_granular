@@ -13,7 +13,7 @@
 #include <algorithm>
 #include <numeric>
 
-#include "../Random.h"
+#include "../LatchedRandom.h"
 #include "../../nvs_libraries/nvs_libraries/include/nvs_gen.h"
 #include "GrainDescription.h"
 #include <JuceHeader.h>
@@ -39,43 +39,6 @@ typedef std::map<noteNumber_t, velocity_t> NoteHolder;
 
 struct genGrain1;
 
-template<std::floating_point float_t>
-struct MuSigmaPair {
-	float_t mu;
-	float_t sigma;
-};
-
-template<std::floating_point float_t>
-struct LatchedGaussianRandom {
-	LatchedGaussianRandom(nvs::rand::BoxMuller &rng, MuSigmaPair<float_t> msp)
-	:	_rng(rng), val(msp.mu), _msp(msp){}
-	
-	float_t operator()(bool gate){
-		if (gate){
-			val = static_cast<float_t>(
-										_rng(static_cast<double>(_msp.mu), static_cast<double>(_msp.sigma))
-									   );
-		}
-		return val;
-	}
-	void setMu(float_t mu){
-		_msp.mu = mu;
-	}
-	void setSigma(float_t sigma){
-		_msp.sigma = sigma;
-	}
-	float_t getMu() const {
-		return _msp.mu;
-	}
-	float_t getSigma() const {
-		return _msp.sigma;
-	}
-	nvs::rand::BoxMuller &_rng;
-private:
-	float_t val;
-	MuSigmaPair<float_t> _msp;
-};
-
 inline double millisecondsToSamples(double ms, double sampleRate) {
 	return (ms / 1000.0) * sampleRate;
 }
@@ -100,6 +63,17 @@ inline double durationGaussianToProcessingSpace(double hertz, double sampleRate)
 	// samples per second:
 	return hertz / sampleRate;
 }
+/**
+ Making use of concepts to guarantee common interface between latched random number generator types without inheritance (thus without virtual function calls)
+ */
+using BoxMuller = nvs::rand::BoxMuller;
+using MuSigmaPair_f  = nvs::rand::MuSigmaPair<float>;
+using MuSigmaPair_d  = nvs::rand::MuSigmaPair<double>;
+using ExponentialRandomNumberGenerator = nvs::rand::ExponentialRandomNumberGeneratorWithVariance;
+using LatchedGaussianRandom_f = decltype(createLatchedGaussianRandom(std::declval<BoxMuller&>(), std::declval<MuSigmaPair_f>()));
+using LatchedGaussianRandom_d = decltype(createLatchedGaussianRandom(std::declval<BoxMuller&>(), std::declval<MuSigmaPair_d>()));
+using LatchedExponentialRandom_f = decltype(createLatchedExponentialRandom(std::declval<ExponentialRandomNumberGenerator&>(), std::declval<MuSigmaPair_f>()));
+using LatchedExponentialRandom_d = decltype(createLatchedExponentialRandom(std::declval<ExponentialRandomNumberGenerator&>(), std::declval<MuSigmaPair_d>()));
 
 class genGranPoly1 {
 public:
@@ -203,14 +177,14 @@ protected:
 	std::array<float, 2> doProcess(float triggerIn);
 	
 private:
-    nvs::rand::BoxMuller _gaussian_rng;
+    BoxMuller _gaussian_rng;
 
     float _normalizer {1.f};
     std::vector<genGrain1> _grains;
     std::vector<size_t> _grain_indices;	// used to index grains in random order
     gen::phasor<double> _phasor_internal_trig;
 
-    LatchedGaussianRandom<float> _speed_lgr {_gaussian_rng, {1.f, 0.f}};
+	LatchedGaussianRandom_f _speed_lgr {_gaussian_rng, {1.f, 0.f}};
     
     nvs::gen::history<float> _trigger_histo;
     nvs::gen::ramp2trig<float> _ramp2trig;
@@ -222,7 +196,7 @@ private:
 
 class genGrain1 {
 public:
-	explicit genGrain1(nvs::rand::BoxMuller *const gaussian_rng, int newId = -1);
+	explicit genGrain1(BoxMuller *const gaussian_rng, int newId = -1);
 	
 	void setId(int newId);
 	void setAudioBlock(juce::dsp::AudioBlock<float> audioBlock, double fileSampleRate);
@@ -259,19 +233,19 @@ private:
     juce::dsp::AudioBlock<float> _wave_block;
     double _file_sample_rate;
     
-    nvs::rand::BoxMuller *const _gaussian_rng_ptr;
+    BoxMuller *const _gaussian_rng_ptr;
     int _grain_id;
     
     nvs::gen::history<float> _busy_histo; // history of 'busy' boolean signal, goes to [switch 1 2]
     nvs::gen::latch<float> _ratio_for_note_latch {1.f};
     nvs::gen::latch<float> _amplitude_for_note_latch {0.f};
     
-    LatchedGaussianRandom<float> _transpose_lgr;
-    LatchedGaussianRandom<double> _position_lgr; // latches position from gate on, goes toward dest windowing
-    LatchedGaussianRandom<double> _duration_lgr; // latches duration from gate on, goes toward dest windowing
-    LatchedGaussianRandom<float> _skew_lgr;
-    LatchedGaussianRandom<float> _plateau_lgr;
-    LatchedGaussianRandom<float> _pan_lgr;
+	LatchedGaussianRandom_f _transpose_lgr;
+	LatchedGaussianRandom_d _position_lgr; // latches position from gate on, goes toward dest windowing
+	LatchedGaussianRandom_d _duration_lgr; // latches duration from gate on, goes toward dest windowing
+	LatchedGaussianRandom_f _skew_lgr;
+	LatchedGaussianRandom_f _plateau_lgr;
+	LatchedGaussianRandom_f _pan_lgr;
     
     nvs::gen::accum<double> _accum; // accumulates samplewise and resets from gate on, goes to windowing and sample lookup!
     
