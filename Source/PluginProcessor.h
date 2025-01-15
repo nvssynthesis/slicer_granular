@@ -80,69 +80,21 @@ public:
 		measuredGrainDescriptions.removeChangeListener(newListener);
 	}
 private:
-	struct LoggingGuts {
-		LoggingGuts();
-		~LoggingGuts();
-		juce::File logFile;
-		juce::FileLogger fileLogger;
-		void logIfNaNOrInf(juce::AudioBuffer<float> buffer);
-	};
-	LoggingGuts loggingGuts;
+	nvs::util::LoggingGuts loggingGuts;
 	
 	void readInAudioFileToBuffer(juce::File const f);
 	void loadAudioFileAsync(juce::File const file, bool notifyEditor);
-public:
-	struct SampleManagementGuts : public juce::ChangeBroadcaster
-	{
-		SampleManagementGuts();
-		~SampleManagementGuts();
-		juce::AudioFormatManager formatManager;
-		const juce::String audioFilePathValueTreeStateIdentifier {"sampleFilePath"};
-		juce::String sampleFilePath;
-		juce::AudioBuffer<float> sampleBuffer;
-		double lastFileSampleRate { 0.0 };
-		float normalizationValue { 1.f };	// a MULTIPLIER for the overall output, based on the inverse of the absolute max value for the current sample
-	};
-private:
-	SampleManagementGuts sampleManagementGuts;
+
+	nvs::util::SampleManagementGuts sampleManagementGuts;
 	
 	juce::AudioProcessorValueTreeState apvts;
 	juce::SpinLock audioBlockLock;
 	
 	GranularSynthesizer granular_synth_juce;
 	
-public:
-	struct MeasuredData : public juce::ChangeBroadcaster
-	{
-		std::vector<nvs::gran::GrainDescription> data0;
-		std::vector<nvs::gran::GrainDescription> data1;
-		std::atomic<bool> dataReady {false};
-		std::atomic<int> activeBufferIdx {0};
-	};
-private:
-	MeasuredData measuredGrainDescriptions;
+	nvs::util::MeasuredData measuredGrainDescriptions;
 	
 	juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Slicer_granularAudioProcessor)
-};
-
-class AudioFileLoaderThread : public juce::Thread
-{
-public:
-	AudioFileLoaderThread(Slicer_granularAudioProcessor& processor, juce::File fileToLoad, bool notify)
-		: juce::Thread("AudioFileLoader"),
-		  audioProcessor(processor),
-		  file(fileToLoad),
-		  notifyEditor(notify) {}
-
-	void run() override {
-		// Perform the file loading operation
-		audioProcessor.loadAudioFile(file, notifyEditor);
-	}
-
-private:
-	Slicer_granularAudioProcessor& audioProcessor;
-	juce::File file;
-	bool notifyEditor;
 };
