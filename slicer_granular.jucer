@@ -21,8 +21,8 @@
       </GROUP>
       <GROUP id="{E5B32F1C-76EF-A0D3-D273-F5D35B649FB8}" name="util">
         <FILE id="PVPUEs" name="algo_util.h" compile="0" resource="0" file="Source/algo_util.h"/>
-        <FILE id="qvhP4H" name="misc_util.cpp" compile="1" resource="0" file="Source/misc_util.cpp"/>
         <FILE id="TKNVpc" name="misc_util.h" compile="0" resource="0" file="Source/misc_util.h"/>
+        <FILE id="qvhP4H" name="misc_util.cpp" compile="1" resource="0" file="Source/misc_util.cpp"/>
         <FILE id="OW557g" name="dsp_util.h" compile="0" resource="0" file="Source/dsp_util.h"/>
         <FILE id="AcOWtc" name="nvs_gen.h" compile="0" resource="0" file="nvs_libraries/nvs_libraries/include/nvs_gen.h"/>
         <FILE id="DcXofS" name="plotting.h" compile="0" resource="0" file="Source/plotting.h"/>
