@@ -53,7 +53,7 @@ public:
 	//==============================================================================
 	void getStateInformation (juce::MemoryBlock& destData) override;
 	void setStateInformation (const void* data, int sizeInBytes) override;
-	
+	//==============================================================================
 	void writeToLog(juce::String const &s);
 	void loadAudioFile(juce::File const f, bool notifyEditor);
 	

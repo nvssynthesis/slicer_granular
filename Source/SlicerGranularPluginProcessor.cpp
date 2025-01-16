@@ -12,15 +12,6 @@ nvs::util::LoggingGuts::LoggingGuts()
 	juce::Logger::setCurrentLogger (&fileLogger);
 }
 
-nvs::util::SampleManagementGuts::SampleManagementGuts()
-{
-	formatManager.registerBasicFormats();
-}
-nvs::util::SampleManagementGuts::~SampleManagementGuts()
-{
-	formatManager.clearFormats();
-}
-
 Slicer_granularAudioProcessor::Slicer_granularAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
      : AudioProcessor (BusesProperties()

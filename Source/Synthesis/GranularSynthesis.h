@@ -80,7 +80,7 @@ public:
 	genGranPoly1(unsigned long seed = 1234567890UL);
 	virtual ~genGranPoly1() = default;
 	//====================================================================================
-	void setAudioBlock(juce::dsp::AudioBlock<float> waveBlock, double fileSampleRate);
+	virtual void setAudioBlock(juce::dsp::AudioBlock<float> waveBlock, double fileSampleRate);
 	void setSampleRate(double sampleRate);
 	//====================================================================================
 	static constexpr size_t getNumGrains(){
@@ -182,7 +182,9 @@ private:
 	ExponentialRandomNumberGenerator _expo_rng;
 
     float _normalizer {1.f};
+protected:
     std::vector<genGrain1> _grains;
+private:
     std::vector<size_t> _grain_indices;	// used to index grains in random order
     gen::phasor<double> _phasor_internal_trig;
 
@@ -231,7 +233,7 @@ public:
 	
 	void setLogger(std::function<void(const juce::String&)> loggerFunction);
 
-private:
+protected:
     double _playback_sample_rate;
     juce::dsp::AudioBlock<float> _wave_block;
     double _file_sample_rate;

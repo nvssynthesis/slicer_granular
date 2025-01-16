@@ -32,4 +32,14 @@ void nvs::util::LoggingGuts::logIfNaNOrInf(juce::AudioBuffer<float> buffer){
 		fileLogger.writeToLog("processBlock:						rms was Inf");
 	}
 }
+
+nvs::util::SampleManagementGuts::SampleManagementGuts()
+{
+	formatManager.registerBasicFormats();
+}
+nvs::util::SampleManagementGuts::~SampleManagementGuts()
+{
+	formatManager.clearFormats();
+}
+
 }	// namespace nvs::util
