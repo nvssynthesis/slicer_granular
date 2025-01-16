@@ -9,23 +9,27 @@
               pluginCode="Slgr" pluginFormats="buildAU,buildStandalone" pluginAUMainType="'aumu'">
   <MAINGROUP id="QmNeTI" name="slicer-granular">
     <GROUP id="{914A1E25-4FE6-1459-BEC3-31343EE40E6A}" name="Source">
-      <FILE id="bnufFz" name="PluginProcessor.cpp" compile="1" resource="0"
-            file="Source/PluginProcessor.cpp"/>
-      <FILE id="uv2a6Q" name="PluginProcessor.h" compile="0" resource="0"
-            file="Source/PluginProcessor.h"/>
-      <FILE id="LIA7dU" name="PluginEditor.cpp" compile="1" resource="0"
-            file="Source/PluginEditor.cpp"/>
-      <FILE id="mApci6" name="PluginEditor.h" compile="0" resource="0" file="Source/PluginEditor.h"/>
-      <FILE id="OW557g" name="dsp_util.h" compile="0" resource="0" file="Source/dsp_util.h"/>
-      <FILE id="PVPUEs" name="algo_util.h" compile="0" resource="0" file="Source/algo_util.h"/>
-      <FILE id="TKNVpc" name="misc_util.h" compile="0" resource="0" file="Source/misc_util.h"/>
-      <FILE id="BN5JES" name="DataStructures.h" compile="0" resource="0"
-            file="Source/DataStructures.h"/>
-      <FILE id="eTazcq" name="Random.h" compile="0" resource="0" file="Source/Random.h"/>
-      <FILE id="ZY4t5I" name="LatchedRandom.h" compile="0" resource="0" file="Source/LatchedRandom.h"/>
+      <GROUP id="{C70272B5-9E9D-4C67-5C0A-6C60AEB8D475}" name="Plugin">
+        <FILE id="AnzZ4t" name="SlicerGranularPluginEditor.cpp" compile="1"
+              resource="0" file="Source/SlicerGranularPluginEditor.cpp"/>
+        <FILE id="mZu9x0" name="SlicerGranularPluginEditor.h" compile="0" resource="0"
+              file="Source/SlicerGranularPluginEditor.h"/>
+        <FILE id="xBhVgo" name="SlicerGranularPluginProcessor.cpp" compile="1"
+              resource="0" file="Source/SlicerGranularPluginProcessor.cpp"/>
+        <FILE id="FIe7ta" name="SlicerGranularPluginProcessor.h" compile="0"
+              resource="0" file="Source/SlicerGranularPluginProcessor.h"/>
+      </GROUP>
+      <GROUP id="{E5B32F1C-76EF-A0D3-D273-F5D35B649FB8}" name="util">
+        <FILE id="PVPUEs" name="algo_util.h" compile="0" resource="0" file="Source/algo_util.h"/>
+        <FILE id="qvhP4H" name="misc_util.cpp" compile="1" resource="0" file="Source/misc_util.cpp"/>
+        <FILE id="TKNVpc" name="misc_util.h" compile="0" resource="0" file="Source/misc_util.h"/>
+        <FILE id="OW557g" name="dsp_util.h" compile="0" resource="0" file="Source/dsp_util.h"/>
+        <FILE id="AcOWtc" name="nvs_gen.h" compile="0" resource="0" file="nvs_libraries/nvs_libraries/include/nvs_gen.h"/>
+        <FILE id="DcXofS" name="plotting.h" compile="0" resource="0" file="Source/plotting.h"/>
+        <FILE id="BN5JES" name="DataStructures.h" compile="0" resource="0"
+              file="Source/DataStructures.h"/>
+      </GROUP>
       <FILE id="wKk0Fn" name="params.h" compile="0" resource="0" file="Source/params.h"/>
-      <FILE id="AcOWtc" name="nvs_gen.h" compile="0" resource="0" file="nvs_libraries/nvs_libraries/include/nvs_gen.h"/>
-      <FILE id="DcXofS" name="plotting.h" compile="0" resource="0" file="Source/plotting.h"/>
       <GROUP id="{BC0357AF-85B3-3B4A-11BC-B4C71511F210}" name="Synthesis">
         <FILE id="jndSe6" name="GrainDescription.h" compile="0" resource="0"
               file="Source/Synthesis/GrainDescription.h"/>
@@ -68,6 +72,10 @@
               file="Source/Gui/GranularMainParametersPage.h"/>
         <FILE id="kLnWlN" name="MainParamsComponent.h" compile="0" resource="0"
               file="Source/Gui/MainParamsComponent.h"/>
+      </GROUP>
+      <GROUP id="{901EFCD3-3854-74C6-2517-A6378D9050C8}" name="Random">
+        <FILE id="eTazcq" name="Random.h" compile="0" resource="0" file="Source/Random.h"/>
+        <FILE id="ZY4t5I" name="LatchedRandom.h" compile="0" resource="0" file="Source/LatchedRandom.h"/>
       </GROUP>
     </GROUP>
   </MAINGROUP>

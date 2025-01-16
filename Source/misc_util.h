@@ -10,10 +10,11 @@
 
 #pragma once
 #include <JuceHeader.h>
+#include "Synthesis/GrainDescription.h"
 
 namespace nvs::util {
 struct LoggingGuts {
-	LoggingGuts();
+	LoggingGuts();	// constructor wants to be defined in the corresponding plugin processor
 	~LoggingGuts();
 	juce::File logFile;
 	juce::FileLogger fileLogger;
@@ -38,26 +39,5 @@ struct MeasuredData : public juce::ChangeBroadcaster
 	std::vector<nvs::gran::GrainDescription> data1;
 	std::atomic<bool> dataReady {false};
 	std::atomic<int> activeBufferIdx {0};
-};
-
-
-class AudioFileLoaderThread : public juce::Thread
-{
-public:
-	AudioFileLoaderThread(juce::AudioProcessor& processor, juce::File fileToLoad, bool notify)
-		: juce::Thread("AudioFileLoader"),
-		  audioProcessor(processor),
-		  file(fileToLoad),
-		  notifyEditor(notify) {}
-
-	void run() override {
-		// Perform the file loading operation
-		audioProcessor.loadAudioFile(file, notifyEditor);
-	}
-
-private:
-	juce::AudioProcessor& audioProcessor;
-	juce::File file;
-	bool notifyEditor;
 };
 }	// nvs::util
