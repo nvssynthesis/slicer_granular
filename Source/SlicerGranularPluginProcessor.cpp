@@ -357,10 +357,10 @@ juce::AudioProcessorValueTreeState::ParameterLayout Slicer_granularAudioProcesso
 	return layout;
 }
 
-
-//==============================================================================
-// This creates new instances of the plugin..
+#ifndef TSN
+// this preprocessor definition should be defined in tsn_granular to prevent multiple definitions
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
     return new Slicer_granularAudioProcessor();
 }
+#endif

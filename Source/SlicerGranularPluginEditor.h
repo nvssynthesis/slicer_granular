@@ -16,43 +16,44 @@
 #include "Gui/TabbedPages.h"
 
 //==============================================================================
-/** TODO:
-*/
 
-class Slicer_granularAudioProcessorEditor  : 	public juce::AudioProcessorEditor
-,												public juce::ChangeListener
-,											 	public juce::FilenameComponentListener
-, private juce::Timer
+struct GranularEditorCommon	:	public juce::ChangeListener
+,								public juce::FilenameComponentListener
+, 								private juce::Timer
 {
-public:
-    Slicer_granularAudioProcessorEditor (Slicer_granularAudioProcessor&);
-    ~Slicer_granularAudioProcessorEditor() override;
-	//==============================================================================
-	void updateToggleState (juce::Button* button, juce::String name, bool &valToAffect);
-    //==============================================================================
-    void paint (juce::Graphics&) override;
-    void resized() override;
-	//===============================================================================
+	GranularEditorCommon(Slicer_granularAudioProcessor& p);
+	// ChangeListener
 	void changeListenerCallback (juce::ChangeBroadcaster* source) override;
-	//===============================================================================
+	// FilenameComponentListener
 	void filenameComponentChanged (juce::FilenameComponent* fileComponentThatHasChanged) override;
+	// Timer
 	void timerCallback() override;
-private:
-	//===============================================================================
+protected:
 	void readFile (const juce::File& fileToRead);
 	void drawThumbnail(juce::String const &sampleFilePath);
 	void notateFileComp(juce::String const &sampleFilePath);
 	//===============================================================================
-private:
-	juce::ComponentBoundsConstrainer constrainer;
-
+	WaveformAndPositionComponent waveformAndPositionComponent;
 	FileSelectorComponent fileComp;
 	TabbedPagesComponent tabbedPages;
-	WaveformAndPositionComponent waveformAndPositionComponent;
-	
+
 	// to get from processor to draw onto gui
 	std::vector<nvs::gran::GrainDescription> grainDescriptions;
 	
+	Slicer_granularAudioProcessor& audioProcessor;
+};
+
+class Slicer_granularAudioProcessorEditor  : 	public juce::AudioProcessorEditor
+,												public GranularEditorCommon
+{
+public:
+    Slicer_granularAudioProcessorEditor (Slicer_granularAudioProcessor&);
+    ~Slicer_granularAudioProcessorEditor() override;
+    //==============================================================================
+    void paint (juce::Graphics&) override;
+    void resized() override;
+private:
+	juce::ComponentBoundsConstrainer constrainer;
 	
 	std::array<juce::Colour, 5> gradientColors {
 		juce::Colours::darkred,
@@ -63,9 +64,6 @@ private:
 	};
 	size_t colourOffsetIndex {0};
 	
-    // This reference is provided as a quick way for your editor to
-    // access the processor object that created it.
     Slicer_granularAudioProcessor& audioProcessor;
-	
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Slicer_granularAudioProcessorEditor)
 };

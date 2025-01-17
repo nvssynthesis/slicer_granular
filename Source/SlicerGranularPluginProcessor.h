@@ -55,7 +55,7 @@ public:
 	void setStateInformation (const void* data, int sizeInBytes) override;
 	//==============================================================================
 	void writeToLog(juce::String const &s);
-	void loadAudioFile(juce::File const f, bool notifyEditor);
+	virtual void loadAudioFile(juce::File const f, bool notifyEditor);
 	
 	void loadAudioFilesFolder(juce::File const folder);
 
@@ -79,18 +79,21 @@ public:
 	void removeMeasuredGrainDescriptionsListener(juce::ChangeListener *newListener){
 		measuredGrainDescriptions.removeChangeListener(newListener);
 	}
+	int getCurrentWaveSize() {
+		return sampleManagementGuts.sampleBuffer.getNumSamples();
+	}
+protected:
+	nvs::util::SampleManagementGuts sampleManagementGuts;
+	juce::AudioProcessorValueTreeState apvts;
+	GranularSynthesizer granular_synth_juce;
+
 private:
 	nvs::util::LoggingGuts loggingGuts;
 	
 	void readInAudioFileToBuffer(juce::File const f);
 	void loadAudioFileAsync(juce::File const file, bool notifyEditor);
 
-	nvs::util::SampleManagementGuts sampleManagementGuts;
-	
-	juce::AudioProcessorValueTreeState apvts;
 	juce::SpinLock audioBlockLock;
-	
-	GranularSynthesizer granular_synth_juce;
 	
 	nvs::util::MeasuredData measuredGrainDescriptions;
 	
