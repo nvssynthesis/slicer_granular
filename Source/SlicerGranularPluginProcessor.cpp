@@ -25,10 +25,12 @@ Slicer_granularAudioProcessor::Slicer_granularAudioProcessor()
 #endif
   apvts(*this, nullptr, "PARAMETERS", createParameterLayout())
 {
-	granular_synth_juce.setLogger([this](const juce::String& message)
+	granular_synth_juce = std::make_unique<GranularSynthesizer>();
+	granular_synth_juce->setLogger([this](const juce::String& message)
 	{
-		if (loggingGuts.fileLogger.getCurrentLogger())
+		if (loggingGuts.fileLogger.getCurrentLogger()){
 			loggingGuts.fileLogger.logMessage(message);
+		}
 	});
 }
 
@@ -95,10 +97,10 @@ void Slicer_granularAudioProcessor::changeProgramName (int index, const juce::St
 //==============================================================================
 void Slicer_granularAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-	granular_synth_juce.setCurrentPlaybackSampleRate (sampleRate);
-	for (int i = 0; i < granular_synth_juce.getNumVoices(); i++)
+	granular_synth_juce->setCurrentPlaybackSampleRate (sampleRate);
+	for (int i = 0; i < granular_synth_juce->getNumVoices(); i++)
 	{
-		if (auto voice = dynamic_cast<GranularVoice*>(granular_synth_juce.getVoice(i)))
+		if (auto voice = dynamic_cast<GranularVoice*>(granular_synth_juce->getVoice(i)))
 		{
 			voice->prepareToPlay (sampleRate, samplesPerBlock);
 		}
@@ -213,7 +215,7 @@ void Slicer_granularAudioProcessor::loadAudioFile(juce::File const f, bool notif
 	loggingGuts.fileLogger.logMessage("                                          ...locked");
 
 	readInAudioFileToBuffer(f);
-	granular_synth_juce.setAudioBlock(sampleManagementGuts.sampleBuffer, sampleManagementGuts.lastFileSampleRate);	// maybe this could just go inside readInAudioFileToBuffer()
+	granular_synth_juce->setAudioBlock(sampleManagementGuts.sampleBuffer, sampleManagementGuts.lastFileSampleRate);	// maybe this could just go inside readInAudioFileToBuffer()
 	{
 		juce::Value sampleFilePathValue = apvts.state.getPropertyAsValue(sampleManagementGuts.audioFilePathValueTreeStateIdentifier, nullptr, true);
 		sampleFilePathValue.setValue(f.getFullPathName());
@@ -266,14 +268,14 @@ void Slicer_granularAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
 	}
 
 	
-	granular_synth_juce.granularMainParamSet<0, GranularSynthesizer::getNumVoices()>(apvts);	// this just sets the params internal to the granular synth (effectively a voice)
-	granular_synth_juce.envelopeParamSet<0, GranularSynthesizer::getNumVoices()>(apvts);
-	granular_synth_juce.renderNextBlock(buffer,
+	granular_synth_juce->granularMainParamSet<0, GranularSynthesizer::getNumVoices()>(apvts);	// this just sets the params internal to the granular synth (effectively a voice)
+	granular_synth_juce->envelopeParamSet<0, GranularSynthesizer::getNumVoices()>(apvts);
+	granular_synth_juce->renderNextBlock(buffer,
 						  midiMessages,
 						  0,
 						  buffer.getNumSamples());
 	
-	std::vector<nvs::gran::GrainDescription> descriptions = granular_synth_juce.getGrainDescriptions();
+	std::vector<nvs::gran::GrainDescription> descriptions = granular_synth_juce->getGrainDescriptions();
 	writeGrainDescriptionData(descriptions);
 	
 	loggingGuts.logIfNaNOrInf(buffer);

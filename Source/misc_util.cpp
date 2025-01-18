@@ -20,7 +20,7 @@ LoggingGuts::~LoggingGuts()
 	fileLogger.trimFileSize(logFile , 64 * 1024);
 	juce::Logger::setCurrentLogger (nullptr);
 }
-void nvs::util::LoggingGuts::logIfNaNOrInf(juce::AudioBuffer<float> buffer){
+void LoggingGuts::logIfNaNOrInf(juce::AudioBuffer<float> buffer){
 	float rms = 0.f;
 	for (auto ch = 0; ch < buffer.getNumChannels(); ++ch){
 		rms += buffer.getRMSLevel(ch, 0, buffer.getNumSamples());
@@ -33,11 +33,11 @@ void nvs::util::LoggingGuts::logIfNaNOrInf(juce::AudioBuffer<float> buffer){
 	}
 }
 
-nvs::util::SampleManagementGuts::SampleManagementGuts()
+SampleManagementGuts::SampleManagementGuts()
 {
 	formatManager.registerBasicFormats();
 }
-nvs::util::SampleManagementGuts::~SampleManagementGuts()
+SampleManagementGuts::~SampleManagementGuts()
 {
 	formatManager.clearFormats();
 }

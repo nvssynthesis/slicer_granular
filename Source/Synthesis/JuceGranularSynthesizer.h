@@ -52,6 +52,12 @@ public:
 		}
 	}
 	void setLogger(std::function<void(const juce::String&)> loggerFunction);
+protected: constexpr static int num_voices =
+#if defined(DEBUG_BUILD) | defined(DEBUG) | defined(_DEBUG)
+											2;
+#else
+											16;
+#endif
 private:
 	std::function<void(const juce::String&)> logger_ = nullptr;
 	juce::dsp::AudioBlock<float> audioBlock_;
@@ -59,11 +65,5 @@ private:
 	void setVoicesAudioBlock();
 	void initializeVoices();
 	
-	constexpr static int num_voices =
-#if defined(DEBUG_BUILD) | defined(DEBUG) | defined(_DEBUG)
-											2;
-#else
-											16;
-#endif
 	size_t totalNumGrains_;
 };

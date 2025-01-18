@@ -84,12 +84,10 @@ public:
 	}
 protected:
 	nvs::util::SampleManagementGuts sampleManagementGuts;
-	juce::AudioProcessorValueTreeState apvts;
-	GranularSynthesizer granular_synth_juce;
-
-private:
 	nvs::util::LoggingGuts loggingGuts;
-	
+	juce::AudioProcessorValueTreeState apvts;
+	std::unique_ptr<GranularSynthesizer> granular_synth_juce;
+private:
 	void readInAudioFileToBuffer(juce::File const f);
 	void loadAudioFileAsync(juce::File const file, bool notifyEditor);
 
