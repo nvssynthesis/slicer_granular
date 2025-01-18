@@ -54,6 +54,7 @@ void GranularSynthesizer::initializeVoices() {
 	setCurrentPlaybackSampleRate(getSampleRate());	// if voices' sample rates need updating, this shall do it
 }
 void GranularSynthesizer::setAudioBlock(juce::AudioBuffer<float> &waveBuffer, double newFileSampleRate){
+	assert(logger_);
 	logger_("GranularSynthesizer: setAudioBlock");
 	audioBlock_ = juce::dsp::AudioBlock<float>(waveBuffer);
 	fileSampleRate_ = newFileSampleRate;

@@ -52,6 +52,9 @@ public:
 		}
 	}
 	void setLogger(std::function<void(const juce::String&)> loggerFunction);
+	bool hasLogger() const {
+		return logger_ != nullptr;
+	}
 protected: constexpr static int num_voices =
 #if defined(DEBUG_BUILD) | defined(DEBUG) | defined(_DEBUG)
 											2;
