@@ -155,7 +155,6 @@ void genGranPoly1::doSetTransposeRandomness(float randomness){
 		g.setTransposeRand(randomness);
 }
 void genGranPoly1::doSetPositionRandomness(double randomness){
-	randomness = randomness * static_cast<double>(_wave_block.getNumSamples());
 	for (auto &g : _grains)
 		g.setPositionRand(randomness);
 }
