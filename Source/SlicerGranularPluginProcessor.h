@@ -19,7 +19,7 @@ class Slicer_granularAudioProcessor  : 	public juce::AudioProcessor
 {
 public:
 	//==============================================================================
-	Slicer_granularAudioProcessor();
+	Slicer_granularAudioProcessor(std::unique_ptr<GranularSynthesizer> granularSynth);
 	
 	//==============================================================================
 	void prepareToPlay (double sampleRate, int samplesPerBlock) override;

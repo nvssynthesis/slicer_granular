@@ -5,14 +5,16 @@
 #endif
 //==============================================================================
 
+#ifndef TSN
 nvs::util::LoggingGuts::LoggingGuts()
 : logFile(juce::File::getSpecialLocation(juce::File::SpecialLocationType::currentApplicationFile).getSiblingFile("log.txt"))
 , fileLogger(logFile, "slicer_granular logging")
 {
 	juce::Logger::setCurrentLogger (&fileLogger);
 }
+#endif
 
-Slicer_granularAudioProcessor::Slicer_granularAudioProcessor()
+Slicer_granularAudioProcessor::Slicer_granularAudioProcessor(std::unique_ptr<GranularSynthesizer> granularSynth)
 #ifndef JucePlugin_PreferredChannelConfigurations
      : AudioProcessor (BusesProperties()
                      #if ! JucePlugin_IsMidiEffect
@@ -23,9 +25,9 @@ Slicer_granularAudioProcessor::Slicer_granularAudioProcessor()
                      #endif
                        ),
 #endif
-  apvts(*this, nullptr, "PARAMETERS", createParameterLayout())
+	apvts(*this, nullptr, "PARAMETERS", createParameterLayout())
+,	granular_synth_juce(std::move(granularSynth))
 {
-	granular_synth_juce = std::make_unique<GranularSynthesizer>();
 	granular_synth_juce->setLogger([this](const juce::String& message)
 	{
 		if (loggingGuts.fileLogger.getCurrentLogger()){
@@ -363,6 +365,6 @@ juce::AudioProcessorValueTreeState::ParameterLayout Slicer_granularAudioProcesso
 // this preprocessor definition should be defined in tsn_granular to prevent multiple definitions
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
-    return new Slicer_granularAudioProcessor();
+    return new Slicer_granularAudioProcessor(std::make_unique<GranularSynthesizer>());
 }
 #endif

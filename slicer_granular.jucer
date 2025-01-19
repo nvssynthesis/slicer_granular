@@ -6,7 +6,8 @@
               pluginManufacturer="nvssynthesis" cppLanguageStandard="20" headerPath="/Users/nicholassolem/development/boost_1_80_0&#10;/Users/nicholassolem/development/eigen-3.4.0&#10;/Users/nicholassolem/development/nvs_maps&#10;/Users/nicholassolem/development/nvs_libraries&#10;/Users/nicholassolem/development/thirdparty/Signalsmith&#10;/Users/nicholassolem/development/thirdparty/frozen/include&#10;/Users/nicholassolem/development/thirdparty/Sprout&#10;/Users/nicholassolem/development/thirdparty/fmt/include&#10;/Users/nicholassolem/development/thirdparty/Xoshiro-cpp"
               companyName="nvssynthesis" companyWebsite="https://nvssynthesis.github.io/"
               version="0.1.2" pluginAUIsSandboxSafe="1" pluginManufacturerCode="Nvss"
-              pluginCode="Slgr" pluginFormats="buildAU,buildStandalone" pluginAUMainType="'aumu'">
+              pluginCode="Slgr" pluginFormats="buildAU,buildStandalone,buildVST3"
+              pluginAUMainType="'aumu'">
   <MAINGROUP id="QmNeTI" name="slicer-granular">
     <GROUP id="{914A1E25-4FE6-1459-BEC3-31343EE40E6A}" name="Source">
       <GROUP id="{C70272B5-9E9D-4C67-5C0A-6C60AEB8D475}" name="Plugin">
