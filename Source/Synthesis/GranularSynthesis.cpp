@@ -124,7 +124,9 @@ void genGranPoly1::doSetTranspose(float transposition_semitones){
 		g.setTranspose(transposition_semitones);
 }
 void genGranPoly1::doSetSpeed(float new_speed){
-	_speed_lgr.setMu(nvs::memoryless::clamp<float>(new_speed, 0.01f, 11025.f));
+	assert (new_speed > 0.01f);
+	assert (new_speed < 11025.f);
+	_speed_ler.setMu(new_speed);
 }
 void genGranPoly1::doSetPosition(double position_normalized){
 	//	position_normalized = nvs::memoryless::clamp<double>(position_normalized, 0.0, 1.0);
@@ -163,8 +165,8 @@ void genGranPoly1::doSetDurationRandomness(double randomness){
 		g.setDurationRand(randomness);
 }
 void genGranPoly1::doSetSpeedRandomness(float randomness){
-	randomness *= _speed_lgr.getMu();
-	_speed_lgr.setSigma(randomness);
+//	randomness *= _speed_ler.getMu();
+	_speed_ler.setSigma(randomness);
 }
 void genGranPoly1::doSetSkewRandomness(float randomness){
 	for (auto &g : _grains)
@@ -183,8 +185,7 @@ std::array<float, 2> genGranPoly1::doProcess(float trigger_in){
 	std::array<float, 2> output;
 	
 	// update phasor's frequency only if _triggerHisto.val is true
-	float const freq_tmp = nvs::memoryless::clamp_low(
-							_speed_lgr(static_cast<bool>(_trigger_histo.val)),  _speed_lgr.getMu() * 0.125f);
+	float const freq_tmp = _speed_ler(static_cast<bool>(_trigger_histo.val)); // used to clamp by percentage of mu. should no longer be necessary.
 	_phasor_internal_trig.setFrequency(freq_tmp);
 	++_phasor_internal_trig;
 	
@@ -230,7 +231,7 @@ genGrain1::genGrain1(nvs::rand::BoxMuller *const gaussian_rng, ExponentialRandom
 ,	_grain_id(newId)
 ,	_transpose_lgr(*_gaussian_rng_ptr, {0.f, 0.f})
 ,	_position_lgr(*_gaussian_rng_ptr, {0.0, 0.0})
-,	_duration_lgr(*expo_rng, {0.5f, 0.f})
+,	_duration_ler(*expo_rng, {0.5f, 0.f})
 ,	_skew_lgr(*_gaussian_rng_ptr, {0.5f, 0.f})
 ,	_plateau_lgr(*_gaussian_rng_ptr, {1.f, 0.f})
 ,	_pan_lgr(*_gaussian_rng_ptr, {0.5f, 0.23f})
@@ -267,7 +268,7 @@ void genGrain1::setTranspose(float ratio){
 void genGrain1::setDuration(double dur_norm){
 	assert (dur_norm <= 1.0);
 	assert (dur_norm >= 0.0);
-	_duration_lgr.setMu(dur_norm);
+	_duration_ler.setMu(dur_norm);
 }
 void genGrain1::setPosition(double position){
 	_position_lgr.setMu(position);
@@ -287,8 +288,7 @@ void genGrain1::setTransposeRand(float transposeRand){
 	_transpose_lgr.setSigma(transposeRand);
 }
 void genGrain1::setDurationRand(double durationRand){
-//	durationRand *= _duration_lgr.getMu();
-	_duration_lgr.setSigma(durationRand);
+	_duration_ler.setSigma(durationRand);
 }
 void genGrain1::setPositionRand(double positionRand){
 	_position_lgr.setSigma(positionRand);
@@ -381,7 +381,7 @@ genGrain1::outs genGrain1::operator()(float const trig_in){
 
 	size_t const length = static_cast<double>(_wave_block.getNumSamples());
 	double const position_in_samps = _position_lgr(should_open_latches) * length;
-	double const latch_duration_result = _duration_lgr(should_open_latches) * length;
+	double const latch_duration_result = _duration_ler(should_open_latches) * length;
 	float const latch_skew_result = memoryless::clamp(_skew_lgr(should_open_latches), 0.001f, 0.999f);
 	
 	double const sample_rate_compensate_ratio = calculateSampleReadRate(_playback_sample_rate, _file_sample_rate);

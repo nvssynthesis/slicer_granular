@@ -188,7 +188,7 @@ private:
     std::vector<size_t> _grain_indices;	// used to index grains in random order
     gen::phasor<double> _phasor_internal_trig;
 
-	LatchedGaussianRandom_f _speed_lgr {_gaussian_rng, {1.f, 0.f}};
+	LatchedExponentialRandom_d _speed_ler {_expo_rng, {1.f, 0.f}};
     
     nvs::gen::history<float> _trigger_histo;
     nvs::gen::ramp2trig<float> _ramp2trig;
@@ -247,7 +247,7 @@ protected:
     
 	LatchedGaussianRandom_f 	_transpose_lgr;
 	LatchedGaussianRandom_d 	_position_lgr; // latches position from gate on, goes toward dest windowing
-	LatchedExponentialRandom_d 	_duration_lgr; // latches duration from gate on, goes toward dest windowing
+	LatchedExponentialRandom_d 	_duration_ler; // latches duration from gate on, goes toward dest windowing
 	LatchedGaussianRandom_f 	_skew_lgr;
 	LatchedGaussianRandom_f 	_plateau_lgr;
 	LatchedGaussianRandom_f 	_pan_lgr;
