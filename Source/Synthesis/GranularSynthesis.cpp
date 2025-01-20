@@ -165,7 +165,6 @@ void genGranPoly1::doSetDurationRandomness(double randomness){
 		g.setDurationRand(randomness);
 }
 void genGranPoly1::doSetSpeedRandomness(float randomness){
-//	randomness *= _speed_ler.getMu();
 	_speed_ler.setSigma(randomness);
 }
 void genGranPoly1::doSetSkewRandomness(float randomness){
@@ -342,7 +341,7 @@ double calculateSampleReadRate(double const playback_sample_rate, double const f
 }
 double calculateSampleIndex(double sample_rate_compensate_ratio, double accum, double position, double duration, float skew, float sample_playback_rate){
 	double const a = sample_rate_compensate_ratio * accum;
-	double const center_of_env = skew * duration * sample_playback_rate;
+	double const center_of_env = skew * duration * sample_playback_rate * sample_rate_compensate_ratio;
 	double const sample_index = a + position - center_of_env;
 	return sample_index;
 }
@@ -379,16 +378,18 @@ genGrain1::outs genGrain1::operator()(float const trig_in){
 	
 	_sample_playback_rate = calculateTransposeMultiplier(_ratio_for_note_latch(_ratio_based_on_note, should_open_latches), 							fastSemitonesToRatio(_transpose_lgr(should_open_latches)));
 
+	double const file_sample_rate_compensate_ratio = calculateSampleReadRate(_playback_sample_rate, _file_sample_rate);
+	double const timing_sample_rate_compensate_ratio = _playback_sample_rate / 44100.0;
+
 	size_t const length = static_cast<double>(_wave_block.getNumSamples());
 	double const position_in_samps = _position_lgr(should_open_latches) * length;
-	double const latch_duration_result = _duration_ler(should_open_latches) * length;
+	double const effective_duration = _duration_ler(should_open_latches) * length * timing_sample_rate_compensate_ratio;
 	float const latch_skew_result = memoryless::clamp(_skew_lgr(should_open_latches), 0.001f, 0.999f);
 	
-	double const sample_rate_compensate_ratio = calculateSampleReadRate(_playback_sample_rate, _file_sample_rate);
 	
 	_accum(_sample_playback_rate, static_cast<bool>(should_open_latches));
-	_sample_index = calculateSampleIndex(sample_rate_compensate_ratio, _accum.val, position_in_samps, latch_duration_result, latch_skew_result, _sample_playback_rate);
-	_window = calculateWindow(_accum.val, latch_duration_result, _sample_playback_rate, latch_skew_result, memoryless::clamp_low(_plateau_lgr(should_open_latches), 0.000001f));
+	_sample_index = calculateSampleIndex(file_sample_rate_compensate_ratio, _accum.val, position_in_samps, effective_duration, latch_skew_result, _sample_playback_rate);
+	_window = calculateWindow(_accum.val, effective_duration, _sample_playback_rate, latch_skew_result, memoryless::clamp_low(_plateau_lgr(should_open_latches), 0.000001f));
 	float const vel_amplitude = _amplitude_for_note_latch(_amplitude_based_on_note, should_open_latches);
 
 	float const sample = calculateSample(_wave_block, _sample_index, _window, vel_amplitude);
@@ -399,5 +400,4 @@ genGrain1::outs genGrain1::operator()(float const trig_in){
 	processBusyness(_window, _busy_histo, o);
 	return o;
 }
-
 }	// namespace nvs::gran
