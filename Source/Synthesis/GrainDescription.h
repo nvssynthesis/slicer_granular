@@ -17,5 +17,6 @@ struct GrainDescription {
 	double sample_playback_rate;
 	float window;
 	float pan;
+	bool busy;
 };
 }	// namespace nvs::gran

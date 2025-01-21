@@ -19,8 +19,8 @@
 #include <JuceHeader.h>
 
 /*** TODO:
- -envelopes shall have secondary parameter, plateau, which clips the window before parzen
- -add automatic traversal
+ -optimize
+ --tanh table
 */
 
 static constexpr size_t N_GRAINS =
@@ -214,7 +214,7 @@ public:
 	void setPlateau(float plateau);
 	void setPan(float pan);
 	void setTransposeRand(float transposeRand);
-	void setDurationRand(double durationRand); //('slope' in max patch)
+	void setDurationRand(double durationRand);
 	void setPositionRand(double positionRand);
 	void setSkewRand(float skewRand);
 	void setPlateauRand(float plateauRand);

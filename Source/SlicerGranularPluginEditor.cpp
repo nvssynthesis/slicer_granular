@@ -100,7 +100,7 @@ void GranularEditorCommon::filenameComponentChanged (juce::FilenameComponent* fi
 			auto const fileToRead = audioProcessor.getSampleFilePath();
 			notateFileComp(fileToRead);
 			drawThumbnail(fileToRead);
-	   }
+		}
 	}
 }
 //==============================================================================

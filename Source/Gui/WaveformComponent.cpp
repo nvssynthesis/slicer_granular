@@ -29,7 +29,7 @@ void WaveformComponent::addMarker(double onsetPosition) {
 
 	onsetMarkerList.insert(it, OnsetMarker{onsetPosition});
 }
-void WaveformComponent::addMarker(nvs::gran::GrainDescription gd){
+void WaveformComponent::addMarker(nvs::gran::GrainDescription const &gd){
 	auto it = std::lower_bound(currentPositionMarkerList.begin(), currentPositionMarkerList.end(), gd,
 							   [](const PositionMarker& marker, nvs::gran::GrainDescription gd) {
 									return marker.position < gd.position;
@@ -54,7 +54,7 @@ void WaveformComponent::drawMarkers(juce::Graphics& g, MarkerType markerType){
 }
 namespace {
 void processLine(juce::Graphics& g, juce::Line<float> &, WaveformComponent::OnsetMarker const &){
-	g.setColour(juce::Colours::blue);
+	g.setColour(juce::Colour(juce::Colours::blue).withMultipliedAlpha(0.75f));
 }
 void processLine(juce::Graphics& g, juce::Line<float> &l, WaveformComponent::PositionMarker const &marker){
 	auto const regionHeight = l.getLength();
@@ -62,7 +62,11 @@ void processLine(juce::Graphics& g, juce::Line<float> &l, WaveformComponent::Pos
 	auto const r = marker.sample_playback_rate;
 	auto const p = marker.pan;
 	auto const w = marker.window;
-	juce::Colour colour = juce::Colour(juce::Colours::lightgreen);
+	auto const busy = marker.busy;
+	if (!busy){
+		assert (w == 0.f);
+	}
+	juce::Colour colour = busy ? juce::Colour(juce::Colours::lightgreen).withMultipliedBrightness(1.1f) : juce::Colour(juce::Colours::grey).withMultipliedLightness(0.9f);
 	colour = colour.withRotatedHue(log2(r) / 20.f);									// pitch affects hue
 	g.setColour(colour);
 	g.setOpacity(sqrt(w));															// envelope (window) affects opacity

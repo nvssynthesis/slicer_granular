@@ -312,6 +312,7 @@ GrainDescription genGrain1::getGrainDescription() const {
 	gd.sample_playback_rate = _sample_playback_rate;
 	gd.window = _window;
 	gd.pan = _pan / (std::numbers::pi * 0.5f);
+	gd.busy = _busy_histo.val != 0.f;
 	return gd;
 }
 

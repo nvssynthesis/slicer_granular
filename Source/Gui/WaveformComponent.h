@@ -35,7 +35,7 @@ public:
 	};
 	size_t getNumMarkers(MarkerType markerType);
 	void addMarker(double onsetPosition);							// adds an OnsetMarker
-	void addMarker(nvs::gran::GrainDescription grainDescription);	// adds a PositionMarker
+	void addMarker(nvs::gran::GrainDescription const &grainDescription);	// adds a PositionMarker
 	void removeMarkers(MarkerType markerType);
 
 	void paint(juce::Graphics& g) override;
@@ -53,8 +53,9 @@ public:
 		double sample_playback_rate;
 		float window;
 		float pan;
+		bool busy;
 		static PositionMarker fromGrainDescription(nvs::gran::GrainDescription const &gd){
-			return PositionMarker{gd.grain_id, gd.position, gd.sample_playback_rate, gd.window, gd.pan};
+			return PositionMarker{gd.grain_id, gd.position, gd.sample_playback_rate, gd.window, gd.pan, gd.busy};
 		}
 	};
 private:
