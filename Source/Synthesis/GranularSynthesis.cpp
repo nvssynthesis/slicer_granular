@@ -309,7 +309,7 @@ GrainDescription genGrain1::getGrainDescription() const {
 	GrainDescription gd;
 	gd.grain_id = _grain_id;
 	gd.position = nvs::gen::wrap01(_sample_index / _wave_block.getNumSamples());
-	gd.sample_playback_rate = _sample_playback_rate;
+	gd.sample_playback_rate = _waveform_read_rate;
 	gd.window = _window;
 	gd.pan = _pan / (std::numbers::pi * 0.5f);
 	gd.busy = _busy_histo.val != 0.f;
@@ -319,6 +319,12 @@ GrainDescription genGrain1::getGrainDescription() const {
 namespace {	// anonymous namespace for local helper functions
 float calculateTransposeMultiplier(float const ratioBasedOnNote, float const ratioBasedOnTranspose){
 	return memoryless::clamp(ratioBasedOnNote * ratioBasedOnTranspose, 0.001f, 1000.f);
+}
+double calculateEffectiveDuration(double latchedDuration, double length, double timingSampleRateCompensate_ratio, double sampleRate){
+	double constexpr maxLengthInSeconds = 15.0;
+	double const maxLengthInSamples = maxLengthInSeconds * sampleRate;
+	auto const clippedLength = nvs::memoryless::clamp_high(length, maxLengthInSamples);
+	return latchedDuration * clippedLength * timingSampleRateCompensate_ratio;
 }
 float calculateWindow(double const accum, double const duration, float const transpositionMultiplier, float const skew, float const plateau){
 	assert(transpositionMultiplier > 0.f);
@@ -377,20 +383,20 @@ genGrain1::outs genGrain1::operator()(float const trig_in){
 	o.next = _busy_histo.val ? trig_in : 0.f;
 	bool const should_open_latches = _busy_histo.val ? false : static_cast<bool>(trig_in);
 	
-	_sample_playback_rate = calculateTransposeMultiplier(_ratio_for_note_latch(_ratio_based_on_note, should_open_latches), 							fastSemitonesToRatio(_transpose_lgr(should_open_latches)));
+	_waveform_read_rate = calculateTransposeMultiplier(_ratio_for_note_latch(_ratio_based_on_note, should_open_latches), 							fastSemitonesToRatio(_transpose_lgr(should_open_latches)));
 
 	double const file_sample_rate_compensate_ratio = calculateSampleReadRate(_playback_sample_rate, _file_sample_rate);
 	double const timing_sample_rate_compensate_ratio = _playback_sample_rate / 44100.0;
 
 	size_t const length = static_cast<double>(_wave_block.getNumSamples());
 	double const position_in_samps = _position_lgr(should_open_latches) * length;
-	double const effective_duration = _duration_ler(should_open_latches) * length * timing_sample_rate_compensate_ratio;
+	double const effective_duration = calculateEffectiveDuration(_duration_ler(should_open_latches), length, timing_sample_rate_compensate_ratio, _playback_sample_rate);
 	float const latch_skew_result = memoryless::clamp(_skew_lgr(should_open_latches), 0.001f, 0.999f);
 	
 	
-	_accum(_sample_playback_rate, static_cast<bool>(should_open_latches));
-	_sample_index = calculateSampleIndex(file_sample_rate_compensate_ratio, _accum.val, position_in_samps, effective_duration, latch_skew_result, _sample_playback_rate);
-	_window = calculateWindow(_accum.val, effective_duration, _sample_playback_rate, latch_skew_result, memoryless::clamp_low(_plateau_lgr(should_open_latches), 0.000001f));
+	_accum(_waveform_read_rate, static_cast<bool>(should_open_latches));
+	_sample_index = calculateSampleIndex(file_sample_rate_compensate_ratio, _accum.val, position_in_samps, effective_duration, latch_skew_result, _waveform_read_rate);
+	_window = calculateWindow(_accum.val, effective_duration, _waveform_read_rate, latch_skew_result, memoryless::clamp_low(_plateau_lgr(should_open_latches), 0.000001f));
 	float const vel_amplitude = _amplitude_for_note_latch(_amplitude_based_on_note, should_open_latches);
 
 	float const sample = calculateSample(_wave_block, _sample_index, _window, vel_amplitude);

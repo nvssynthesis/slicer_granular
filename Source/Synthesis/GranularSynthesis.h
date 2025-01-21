@@ -255,7 +255,7 @@ protected:
     nvs::gen::accum<double> _accum; // accumulates samplewise and resets from gate on, goes to windowing and sample lookup!
     
     double _sample_index {0.0};
-    float _sample_playback_rate {0.0};
+    float _waveform_read_rate {0.0};
     float _window {0.f};
 	float _pan {0.f};
     
