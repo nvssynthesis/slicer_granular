@@ -246,6 +246,12 @@ void Slicer_granularAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
 		buffer.clear (i, 0, buffer.getNumSamples());
 	}
 	
+	const juce::SpinLock::ScopedTryLockType lock(audioBlockLock);
+	if (!lock.isLocked()){
+		writeToLog("processBlock:        lock was not locked; exiting early.");
+		return;
+	}
+	
 	float* const*  wp = sampleManagementGuts.sampleBuffer.getArrayOfWritePointers();
 	auto const numSampChans = sampleManagementGuts.sampleBuffer.getNumChannels();
 	for (int i = 0; i < numSampChans; ++i){
@@ -263,11 +269,7 @@ void Slicer_granularAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
 		return;
 	}
 	
-	const juce::SpinLock::ScopedTryLockType lock(audioBlockLock);
-	if (!lock.isLocked()){
-		writeToLog("processBlock:        lock was not locked; exiting early.");
-		return;
-	}
+
 
 	
 	granular_synth_juce->granularMainParamSet<0, GranularSynthesizer::getNumVoices()>(apvts);	// this just sets the params internal to the granular synth (effectively a voice)

@@ -32,6 +32,7 @@ protected:
 	void readFile (const juce::File& fileToRead);
 	void drawThumbnail(juce::String const &sampleFilePath);
 	void notateFileComp(juce::String const &sampleFilePath);
+	virtual void displayGrainDescriptions();
 	//===============================================================================
 	WaveformAndPositionComponent waveformAndPositionComponent;
 	FileSelectorComponent fileComp;

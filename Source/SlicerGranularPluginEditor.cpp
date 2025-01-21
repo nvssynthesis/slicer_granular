@@ -61,6 +61,13 @@ void GranularEditorCommon::drawThumbnail(juce::String const &sampleFilePath){
 		thumbnail->setSource (new juce::FileInputSource (sampleFilePath));	// owned by thumbnail, no worry about delete
 	}
 }
+void GranularEditorCommon::displayGrainDescriptions() {
+	audioProcessor.readGrainDescriptionData(grainDescriptions);
+	waveformAndPositionComponent.wc.removeMarkers(WaveformComponent::MarkerType::CurrentPosition);
+	for (auto gd : grainDescriptions){
+		waveformAndPositionComponent.wc.addMarker(gd);
+	}
+}
 void GranularEditorCommon::changeListenerCallback (juce::ChangeBroadcaster* source){
 	if (dynamic_cast<nvs::util::SampleManagementGuts*>(source)){
 		auto const fileToRead = audioProcessor.getSampleFilePath();
@@ -68,11 +75,7 @@ void GranularEditorCommon::changeListenerCallback (juce::ChangeBroadcaster* sour
 		drawThumbnail(fileToRead);
 	}
 	else if (dynamic_cast<nvs::util::MeasuredData*>(source)) {
-		audioProcessor.readGrainDescriptionData(grainDescriptions);
-		waveformAndPositionComponent.wc.removeMarkers(WaveformComponent::MarkerType::CurrentPosition);
-		for (auto gd : grainDescriptions){
-			waveformAndPositionComponent.wc.addMarker(gd);
-		}
+		displayGrainDescriptions();
 		waveformAndPositionComponent.wc.repaint();
 	}
 	else {
