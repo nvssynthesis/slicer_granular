@@ -61,6 +61,8 @@ void GranularEditorCommon::drawThumbnail(juce::String const &sampleFilePath){
 		thumbnail->setSource (new juce::FileInputSource (sampleFilePath));	// owned by thumbnail, no worry about delete
 	}
 }
+//==============================================================================================================================
+//============================================= ChangeListener - related =======================================================
 void GranularEditorCommon::displayGrainDescriptions() {
 	audioProcessor.readGrainDescriptionData(grainDescriptions);
 	waveformAndPositionComponent.wc.removeMarkers(WaveformComponent::MarkerType::CurrentPosition);
@@ -68,26 +70,34 @@ void GranularEditorCommon::displayGrainDescriptions() {
 		waveformAndPositionComponent.wc.addMarker(gd);
 	}
 }
+void GranularEditorCommon::handleGrainDescriptionBroadcast(){
+	displayGrainDescriptions();
+	waveformAndPositionComponent.wc.repaint();
+}
+void GranularEditorCommon::handleSampleManagementBroadcast(){
+	auto const fileToRead = audioProcessor.getSampleFilePath();
+	notateFileComp(fileToRead);
+	drawThumbnail(fileToRead);
+}
 void GranularEditorCommon::changeListenerCallback (juce::ChangeBroadcaster* source){
 	if (dynamic_cast<nvs::util::SampleManagementGuts*>(source)){
-		auto const fileToRead = audioProcessor.getSampleFilePath();
-		notateFileComp(fileToRead);
-		drawThumbnail(fileToRead);
+		handleSampleManagementBroadcast();
 	}
 	else if (dynamic_cast<nvs::util::MeasuredData*>(source)) {
-		displayGrainDescriptions();
-		waveformAndPositionComponent.wc.repaint();
+		handleGrainDescriptionBroadcast();
 	}
 	else {
 		audioProcessor.writeToLog("no match for listener.\n");
 	}
 }
+//==========================================================  Timer  ============================================================
 void GranularEditorCommon::timerCallback() {
 	// this is a workaround for now to address the behavior of the file comp notating the DAW's path
 	audioProcessor.writeToLog("Timer callback notating file comp");
 	notateFileComp(audioProcessor.getSampleFilePath());
 	stopTimer();
 }
+//=================================================  FilenameComponentListener  =================================================
 void GranularEditorCommon::filenameComponentChanged (juce::FilenameComponent* fileComponentThatHasChanged)
 {
 	audioProcessor.writeToLog("editor: filenameComponentChanged.");

@@ -34,6 +34,7 @@ public:
 		CurrentPosition
 	};
 	size_t getNumMarkers(MarkerType markerType);
+	std::vector<double> getNormalizedOnsets() const;
 	void addMarker(double onsetPosition);							// adds an OnsetMarker
 	void addMarker(nvs::gran::GrainDescription const &grainDescription);	// adds a PositionMarker
 	void removeMarkers(MarkerType markerType);
@@ -91,6 +92,7 @@ private:
  */
 class WaveformAndPositionComponent	:	public juce::Component
 ,										public juce::Slider::Listener
+,										public juce::ChangeBroadcaster
 {
 public:
 	WaveformAndPositionComponent(int sourceSamplesPerThumbnailSample,
@@ -101,6 +103,7 @@ public:
 	void paint (juce::Graphics& g) override;
 	
 	void sliderValueChanged (juce::Slider *slider) override;
+	double getPositionSliderValue() const;
 
 	WaveformComponent wc; // externally accessible 
 private:

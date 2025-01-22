@@ -9,7 +9,7 @@
 */
 
 #include "WaveformComponent.h"
-
+#include <ranges>
 
 WaveformComponent::WaveformComponent(int sourceSamplesPerThumbnailSample, juce::AudioFormatManager &formatManagerToUse)
 :	thumbnailCache(5), thumbnail(sourceSamplesPerThumbnailSample, formatManagerToUse, thumbnailCache)
@@ -21,6 +21,12 @@ size_t WaveformComponent::getNumMarkers(MarkerType markerType) {
 	const auto& markerListVariant = markerListMap.at(markerType);
 	return std::visit([](auto* markerList) { return markerList->size(); }, markerListVariant);
 }
+std::vector<double> WaveformComponent::getNormalizedOnsets() const {
+	auto view = onsetMarkerList | std::views::transform([](OnsetMarker const &m){ return m.position; }) ;
+	std::vector<double> onsets(std::ranges::begin(view), std::ranges::end(view));
+	return onsets;
+}
+
 void WaveformComponent::addMarker(double onsetPosition) {
 	auto it = std::lower_bound(onsetMarkerList.begin(), onsetMarkerList.end(), onsetPosition,
 							   [](const OnsetMarker& marker, double position) {
@@ -192,12 +198,15 @@ void WaveformAndPositionComponent::resized()
 		positionSlider._slider.setBounds(sliderRect);
 	}
 }
-void WaveformAndPositionComponent::paint (juce::Graphics& g) {
-	
+void WaveformAndPositionComponent::paint (juce::Graphics& g) {}
+
+double WaveformAndPositionComponent::getPositionSliderValue() const {
+	return positionSlider._slider.getValue();
 }
 
 void WaveformAndPositionComponent::sliderValueChanged (juce::Slider *slider) {
 	if (slider == &positionSlider._slider){
-		// this used to set the position of the read-only slider
+		// this is used to update the timbre space component (for TSN version)
+		sendChangeMessage();
 	}
 }

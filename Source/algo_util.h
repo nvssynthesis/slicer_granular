@@ -12,8 +12,7 @@
 #include <numeric>
 #include <vector>
 
-namespace nvs {
-namespace util {
+namespace nvs::util {
 
 template<typename T>
 std::optional<std::pair<size_t, T>>
@@ -73,5 +72,4 @@ get_left(T target, std::vector<T> const V){
 	return std::make_pair(low, V[low]);
 }
 
-}	// namespace util
-}	// namespace nvs
+}	// namespace nvs::util

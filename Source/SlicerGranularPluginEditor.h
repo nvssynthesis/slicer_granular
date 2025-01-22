@@ -19,7 +19,7 @@
 
 struct GranularEditorCommon	:	public juce::ChangeListener
 ,								public juce::FilenameComponentListener
-, 								private juce::Timer
+, 								private juce::Timer	// time was only introduced to defer fileComp notating on startup
 {
 	GranularEditorCommon(Slicer_granularAudioProcessor& p);
 	// ChangeListener
@@ -33,6 +33,9 @@ protected:
 	void drawThumbnail(juce::String const &sampleFilePath);
 	void notateFileComp(juce::String const &sampleFilePath);
 	virtual void displayGrainDescriptions();
+	
+	void handleSampleManagementBroadcast();
+	void handleGrainDescriptionBroadcast();
 	//===============================================================================
 	WaveformAndPositionComponent waveformAndPositionComponent;
 	FileSelectorComponent fileComp;
