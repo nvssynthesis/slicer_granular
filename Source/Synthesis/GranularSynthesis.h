@@ -27,7 +27,7 @@ static constexpr size_t N_GRAINS =
 #if defined(DEBUG_BUILD) | defined(DEBUG) | defined(_DEBUG)
 								10;
 #else
-								15;
+								25;
 #endif
 
 namespace nvs {

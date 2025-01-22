@@ -59,7 +59,7 @@ protected: constexpr static int num_voices =
 #if defined(DEBUG_BUILD) | defined(DEBUG) | defined(_DEBUG)
 											2;
 #else
-											16;
+											4;
 #endif
 private:
 	std::function<void(const juce::String&)> logger_ = nullptr;
