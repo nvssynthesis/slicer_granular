@@ -42,30 +42,19 @@ struct genGrain1;
 inline double millisecondsToSamples(double ms, double sampleRate) {
 	return (ms / 1000.0) * sampleRate;
 }
-inline double millisecondsToHertz(double ms){
+inline double millisecondsToHertz(double ms) {
 	return 1000.0 / ms;
 }
 inline double samplesToMilliseconds(double samps, double sampleRate) {
 	return (samps / sampleRate) * 1000.0;
 }
-
 inline double millisecondsToFreqSamps(double ms, double sampleRate) {
 	auto const samps = millisecondsToSamples(ms, sampleRate);
 	return 1.0 / samps;
 }
-inline double durationMsToGaussianSpace(double ms, double sampleRate){
-	(void)sampleRate;
-	return millisecondsToHertz(ms);
-}
-inline double durationGaussianToProcessingSpace(double hertz, double sampleRate){
-	// input is in hertz
-	// = cycles per second
-	// samples per second:
-	return hertz / sampleRate;
-}
 /**
  Making use of concepts to guarantee common interface between latched random number generator types without inheritance (thus without virtual function calls)
- */
+*/
 using MuSigmaPair_f  = nvs::rand::MuSigmaPair<float>;
 using MuSigmaPair_d  = nvs::rand::MuSigmaPair<double>;
 using BoxMuller = nvs::rand::BoxMuller;

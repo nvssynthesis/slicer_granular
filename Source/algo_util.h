@@ -51,7 +51,7 @@ get_left(T target, std::vector<T> const V){
 		return {};
 	}
 	size_t low = 0;
-	size_t high = V.size() ;
+	size_t high = V.size() - 1;
 	
 	while (low < high){
 		size_t mid = std::midpoint(low, high);
