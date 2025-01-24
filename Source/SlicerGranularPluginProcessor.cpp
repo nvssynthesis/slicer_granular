@@ -360,6 +360,17 @@ juce::AudioProcessorValueTreeState::ParameterLayout Slicer_granularAudioProcesso
 		envelopeParams->addChild(a(param));
 	}
 	layout.add(std::move(envelopeParams));
+#ifdef TSN
+	auto navigationParams = std::make_unique<juce::AudioProcessorParameterGroup>("Navigation", "NavParams", "|");
+	
+	for (size_t i = static_cast<size_t>(params_e::count_envelope_params) + 1;
+		 i < static_cast<size_t>(params_e::count_nav_lfo_params);
+		 ++i){
+		params_e param = static_cast<params_e>(i);
+		navigationParams->addChild(a(param));
+	}
+	layout.add(std::move(navigationParams));
+#endif
 	return layout;
 }
 

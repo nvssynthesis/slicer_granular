@@ -47,6 +47,12 @@ enum class params_e {
 	amp_release,
 	
 	count_envelope_params
+#ifdef TSN
+,	nav_lfo_amount,
+	nav_lfo_rate,
+	
+	count_nav_lfo_params
+#endif
 };
 
 inline params_e mainToRandom(params_e mainParam){
@@ -79,7 +85,7 @@ static constexpr float envTimingMin {0.01f};
 static constexpr float envTimingMax {8.f};
 static constexpr float envTimingSkew {0.5f};
 static const inline  std::map<params_e, paramPropsTuple> paramMap {
-	// 				   		min,   max,  spacing, skew, symmetrical, default, name
+	// 				   		min,   max,       spacing, skew, symmetrical, default, name
 	{params_e::transpose,	{-60.f, 60.f, 		0.f, 	1.f, 	true, 	0.f, 	"Transpose"}},
 	{params_e::position,	{0.f, 	1.f, 		0.f, 	1.f, 	false, 	0.f, 	"Position"}},
 	{params_e::speed, 		{0.1f, 	1000.f, 	0.f, 	0.3f, 	false, 	50.f, 	"Speed"}},
@@ -100,6 +106,11 @@ static const inline  std::map<params_e, paramPropsTuple> paramMap {
 	{params_e::amp_decay,	{envTimingMin, envTimingMax, 0.f, 	envTimingSkew, 	false, 	0.5f, 	"Amp Env Decay"}},
 	{params_e::amp_sustain,	{0.f,   		1.f, 		 0.f, 		1.f, 		false, 	0.5f, 	"Amp Env Sustain"}},
 	{params_e::amp_release,	{envTimingMin, envTimingMax, 0.f, 	envTimingSkew, 	false, 	0.8f, 	"Amp Env Release"}}
+#ifdef TSN
+	// 				   			min,   max,  spacing, skew, symmetrical, default, name
+,	{params_e::nav_lfo_amount, 	{0.f, 	1.f, 0.f, 		1.f, false, 	0.1f, 	"Amount"}},
+	{params_e::nav_lfo_rate, 	{0.1f, 10.f, 0.f, 		1.f, false, 	0.5f, 	"Rate"}}
+#endif
 };
 
 
