@@ -50,6 +50,8 @@ enum class params_e {
 #ifdef TSN
 ,	nav_lfo_amount,
 	nav_lfo_rate,
+	nav_lfo_offset_x,
+	nav_lfo_offset_y,
 	
 	count_nav_lfo_params
 #endif
@@ -109,7 +111,10 @@ static const inline  std::map<params_e, paramPropsTuple> paramMap {
 #ifdef TSN
 	// 				   			min,   max,  spacing, skew, symmetrical, default, name
 ,	{params_e::nav_lfo_amount, 	{0.f, 	1.f, 0.f, 		1.f, false, 	0.1f, 	"Amount"}},
-	{params_e::nav_lfo_rate, 	{0.1f, 10.f, 0.f, 		1.f, false, 	0.5f, 	"Rate"}}
+	{params_e::nav_lfo_rate, 	{0.1f, 10.f, 0.f, 		1.f, false, 	0.5f, 	"Rate"}},
+	{params_e::nav_lfo_offset_x,{-1.f,  1.f, 0.f, 		1.f, true, 		0.f, 	"X Offset"}},
+	{params_e::nav_lfo_offset_y,{-1.f,  1.f, 0.f, 		1.f, true, 		0.f, 	"Y Offset"}},
+
 #endif
 };
 
