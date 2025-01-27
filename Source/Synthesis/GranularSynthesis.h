@@ -25,7 +25,7 @@
 
 static constexpr size_t N_GRAINS =
 #if defined(DEBUG_BUILD) | defined(DEBUG) | defined(_DEBUG)
-								10;
+								20;
 #else
 								25;
 #endif
