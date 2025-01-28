@@ -226,8 +226,8 @@ protected:
     double _playback_sample_rate;
     juce::dsp::AudioBlock<float> _wave_block;
     double _file_sample_rate;
-    
-    BoxMuller *const _gaussian_rng_ptr;
+	std::function<void(const juce::String&)> _logger = nullptr;
+
     int _grain_id;
     
     nvs::gen::history<float> _busy_histo; // history of 'busy' boolean signal, goes to [switch 1 2]
@@ -250,8 +250,6 @@ protected:
     
     float _ratio_based_on_note {1.f}; // =1.f. later this may change according to a settable concert pitch
     float _amplitude_based_on_note {0.f};
-    
-    std::function<void(const juce::String&)> _logger = nullptr;
 };
 
 }	// namespace granular

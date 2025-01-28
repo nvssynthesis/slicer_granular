@@ -226,14 +226,13 @@ std::vector<GrainDescription> genGranPoly1::getGrainDescriptions() const {
 
 //=====================================================================================
 genGrain1::genGrain1(nvs::rand::BoxMuller *const gaussian_rng, ExponentialRandomNumberGenerator *const expo_rng, int newId)
-:	_gaussian_rng_ptr(gaussian_rng)
-,	_grain_id(newId)
-,	_transpose_lgr(*_gaussian_rng_ptr, {0.f, 0.f})
-,	_position_lgr(*_gaussian_rng_ptr, {0.0, 0.0})
+:	_grain_id(newId)
+,	_transpose_lgr(*gaussian_rng, {0.f, 0.f})
+,	_position_lgr(*gaussian_rng, {0.0, 0.0})
 ,	_duration_ler(*expo_rng, {0.5f, 0.f})
-,	_skew_lgr(*_gaussian_rng_ptr, {0.5f, 0.f})
-,	_plateau_lgr(*_gaussian_rng_ptr, {1.f, 0.f})
-,	_pan_lgr(*_gaussian_rng_ptr, {0.5f, 0.23f})
+,	_skew_lgr(*gaussian_rng, {0.5f, 0.f})
+,	_plateau_lgr(*gaussian_rng, {1.f, 0.f})
+,	_pan_lgr(*gaussian_rng, {0.5f, 0.23f})
 {
 	assert (gaussian_rng);
 	assert (expo_rng);
@@ -347,9 +346,8 @@ double calculateSampleReadRate(double const playback_sample_rate, double const f
 	return file_sample_rate / playback_sample_rate;
 }
 double calculateSampleIndex(double sample_rate_compensate_ratio, double accum, double position, double duration, float skew, float sample_playback_rate){
-	double const a = sample_rate_compensate_ratio * accum;
-	double const center_of_env = skew * duration * sample_playback_rate * sample_rate_compensate_ratio;
-	double const sample_index = a + position - center_of_env;
+	double const center_of_env = skew * duration * sample_playback_rate;
+	double const sample_index = sample_rate_compensate_ratio * (accum - center_of_env) + position;
 	return sample_index;
 }
 float calculateSample(juce::dsp::AudioBlock<float> const wave_block, double const sample_index, float const win, float const velocity_amplitude){
@@ -378,7 +376,6 @@ void processBusyness(float const window, nvs::gen::history<float> &busyHistory, 
 
 genGrain1::outs genGrain1::operator()(float const trig_in){
 	outs o;
-	assert(_gaussian_rng_ptr != nullptr);
 	
 	o.next = _busy_histo.val ? trig_in : 0.f;
 	bool const should_open_latches = _busy_histo.val ? false : static_cast<bool>(trig_in);
