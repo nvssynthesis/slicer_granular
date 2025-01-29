@@ -48,6 +48,8 @@ _normalizer(1.f / std::sqrt(static_cast<float>(std::clamp(N_GRAINS, 1UL, 10000UL
 _grain_indices(N_GRAINS),
 _speed_ler(_voice_shared_state._expo_rng,  {1.f, 0.f})
 {
+	_synth_shared_state->_settings._center_position_at_env_peak = true;
+	
 	for (int i = 0; i < N_GRAINS; ++i){
 		_grains[i].setId(i);
 	}
@@ -337,8 +339,11 @@ double calculateSampleReadRate(double const playback_sample_rate, double const f
 	assert(file_sample_rate > 0.0);
 	return file_sample_rate / playback_sample_rate;
 }
-double calculateSampleIndex(double sample_rate_compensate_ratio, double accum, double position, double duration, float skew, float sample_playback_rate){
-	double const center_of_env = skew * duration * sample_playback_rate;
+double calculateSampleIndex(double const accum, double const position, double const duration, float const skew,
+							float const sample_playback_rate,
+							double const sample_rate_compensate_ratio,
+							bool const center_envelope_at_env_peak){
+	double const center_of_env = center_envelope_at_env_peak ? skew * duration * sample_playback_rate : 0.0;
 	double const sample_index = sample_rate_compensate_ratio * (accum - center_of_env) + position;
 	return sample_index;
 }
@@ -389,7 +394,9 @@ genGrain1::outs genGrain1::operator()(float const trig_in){
 	
 	
 	_accum(_waveform_read_rate, static_cast<bool>(should_open_latches));
-	_sample_index = calculateSampleIndex(file_sample_rate_compensate_ratio, _accum.val, position_in_samps, effective_duration, latch_skew_result, _waveform_read_rate);
+	_sample_index = calculateSampleIndex(_accum.val, position_in_samps, effective_duration, latch_skew_result,
+										 _waveform_read_rate, file_sample_rate_compensate_ratio,
+										 _synth_shared_state->_settings._center_position_at_env_peak);
 	_window = calculateWindow(_accum.val, effective_duration, _waveform_read_rate, latch_skew_result, memoryless::clamp_low(_plateau_lgr(should_open_latches), 0.000001f));
 	float const vel_amplitude = _amplitude_for_note_latch(_amplitude_based_on_note, should_open_latches);
 

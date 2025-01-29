@@ -70,6 +70,11 @@ struct GranularSynthSharedState {
 	juce::dsp::AudioBlock<float> _wave_block;
 	double _file_sample_rate {0.0};
 	std::function<void(const juce::String&)> _logger_func {nullptr};
+	
+	struct Settings {
+		bool _center_position_at_env_peak;
+	};
+	Settings _settings;
 };
 
 struct GranularVoiceSharedState {
