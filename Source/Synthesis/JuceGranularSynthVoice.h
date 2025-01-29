@@ -100,8 +100,9 @@ public:
 	}
 	void setLogger(std::function<void(const juce::String&)> loggerFunction);
 private:
-//	float trigger {0.f};
 	std::unique_ptr<nvs::gran::genGranPoly1> granularSynthGuts;
+	nvs::gran::GranularVoiceSharedState _voice_shared_state;
+	
 	int lastMidiNoteNumber {0};
 	std::vector<nvs::gran::GrainDescription> _grainDescriptions;
 	juce::ADSR adsr;

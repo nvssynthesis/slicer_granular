@@ -52,6 +52,7 @@ inline double millisecondsToFreqSamps(double ms, double sampleRate) {
 	auto const samps = millisecondsToSamples(ms, sampleRate);
 	return 1.0 / samps;
 }
+
 /**
  Making use of concepts to guarantee common interface between latched random number generator types without inheritance (thus without virtual function calls)
 */
@@ -63,10 +64,24 @@ using LatchedGaussianRandom_f = decltype(createLatchedGaussianRandom(std::declva
 using LatchedGaussianRandom_d = decltype(createLatchedGaussianRandom(std::declval<BoxMuller&>(), std::declval<MuSigmaPair_d>()));
 using LatchedExponentialRandom_f = decltype(createLatchedExponentialRandom(std::declval<ExponentialRandomNumberGenerator&>(), std::declval<MuSigmaPair_f>()));
 using LatchedExponentialRandom_d = decltype(createLatchedExponentialRandom(std::declval<ExponentialRandomNumberGenerator&>(), std::declval<MuSigmaPair_d>()));
+//========================================================================================================================================
+struct GranularSynthSharedState {
+	double _playback_sample_rate {0.0};
+	juce::dsp::AudioBlock<float> _wave_block;
+	double _file_sample_rate {0.0};
+	std::function<void(const juce::String&)> _logger_func {nullptr};
+};
+
+struct GranularVoiceSharedState {
+	// random generators are uniquely seeded per voice.
+	BoxMuller _gaussian_rng;
+	ExponentialRandomNumberGenerator _expo_rng;
+};
+//========================================================================================================================================
 
 class genGranPoly1 {
 public:
-	genGranPoly1(unsigned long seed = 1234567890UL);
+	genGranPoly1(GranularSynthSharedState *const synth_shared_state, unsigned long seed = 1234567890UL);
 	virtual ~genGranPoly1() = default;
 	//====================================================================================
 	virtual void setAudioBlock(juce::dsp::AudioBlock<float> waveBlock, double fileSampleRate);
@@ -141,7 +156,6 @@ public:
 	std::vector<GrainDescription> getGrainDescriptions() const;
 	void setLogger(std::function<void(const juce::String&)> loggerFunction);
 protected:
-	juce::dsp::AudioBlock<float> _wave_block;	// dependent on owning instantiator, subject to change address from above
 	//================================================================================
 	virtual void doNoteOn(noteNumber_t note, velocity_t velocity);	// reassign to noteHolder
 	virtual void doNoteOff(noteNumber_t note);						// remove from noteHolder
@@ -166,34 +180,31 @@ protected:
 	virtual void doSetPanRandomness(float randomness);
 	std::array<float, 2> doProcess(float triggerIn);
 	
+	//================================================================================
+	GranularSynthSharedState *const _synth_shared_state;
+	GranularVoiceSharedState _voice_shared_state;
+	std::vector<genGrain1> _grains;
 private:
-    BoxMuller _gaussian_rng;
-	ExponentialRandomNumberGenerator _expo_rng;
+	float _normalizer {1.f};
 
-    float _normalizer {1.f};
-protected:
-    std::vector<genGrain1> _grains;
-private:
     std::vector<size_t> _grain_indices;	// used to index grains in random order
     gen::phasor<double> _phasor_internal_trig;
 
-	LatchedExponentialRandom_d _speed_ler {_expo_rng, {1.f, 0.f}};
+	LatchedExponentialRandom_d _speed_ler; /*{_expo_rng, {1.f, 0.f}};*/
     
     nvs::gen::history<float> _trigger_histo;
     nvs::gen::ramp2trig<float> _ramp2trig;
     
     NoteHolder _note_holder {};
-    
-    std::function<void(const juce::String&)> _logger = nullptr;
 };
 
 class genGrain1 {
 public:
-	explicit genGrain1(BoxMuller *const gaussian_rng, ExponentialRandomNumberGenerator *const expo_rng, int newId = -1);
+	explicit genGrain1(GranularSynthSharedState *const synth_shared_state,
+					   GranularVoiceSharedState *const voice_shared_state,
+					   int newId = -1);
 	
 	void setId(int newId);
-	void setAudioBlock(juce::dsp::AudioBlock<float> audioBlock, double fileSampleRate);
-	void setSampleRate(double sampleRate);
 	void setRatioBasedOnNote(float ratioForNote);
 	void setAmplitudeBasedOnNote(float velocity);
 	void setTranspose(float semitones);
@@ -220,13 +231,14 @@ public:
 	
 	GrainDescription getGrainDescription() const;
 	
-	void setLogger(std::function<void(const juce::String&)> loggerFunction);
-
 protected:
-    double _playback_sample_rate;
-    juce::dsp::AudioBlock<float> _wave_block;
-    double _file_sample_rate;
-	std::function<void(const juce::String&)> _logger = nullptr;
+	GranularSynthSharedState *const _synth_shared_state;
+	GranularVoiceSharedState *const _voice_shared_state;
+	
+	void writeToLog(const juce::String &s){
+		assert(_synth_shared_state != nullptr);
+		_synth_shared_state->_logger_func(s);
+	}
 
     int _grain_id;
     

@@ -20,7 +20,7 @@ public:
 	void setAudioBlock(juce::AudioBuffer<float> &waveBuffer, double newFileSampleRate);
 	static constexpr int getNumVoices(){ return num_voices; }
 	std::vector<nvs::gran::GrainDescription> getGrainDescriptions() const;
-	void setCurrentPlaybackSampleRate(double sampleRate) override;
+	void setCurrentPlaybackSampleRate(double newSampleRate) override;
 	
 	template <auto Start, auto End>
 	constexpr void granularMainParamSet(juce::AudioProcessorValueTreeState &apvts){
@@ -53,20 +53,25 @@ public:
 	}
 	void setLogger(std::function<void(const juce::String&)> loggerFunction);
 	bool hasLogger() const {
-		return logger_ != nullptr;
+		return _synth_shared_state._logger_func != nullptr;
 	}
 protected: constexpr static int num_voices =
 #if defined(DEBUG_BUILD) | defined(DEBUG) | defined(_DEBUG)
 											2;
 #else
-											4;
+											8;
 #endif
 private:
-	std::function<void(const juce::String&)> logger_ = nullptr;
-	juce::dsp::AudioBlock<float> audioBlock_;
-	double fileSampleRate_;
-	void setVoicesAudioBlock();
+	nvs::gran::GranularSynthSharedState _synth_shared_state;
+	
 	void initializeVoices();
 	
 	size_t totalNumGrains_;
+	
+//==============================================================================================================
+	void writeToLog(const juce::String &s){
+		_synth_shared_state._logger_func(prepend_msg);
+		_synth_shared_state._logger_func(s);
+	}
+	juce::String prepend_msg {"GranularSynthesizer: "};
 };

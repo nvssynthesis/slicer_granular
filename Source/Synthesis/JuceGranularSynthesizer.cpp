@@ -43,47 +43,26 @@ void GranularSynthesizer::initializeVoices() {
 	unsigned long seed = 1234567890UL;
 	totalNumGrains_ = 0;
 	for (int i = 0; i < num_voices; ++i) {
-
-		auto voice = new GranularVoice(std::make_unique<nvs::gran::genGranPoly1>(seed));
+		auto voice = new GranularVoice(std::make_unique<nvs::gran::genGranPoly1>(&_synth_shared_state, seed));
 		addVoice(voice);
 		totalNumGrains_ += voice->getNumGrains();
 		++seed;
 	}
 	// previously, addSound occured here
-	setVoicesAudioBlock();	// if audio block needs to be passed down, this shall do it
 	setCurrentPlaybackSampleRate(getSampleRate());	// if voices' sample rates need updating, this shall do it
 }
 void GranularSynthesizer::setAudioBlock(juce::AudioBuffer<float> &waveBuffer, double newFileSampleRate){
-	assert(logger_);
-	logger_("GranularSynthesizer: setAudioBlock");
-	audioBlock_ = juce::dsp::AudioBlock<float>(waveBuffer);
-	fileSampleRate_ = newFileSampleRate;
-	
-	setVoicesAudioBlock();
+	assert(hasLogger());
+	writeToLog("GranularSynthesizer: setAudioBlock");
+	_synth_shared_state._wave_block = juce::dsp::AudioBlock<float>(waveBuffer);
+	_synth_shared_state._file_sample_rate = newFileSampleRate;
 }
 
-void GranularSynthesizer::setCurrentPlaybackSampleRate(double sampleRate){
-	for (auto &v : voices){
-		v->setCurrentPlaybackSampleRate(sampleRate);
-	}
-	Synthesiser::setCurrentPlaybackSampleRate(sampleRate);
+void GranularSynthesizer::setCurrentPlaybackSampleRate(double newSampleRate) {
+	_synth_shared_state._playback_sample_rate = newSampleRate;
+	Synthesiser::setCurrentPlaybackSampleRate(newSampleRate);	// so far this is not necessary
 }
 
-void GranularSynthesizer::setLogger(std::function<void(const juce::String&)> loggerFunction)
-{
-	logger_ = loggerFunction;
-	for (int i = 0; i < num_voices; i++){
-		if (auto voice = dynamic_cast<GranularVoice*>(getVoice(i))){
-			voice->setLogger(loggerFunction);
-		}
-	}
-}
-void GranularSynthesizer::setVoicesAudioBlock(){
-	for (int i = 0; i < num_voices; i++)
-	{
-		if (auto voice = dynamic_cast<GranularVoice*>(getVoice(i)))
-		{
-			voice->setAudioBlock(audioBlock_, fileSampleRate_);
-		}
-	}
+void GranularSynthesizer::setLogger(std::function<void(const juce::String&)> loggerFunction) {
+	_synth_shared_state._logger_func = loggerFunction;
 }
