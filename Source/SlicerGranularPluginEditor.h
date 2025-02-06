@@ -22,6 +22,7 @@ struct GranularEditorCommon	:	public juce::ChangeListener
 , 								private juce::Timer	// time was only introduced to defer fileComp notating on startup
 {
 	GranularEditorCommon(Slicer_granularAudioProcessor& p);
+	~GranularEditorCommon();	// remove listeners
 	// ChangeListener
 	void changeListenerCallback (juce::ChangeBroadcaster* source) override;
 	// FilenameComponentListener

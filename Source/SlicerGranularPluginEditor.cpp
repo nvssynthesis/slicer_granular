@@ -27,6 +27,10 @@ GranularEditorCommon::GranularEditorCommon (Slicer_granularAudioProcessor& p)
 	fileComp.addListener (this);
 	fileComp.getRecentFilesFromUserApplicationDataDirectory();
 }
+GranularEditorCommon::~GranularEditorCommon() {
+	audioProcessor.removeSampleManagementGutsListener(this);
+	audioProcessor.removeMeasuredGrainDescriptionsListener(this);
+}
 
 void GranularEditorCommon::readFile (const juce::File& fileToRead)
 {
@@ -133,8 +137,6 @@ Slicer_granularAudioProcessorEditor::Slicer_granularAudioProcessorEditor (Slicer
 Slicer_granularAudioProcessorEditor::~Slicer_granularAudioProcessorEditor()
 {
 	fileComp.pushRecentFilesToFile();
-	audioProcessor.removeSampleManagementGutsListener(this);
-	audioProcessor.removeMeasuredGrainDescriptionsListener(this);
 }
 //==============================================================================
 void Slicer_granularAudioProcessorEditor::paint (juce::Graphics& g)

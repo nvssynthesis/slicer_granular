@@ -41,15 +41,13 @@ genGranPoly1::genGranPoly1(GranularSynthSharedState *const synth_shared_state, u
 _synth_shared_state { synth_shared_state },
 _voice_shared_state {
 	._gaussian_rng {seed},
-	._expo_rng {seed + 123456789}
+	._expo_rng {seed + 123456789UL}
 },
 _grains(N_GRAINS, genGrain1(_synth_shared_state, &_voice_shared_state) ),
 _normalizer(1.f / std::sqrt(static_cast<float>(std::clamp(N_GRAINS, 1UL, 10000UL)))),
 _grain_indices(N_GRAINS),
-_speed_ler(_voice_shared_state._expo_rng,  {1.f, 0.f})
+_speed_ler(_voice_shared_state._expo_rng,  {10.f, 0.f})
 {
-	_synth_shared_state->_settings._center_position_at_env_peak = true;
-	
 	for (int i = 0; i < N_GRAINS; ++i){
 		_grains[i].setId(i);
 	}
@@ -58,6 +56,7 @@ _speed_ler(_voice_shared_state._expo_rng,  {1.f, 0.f})
 void genGranPoly1::setAudioBlock(juce::dsp::AudioBlock<float> wave_block, double file_sample_rate){
 	assert(_synth_shared_state);
 	_synth_shared_state->_wave_block = wave_block;
+	_synth_shared_state->_file_sample_rate = file_sample_rate;
 }
 void genGranPoly1::setSampleRate(double sample_rate){
 	assert(_synth_shared_state);
@@ -68,7 +67,6 @@ void genGranPoly1::setLogger(std::function<void(const juce::String&)> loggerFunc
 	assert(_synth_shared_state);
 	_synth_shared_state->_logger_func = loggerFunction;
 }
-
 
 void genGranPoly1::doNoteOn(noteNumber_t note, velocity_t velocity){
 	// reassign to noteHolder
@@ -235,7 +233,7 @@ genGrain1::genGrain1(GranularSynthSharedState *const synth_shared_state,
 ,	_grain_id(newId)
 ,	_transpose_lgr(_voice_shared_state->_gaussian_rng, {0.f, 0.f})
 ,	_position_lgr(_voice_shared_state->_gaussian_rng, {0.0, 0.0})
-,	_duration_ler(_voice_shared_state->_expo_rng, {0.5f, 0.f})
+,	_duration_ler(_voice_shared_state->_expo_rng, {0.015f, 0.f})
 ,	_skew_lgr(_voice_shared_state->_gaussian_rng, {0.5f, 0.f})
 ,	_plateau_lgr(_voice_shared_state->_gaussian_rng, {1.f, 0.f})
 ,	_pan_lgr(_voice_shared_state->_gaussian_rng, {0.5f, 0.23f})
@@ -313,20 +311,22 @@ namespace {	// anonymous namespace for local helper functions
 float calculateTransposeMultiplier(float const ratioBasedOnNote, float const ratioBasedOnTranspose){
 	return memoryless::clamp(ratioBasedOnNote * ratioBasedOnTranspose, 0.001f, 1000.f);
 }
-double calculateEffectiveDuration(double latchedDuration, double length, double timingSampleRateCompensate_ratio, double sampleRate){
+double calculateDurationInSamples(double latchedDuration, double length, double timingSampleRateCompensate_ratio, double sampleRate){
 	double constexpr maxLengthInSeconds = 15.0;
+	double constexpr minLengthInSeconds = 0.001;	// 1 ms
 	double const maxLengthInSamples = maxLengthInSeconds * sampleRate;
-	auto const clippedLength = nvs::memoryless::clamp_high(length, maxLengthInSamples);
+	double const minLengthInSamples = minLengthInSeconds * sampleRate;
+	auto const clippedLength = nvs::memoryless::clamp(length, minLengthInSamples, maxLengthInSamples);
 	return latchedDuration * clippedLength * timingSampleRateCompensate_ratio;
 }
-float calculateWindow(double const accum, double const duration, float const transpositionMultiplier, float const skew, float const plateau){
+float calculateWindow(double const accum, double const duration, float const transpositionMultiplier, float const skew, float plateau){
 	assert(transpositionMultiplier > 0.f);
 	assert (duration > 0.0);
 	double const v = (accum / duration);
 	double const windowIdx = nvs::memoryless::clamp(v / transpositionMultiplier, 0.0, 1.0);
 	float win = nvs::gen::triangle<float, false>(static_cast<float>(windowIdx), skew);
 	
-	assert (plateau > 0.f);
+	plateau = memoryless::clamp_low(plateau, 0.000001f);
 	win *= plateau;
 	win = gen::parzen(tanh(win)) / gen::parzen(tanh(plateau));
 	if (plateau < 1.0){
@@ -339,12 +339,20 @@ double calculateSampleReadRate(double const playback_sample_rate, double const f
 	assert(file_sample_rate > 0.0);
 	return file_sample_rate / playback_sample_rate;
 }
-double calculateSampleIndex(double const accum, double const position, double const duration, float const skew,
+float getDurationPitchCompensationFactor(float const duration_pitch_compensation_amount, float waveform_read_rate){
+	assert (duration_pitch_compensation_amount >= 0.f);
+	assert (duration_pitch_compensation_amount <= 1.f);
+	return waveform_read_rate * duration_pitch_compensation_amount + (1.f - duration_pitch_compensation_amount);
+}
+double calculateSampleIndex(double const accum, double const normalized_position, double const duration, float const skew,
+							double const sample_right_bound,
 							float const sample_playback_rate,
 							double const sample_rate_compensate_ratio,
-							bool const center_envelope_at_env_peak){
+							bool const center_envelope_at_env_peak)
+{
+	double const position_in_samps = normalized_position * (sample_right_bound - duration);
 	double const center_of_env = center_envelope_at_env_peak ? skew * duration * sample_playback_rate : 0.0;
-	double const sample_index = sample_rate_compensate_ratio * (accum - center_of_env) + position;
+	double const sample_index = sample_rate_compensate_ratio * (accum - center_of_env) + position_in_samps;
 	return sample_index;
 }
 float calculateSample(juce::dsp::AudioBlock<float> const wave_block, double const sample_index, float const win, float const velocity_amplitude){
@@ -388,16 +396,18 @@ genGrain1::outs genGrain1::operator()(float const trig_in){
 	double const timing_sample_rate_compensate_ratio = playback_sr / 44100.0;
 
 	size_t const length = static_cast<double>(wave_block.getNumSamples());
-	double const position_in_samps = _position_lgr(should_open_latches) * length;
-	double const effective_duration = calculateEffectiveDuration(_duration_ler(should_open_latches), length, timing_sample_rate_compensate_ratio, playback_sr);
+	double const duration_in_samps = calculateDurationInSamples(_duration_ler(should_open_latches), length, timing_sample_rate_compensate_ratio, playback_sr);
+	assert (duration_in_samps < length);
 	float const latch_skew_result = memoryless::clamp(_skew_lgr(should_open_latches), 0.001f, 0.999f);
 	
+	float const duration_pitch_compensation_factor = getDurationPitchCompensationFactor(_synth_shared_state->_settings._duration_pitch_compensation, _waveform_read_rate);
 	
 	_accum(_waveform_read_rate, static_cast<bool>(should_open_latches));
-	_sample_index = calculateSampleIndex(_accum.val, position_in_samps, effective_duration, latch_skew_result,
-										 _waveform_read_rate, file_sample_rate_compensate_ratio,
+	_sample_index = calculateSampleIndex(_accum.val, _position_lgr(should_open_latches), duration_in_samps, latch_skew_result,
+										 length,
+										 duration_pitch_compensation_factor, file_sample_rate_compensate_ratio,
 										 _synth_shared_state->_settings._center_position_at_env_peak);
-	_window = calculateWindow(_accum.val, effective_duration, _waveform_read_rate, latch_skew_result, memoryless::clamp_low(_plateau_lgr(should_open_latches), 0.000001f));
+	_window = calculateWindow(_accum.val, duration_in_samps, duration_pitch_compensation_factor, latch_skew_result, _plateau_lgr(should_open_latches));
 	float const vel_amplitude = _amplitude_for_note_latch(_amplitude_based_on_note, should_open_latches);
 
 	float const sample = calculateSample(wave_block, _sample_index, _window, vel_amplitude);

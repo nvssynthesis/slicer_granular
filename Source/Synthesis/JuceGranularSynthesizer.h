@@ -22,6 +22,14 @@ public:
 	std::vector<nvs::gran::GrainDescription> getGrainDescriptions() const;
 	void setCurrentPlaybackSampleRate(double newSampleRate) override;
 	
+	enum class PositionAlignmentSetting {
+		alignAtWindowStart = 0,
+		alignAtWindowPeak = 1
+	};
+	void setPositionAlignmentSetting(PositionAlignmentSetting setting) {
+		_synth_shared_state._settings._center_position_at_env_peak = static_cast<bool>(setting);
+	}
+	
 	template <auto Start, auto End>
 	constexpr void granularMainParamSet(juce::AudioProcessorValueTreeState &apvts){
 		if constexpr (Start < End){
@@ -61,9 +69,9 @@ protected: constexpr static int num_voices =
 #else
 											8;
 #endif
-private:
 	nvs::gran::GranularSynthSharedState _synth_shared_state;
-	
+private:
+
 	void initializeVoices();
 	
 	size_t totalNumGrains_;

@@ -72,7 +72,8 @@ struct GranularSynthSharedState {
 	std::function<void(const juce::String&)> _logger_func {nullptr};
 	
 	struct Settings {
-		bool _center_position_at_env_peak;
+		bool _center_position_at_env_peak { true };
+		float _duration_pitch_compensation { 1.f };
 	};
 	Settings _settings;
 };

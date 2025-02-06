@@ -19,9 +19,9 @@ GranularSynthesizer::GranularSynthesizer()
 	setCurrentPlaybackSampleRate(44100.0);	// setting to some default rate, because we need a sensible sample rate (not 0) to construct the voices, to avoid divide by zero
 	initializeVoices();
 	clearSounds();
-	auto sound = new GranularSound;
-	addSound(sound);
+	addSound(new GranularSound);
 	setNoteStealingEnabled(true);
+	setPositionAlignmentSetting(PositionAlignmentSetting::alignAtWindowPeak);
 }
 std::vector<nvs::gran::GrainDescription> GranularSynthesizer::getGrainDescriptions() const {
 	std::vector<nvs::gran::GrainDescription> grainDescriptions;
