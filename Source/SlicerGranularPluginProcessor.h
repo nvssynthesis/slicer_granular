@@ -87,11 +87,11 @@ protected:
 	nvs::util::LoggingGuts loggingGuts;
 	juce::AudioProcessorValueTreeState apvts;
 	std::unique_ptr<GranularSynthesizer> granular_synth_juce;
-private:
-	void readInAudioFileToBuffer(juce::File const f);
-	void loadAudioFileAsync(juce::File const file, bool notifyEditor);
-
+	
 	juce::SpinLock audioBlockLock;
+	void readInAudioFileToBuffer(juce::File const f);
+private:
+	void loadAudioFileAsync(juce::File const file, bool notifyEditor);
 	
 	nvs::util::MeasuredData measuredGrainDescriptions;
 	

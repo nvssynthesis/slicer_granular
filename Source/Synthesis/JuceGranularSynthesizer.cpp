@@ -51,11 +51,12 @@ void GranularSynthesizer::initializeVoices() {
 	// previously, addSound occured here
 	setCurrentPlaybackSampleRate(getSampleRate());	// if voices' sample rates need updating, this shall do it
 }
-void GranularSynthesizer::setAudioBlock(juce::AudioBuffer<float> &waveBuffer, double newFileSampleRate){
+void GranularSynthesizer::setAudioBlock(juce::AudioBuffer<float> &waveBuffer, double newFileSampleRate, size_t fileNameHash){
 	assert(hasLogger());
 	writeToLog("GranularSynthesizer: setAudioBlock");
-	_synth_shared_state._wave_block = juce::dsp::AudioBlock<float>(waveBuffer);
-	_synth_shared_state._file_sample_rate = newFileSampleRate;
+	_synth_shared_state._buffer._wave_block = juce::dsp::AudioBlock<float>(waveBuffer);
+	_synth_shared_state._buffer._file_sample_rate = newFileSampleRate;
+	_synth_shared_state._buffer._filename_hash = fileNameHash;
 }
 
 void GranularSynthesizer::setCurrentPlaybackSampleRate(double newSampleRate) {

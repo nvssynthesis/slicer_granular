@@ -217,7 +217,7 @@ void Slicer_granularAudioProcessor::loadAudioFile(juce::File const f, bool notif
 	loggingGuts.fileLogger.logMessage("                                          ...locked");
 
 	readInAudioFileToBuffer(f);
-	granular_synth_juce->setAudioBlock(sampleManagementGuts.sampleBuffer, sampleManagementGuts.lastFileSampleRate);	// maybe this could just go inside readInAudioFileToBuffer()
+	granular_synth_juce->setAudioBlock(sampleManagementGuts.sampleBuffer, sampleManagementGuts.lastFileSampleRate, f.getFullPathName().hash());	// maybe this could just go inside readInAudioFileToBuffer()
 	{
 		juce::Value sampleFilePathValue = apvts.state.getPropertyAsValue(sampleManagementGuts.audioFilePathValueTreeStateIdentifier, nullptr, true);
 		sampleFilePathValue.setValue(f.getFullPathName());
@@ -228,6 +228,7 @@ void Slicer_granularAudioProcessor::loadAudioFile(juce::File const f, bool notif
 		loggingGuts.fileLogger.logMessage("Processor: sending change message from loadAudioFile");
 		juce::MessageManager::callAsync([this]() { sampleManagementGuts.sendChangeMessage(); });
 	}
+	writeToLog("slicer: loadAudioFile exiting");
 }
 juce::String Slicer_granularAudioProcessor::getSampleFilePath() const {
 	return sampleManagementGuts.sampleFilePath;
@@ -268,9 +269,6 @@ void Slicer_granularAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
 		writeToLog("processBlock:        sampleBuffer has no channels; exiting early.");
 		return;
 	}
-	
-
-
 	
 	granular_synth_juce->granularMainParamSet<0, GranularSynthesizer::getNumVoices()>(apvts);	// this just sets the params internal to the granular synth (effectively a voice)
 	granular_synth_juce->envelopeParamSet<0, GranularSynthesizer::getNumVoices()>(apvts);

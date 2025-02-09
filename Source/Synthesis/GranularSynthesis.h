@@ -67,8 +67,14 @@ using LatchedExponentialRandom_d = decltype(createLatchedExponentialRandom(std::
 //========================================================================================================================================
 struct GranularSynthSharedState {
 	double _playback_sample_rate {0.0};
-	juce::dsp::AudioBlock<float> _wave_block;
-	double _file_sample_rate {0.0};
+	
+	struct Buffer {
+		juce::dsp::AudioBlock<float> _wave_block;
+		double _file_sample_rate {0.0};
+		size_t _filename_hash;
+	};
+	Buffer _buffer;
+	
 	std::function<void(const juce::String&)> _logger_func {nullptr};
 	
 	struct Settings {
@@ -90,7 +96,6 @@ public:
 	genGranPoly1(GranularSynthSharedState *const synth_shared_state, unsigned long seed = 1234567890UL);
 	virtual ~genGranPoly1() = default;
 	//====================================================================================
-	virtual void setAudioBlock(juce::dsp::AudioBlock<float> waveBlock, double fileSampleRate);
 	void setSampleRate(double sampleRate);
 	//====================================================================================
 	static constexpr size_t getNumGrains(){

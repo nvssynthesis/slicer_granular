@@ -36,7 +36,6 @@ public:
 	GranularVoice(std::unique_ptr<nvs::gran::genGranPoly1> synthGuts)
 	:	granularSynthGuts{std::move(synthGuts)}
 	{}
-	void setAudioBlock(juce::dsp::AudioBlock<float> audioBlock, double fileSampleRate);
 	void setCurrentPlaybackSampleRate(double sampleRate) override;
 
 	void prepareToPlay(double sampleRate, int samplesPerBlock);	// why not override??
@@ -102,6 +101,7 @@ public:
 private:
 	std::unique_ptr<nvs::gran::genGranPoly1> granularSynthGuts;
 	nvs::gran::GranularVoiceSharedState _voice_shared_state;
+	nvs::gran::GranularSynthSharedState _synth_shared_state;
 	
 	int lastMidiNoteNumber {0};
 	std::vector<nvs::gran::GrainDescription> _grainDescriptions;

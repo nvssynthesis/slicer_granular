@@ -53,11 +53,6 @@ _speed_ler(_voice_shared_state._expo_rng,  {10.f, 0.f})
 	}
 	std::iota(_grain_indices.begin(), _grain_indices.end(), 0);
 }
-void genGranPoly1::setAudioBlock(juce::dsp::AudioBlock<float> wave_block, double file_sample_rate){
-	assert(_synth_shared_state);
-	_synth_shared_state->_wave_block = wave_block;
-	_synth_shared_state->_file_sample_rate = file_sample_rate;
-}
 void genGranPoly1::setSampleRate(double sample_rate){
 	assert(_synth_shared_state);
 	_phasor_internal_trig.setSampleRate(sample_rate);
@@ -295,7 +290,7 @@ float genGrain1::getBusyStatus() const{
 
 GrainDescription genGrain1::getGrainDescription() const {
 	assert(_synth_shared_state);
-	auto const N = _synth_shared_state->_wave_block.getNumSamples();
+	auto const N = _synth_shared_state->_buffer._wave_block.getNumSamples();
 
 	GrainDescription gd;
 	gd.grain_id = _grain_id;
@@ -344,14 +339,19 @@ float getDurationPitchCompensationFactor(float const duration_pitch_compensation
 	assert (duration_pitch_compensation_amount <= 1.f);
 	return waveform_read_rate * duration_pitch_compensation_amount + (1.f - duration_pitch_compensation_amount);
 }
-double calculateSampleIndex(double const accum, double const normalized_position, double const duration, float const skew,
+double calculateCenterOfEnvelope(bool const center_envelope_at_env_peak, float const skew, double const sr_compensated_duration, float const sample_playback_rate){
+	double const center_of_env = center_envelope_at_env_peak ?
+		skew * sr_compensated_duration * sample_playback_rate
+		: 0.0;
+	return center_of_env;
+}
+double calculateSampleIndex(double const accum,
+							double const normalized_position,
 							double const sample_right_bound,
-							float const sample_playback_rate,
 							double const sample_rate_compensate_ratio,
-							bool const center_envelope_at_env_peak)
+							double const center_of_env)
 {
-	double const position_in_samps = normalized_position * (sample_right_bound - duration);
-	double const center_of_env = center_envelope_at_env_peak ? skew * duration * sample_playback_rate : 0.0;
+	double const position_in_samps = normalized_position * (sample_right_bound);
 	double const sample_index = sample_rate_compensate_ratio * (accum - center_of_env) + position_in_samps;
 	return sample_index;
 }
@@ -382,12 +382,12 @@ void processBusyness(float const window, nvs::gen::history<float> &busyHistory, 
 genGrain1::outs genGrain1::operator()(float const trig_in){
 	assert(_synth_shared_state);
 	auto const playback_sr = _synth_shared_state->_playback_sample_rate;
-	auto const file_sr = _synth_shared_state->_file_sample_rate;
-	juce::dsp::AudioBlock<float> const wave_block = _synth_shared_state->_wave_block;
+	auto const file_sr = _synth_shared_state->_buffer._file_sample_rate;
+	juce::dsp::AudioBlock<float> const wave_block = _synth_shared_state->_buffer._wave_block;
 	
 	outs o;
-	
 	o.next = _busy_histo.val ? trig_in : 0.f;
+	
 	bool const should_open_latches = _busy_histo.val ? false : static_cast<bool>(trig_in);
 	
 	_waveform_read_rate = calculateTransposeMultiplier(_ratio_for_note_latch(_ratio_based_on_note, should_open_latches), 							fastSemitonesToRatio(_transpose_lgr(should_open_latches)));
@@ -403,10 +403,29 @@ genGrain1::outs genGrain1::operator()(float const trig_in){
 	float const duration_pitch_compensation_factor = getDurationPitchCompensationFactor(_synth_shared_state->_settings._duration_pitch_compensation, _waveform_read_rate);
 	
 	_accum(_waveform_read_rate, static_cast<bool>(should_open_latches));
-	_sample_index = calculateSampleIndex(_accum.val, _position_lgr(should_open_latches), duration_in_samps, latch_skew_result,
+
+	/*
+								(bool const center_envelope_at_env_peak,
+								float const skew,
+								double const sr_compensated_duration,
+								float const sample_playback_rate)
+	 */
+	auto const center_of_env = calculateCenterOfEnvelope(_synth_shared_state->_settings._center_position_at_env_peak,
+														 latch_skew_result,
+														 duration_in_samps,
+														 duration_pitch_compensation_factor);
+	/*
+								(double const accum,
+								 double const normalized_position,
+								 double const sample_right_bound,
+								 double const sample_rate_compensate_ratio,
+								 double const center_of_env)
+	 */
+	_sample_index = calculateSampleIndex(_accum.val,
+										 _position_lgr(should_open_latches),
 										 length,
-										 duration_pitch_compensation_factor, file_sample_rate_compensate_ratio,
-										 _synth_shared_state->_settings._center_position_at_env_peak);
+										 file_sample_rate_compensate_ratio,
+										 center_of_env);
 	_window = calculateWindow(_accum.val, duration_in_samps, duration_pitch_compensation_factor, latch_skew_result, _plateau_lgr(should_open_latches));
 	float const vel_amplitude = _amplitude_for_note_latch(_amplitude_based_on_note, should_open_latches);
 

@@ -11,9 +11,9 @@
 #include "JuceGranularSynthVoice.h"
 
 
-void GranularVoice::setAudioBlock(juce::dsp::AudioBlock<float> audioBlock, double fileSampleRate){
-	granularSynthGuts->setAudioBlock(audioBlock, fileSampleRate);
-}
+//void GranularVoice::setAudioBlock(juce::dsp::AudioBlock<float> audioBlock, double fileSampleRate){
+//	granularSynthGuts->setAudioBlock(audioBlock, fileSampleRate);
+//}
 void GranularVoice::setLogger(std::function<void(const juce::String&)> loggerFunction)
 {
 	logger = loggerFunction;

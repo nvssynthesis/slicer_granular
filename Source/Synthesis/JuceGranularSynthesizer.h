@@ -17,7 +17,7 @@ class GranularSynthesizer	:	public juce::Synthesiser
 public:
 	GranularSynthesizer();
 	
-	void setAudioBlock(juce::AudioBuffer<float> &waveBuffer, double newFileSampleRate);
+	void setAudioBlock(juce::AudioBuffer<float> &waveBuffer, double newFileSampleRate, size_t fileNameHash);
 	static constexpr int getNumVoices(){ return num_voices; }
 	std::vector<nvs::gran::GrainDescription> getGrainDescriptions() const;
 	void setCurrentPlaybackSampleRate(double newSampleRate) override;
