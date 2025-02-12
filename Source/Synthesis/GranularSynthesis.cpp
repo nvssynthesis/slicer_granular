@@ -307,7 +307,7 @@ float calculateTransposeMultiplier(float const ratioBasedOnNote, float const rat
 	return memoryless::clamp(ratioBasedOnNote * ratioBasedOnTranspose, 0.001f, 1000.f);
 }
 double calculateDurationInSamples(double latchedDuration, double length, double timingSampleRateCompensate_ratio, double sampleRate){
-	double constexpr maxLengthInSeconds = 15.0;
+	double constexpr maxLengthInSeconds = 20.0;
 	double constexpr minLengthInSeconds = 0.001;	// 1 ms
 	double const maxLengthInSamples = maxLengthInSeconds * sampleRate;
 	double const minLengthInSamples = minLengthInSeconds * sampleRate;
@@ -393,10 +393,11 @@ genGrain1::outs genGrain1::operator()(float const trig_in){
 	_waveform_read_rate = calculateTransposeMultiplier(_ratio_for_note_latch(_ratio_based_on_note, should_open_latches), 							fastSemitonesToRatio(_transpose_lgr(should_open_latches)));
 
 	double const file_sample_rate_compensate_ratio = calculateSampleReadRate(playback_sr, file_sr);
-	double const timing_sample_rate_compensate_ratio = playback_sr / 44100.0;
 
 	size_t const length = static_cast<double>(wave_block.getNumSamples());
-	double const duration_in_samps = calculateDurationInSamples(_duration_ler(should_open_latches), length, timing_sample_rate_compensate_ratio, playback_sr);
+	double const duration_in_samps = calculateDurationInSamples(_duration_ler(should_open_latches), length,
+																1.f/file_sample_rate_compensate_ratio,	// was timing_sample_rate_compensate_ratio
+																playback_sr);
 	assert (duration_in_samps < length);
 	float const latch_skew_result = memoryless::clamp(_skew_lgr(should_open_latches), 0.001f, 0.999f);
 	
@@ -404,29 +405,23 @@ genGrain1::outs genGrain1::operator()(float const trig_in){
 	
 	_accum(_waveform_read_rate, static_cast<bool>(should_open_latches));
 
-	/*
-								(bool const center_envelope_at_env_peak,
-								float const skew,
-								double const sr_compensated_duration,
-								float const sample_playback_rate)
-	 */
-	auto const center_of_env = calculateCenterOfEnvelope(_synth_shared_state->_settings._center_position_at_env_peak,
-														 latch_skew_result,
-														 duration_in_samps,
-														 duration_pitch_compensation_factor);
-	/*
-								(double const accum,
-								 double const normalized_position,
-								 double const sample_right_bound,
-								 double const sample_rate_compensate_ratio,
-								 double const center_of_env)
-	 */
-	_sample_index = calculateSampleIndex(_accum.val,
-										 _position_lgr(should_open_latches),
-										 length,
-										 file_sample_rate_compensate_ratio,
-										 center_of_env);
-	_window = calculateWindow(_accum.val, duration_in_samps, duration_pitch_compensation_factor, latch_skew_result, _plateau_lgr(should_open_latches));
+	auto const center_of_env = calculateCenterOfEnvelope(_synth_shared_state->_settings._center_position_at_env_peak,	// bool const center_envelope_at_env_peak
+														 latch_skew_result,												// float const skew
+														 duration_in_samps,												// double const sr_compensated_duration
+														 duration_pitch_compensation_factor);							// float const sample_playback_rate
+	
+	_sample_index = calculateSampleIndex(_accum.val,							// double const accum
+										 _position_lgr(should_open_latches),	// double const normalized_position
+										 length,								// double const sample_right_bound
+										 file_sample_rate_compensate_ratio,		// double const sample_rate_compensate_ratio
+										 center_of_env);						// double const center_of_env
+
+	_window = calculateWindow(_accum.val,							// double const accum
+							  duration_in_samps,					// double const duration
+							  duration_pitch_compensation_factor,	// float const transpositionMultiplier
+							  latch_skew_result,					// float const skew
+							  _plateau_lgr(should_open_latches));		// float plateau
+							  
 	float const vel_amplitude = _amplitude_for_note_latch(_amplitude_based_on_note, should_open_latches);
 
 	float const sample = calculateSample(wave_block, _sample_index, _window, vel_amplitude);
