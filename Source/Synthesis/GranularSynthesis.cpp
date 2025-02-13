@@ -19,6 +19,7 @@
 #include "../dsp_util.h"
 #include "../algo_util.h"
 #include <numbers>
+#include <span>
 #if defined(DEBUG_BUILD) | defined(DEBUG) | defined(_DEBUG)
 #include "fmt/core.h"
 #endif
@@ -174,7 +175,26 @@ void genGranPoly1::doSetPanRandomness(float randomness){
 	for (auto &g : _grains)
 		g.setPanRand(randomness);
 }
-
+namespace {
+auto checkNan = [](float a){
+	return a != a;
+};
+auto checkInf = [](float a){
+	return std::isinf(a);
+};
+bool checkNanOrInf(std::span<float> sp) {
+	for (auto const &a : sp){
+		if (checkNan(a) || checkInf(a)){
+			return true;
+		}
+	}
+	return false;
+}
+template<size_t N>
+bool checkNanOrInf(std::array<float, N> sp) {
+	checkNanOrInf(std::span<float>(sp));
+}
+}
 std::array<float, 2> genGranPoly1::doProcess(float trigger_in){
 	std::array<float, 2> output;
 	
@@ -207,6 +227,10 @@ std::array<float, 2> genGranPoly1::doProcess(float trigger_in){
 	}
 	output[0] = audio_out_L * _normalizer;
 	output[1] = audio_out_R * _normalizer;
+
+	if (checkNanOrInf(output)){
+		return {};
+	}
 	return output;
 }
 
@@ -430,6 +454,11 @@ genGrain1::outs genGrain1::operator()(float const trig_in){
 	writeAudioToOuts(sample, _pan, o);
 	
 	processBusyness(_window, _busy_histo, o);
+	
+	if (checkNanOrInf(std::array<float, 2>{o.audio_L, o.audio_R})){
+		return {};
+	}
+	
 	return o;
 }
 }	// namespace nvs::gran

@@ -18,6 +18,9 @@ public:
 	GranularSynthesizer();
 	
 	void setAudioBlock(juce::AudioBuffer<float> &waveBuffer, double newFileSampleRate, size_t fileNameHash);
+	size_t getFilenameHash() const {
+		return _synth_shared_state._buffer._filename_hash;
+	}
 	static constexpr int getNumVoices(){ return num_voices; }
 	std::vector<nvs::gran::GrainDescription> getGrainDescriptions() const;
 	void setCurrentPlaybackSampleRate(double newSampleRate) override;
