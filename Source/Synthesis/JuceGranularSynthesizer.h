@@ -66,12 +66,8 @@ public:
 	bool hasLogger() const {
 		return _synth_shared_state._logger_func != nullptr;
 	}
-protected: constexpr static int num_voices =
-#if defined(DEBUG_BUILD) | defined(DEBUG) | defined(_DEBUG)
-											2;
-#else
-											8;
-#endif
+protected:
+	constexpr static int num_voices = N_VOICES;
 	nvs::gran::GranularSynthSharedState _synth_shared_state;
 private:
 

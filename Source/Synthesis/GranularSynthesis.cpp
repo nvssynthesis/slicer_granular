@@ -444,7 +444,7 @@ genGrain1::outs genGrain1::operator()(float const trig_in){
 							  duration_in_samps,					// double const duration
 							  duration_pitch_compensation_factor,	// float const transpositionMultiplier
 							  latch_skew_result,					// float const skew
-							  _plateau_lgr(should_open_latches));		// float plateau
+							  _plateau_lgr(should_open_latches));	// float plateau
 							  
 	float const vel_amplitude = _amplitude_for_note_latch(_amplitude_based_on_note, should_open_latches);
 

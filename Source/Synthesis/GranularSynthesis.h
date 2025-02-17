@@ -16,19 +16,13 @@
 #include "../LatchedRandom.h"
 #include "../../nvs_libraries/nvs_libraries/include/nvs_gen.h"
 #include "GrainDescription.h"
+#include "VoicesXGrains.h"
 #include <JuceHeader.h>
 
 /*** TODO:
  -optimize
  --tanh table
 */
-
-static constexpr size_t N_GRAINS =
-#if defined(DEBUG_BUILD) | defined(DEBUG) | defined(_DEBUG)
-								20;
-#else
-								25;
-#endif
 
 namespace nvs {
 namespace gran {
