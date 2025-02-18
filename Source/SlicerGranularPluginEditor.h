@@ -14,6 +14,7 @@
 #include "Gui/FileSelectorComponent.h"
 #include "Gui/WaveformComponent.h"
 #include "Gui/TabbedPages.h"
+#include "Gui/GrainBusyDisplay.h"
 
 //==============================================================================
 
@@ -39,6 +40,7 @@ protected:
 	void handleGrainDescriptionBroadcast();
 	//===============================================================================
 	WaveformAndPositionComponent waveformAndPositionComponent;
+	GrainBusyDisplay grainBusyDisplay;
 	FileSelectorComponent fileComp;
 	TabbedPagesComponent tabbedPages;
 

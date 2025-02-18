@@ -65,7 +65,6 @@ void GranularEditorCommon::drawThumbnail(juce::String const &sampleFilePath){
 		thumbnail->setSource (new juce::FileInputSource (sampleFilePath));	// owned by thumbnail, no worry about delete
 	}
 }
-//==============================================================================================================================
 //============================================= ChangeListener - related =======================================================
 void GranularEditorCommon::displayGrainDescriptions() {
 	audioProcessor.readGrainDescriptionData(grainDescriptions);
@@ -126,6 +125,7 @@ Slicer_granularAudioProcessorEditor::Slicer_granularAudioProcessorEditor (Slicer
 	addAndMakeVisible (fileComp);
 	addAndMakeVisible(tabbedPages);
 	addAndMakeVisible(waveformAndPositionComponent);
+	addAndMakeVisible(grainBusyDisplay);
 
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
@@ -166,15 +166,29 @@ void Slicer_granularAudioProcessorEditor::resized()
 	int const smallPad = 10;
 	localBounds.reduce(smallPad, smallPad);
 	
-	int x(0), y(0);
-	{	// just some scopes for temporaries
-		int fileCompWidth = localBounds.getWidth();
-		int fileCompHeight = 20;
-		x = localBounds.getX();
-		y = localBounds.getY();
-		fileComp.setBounds(x, y, fileCompWidth, fileCompHeight);
-		y += fileCompHeight;
-		y += smallPad;
+	int y(localBounds.getY());
+	{ // just some scopes for temporaries
+		int const fileCompAndGrainDisplayHeight = 26;
+		{
+			int const pad = 2;
+			int const grainDisplayHeight = fileCompAndGrainDisplayHeight - pad;
+			
+			grainBusyDisplay.setSizePerGrain((float)grainDisplayHeight / (float)N_VOICES);
+			float const sizePerGrain = grainBusyDisplay.getSizePerGrain();
+			
+			int const grainBusyDisplayWidth = (float)N_GRAINS * sizePerGrain - pad;
+			
+			int const grainBusyX = localBounds.getX() + (localBounds.getWidth() - grainBusyDisplayWidth) + pad/2;
+			int const grainBusyY = y + pad/2;
+			grainBusyDisplay.setBounds(grainBusyX, grainBusyY, grainBusyDisplayWidth, grainDisplayHeight);
+		}
+		{
+			int const fileCompWidth = localBounds.getWidth() - grainBusyDisplay.getWidth();
+			int const x(localBounds.getX());
+			fileComp.setBounds(x, y, fileCompWidth, fileCompAndGrainDisplayHeight);
+			y += fileCompAndGrainDisplayHeight;
+			y += smallPad;
+		}
 	}
 	{
 		auto const mainParamsRemainingHeightRatio = 0.8 * localBounds.getHeight();

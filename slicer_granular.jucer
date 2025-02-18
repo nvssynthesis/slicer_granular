@@ -74,6 +74,10 @@
               file="Source/Gui/GranularMainParametersPage.h"/>
         <FILE id="kLnWlN" name="MainParamsComponent.h" compile="0" resource="0"
               file="Source/Gui/MainParamsComponent.h"/>
+        <FILE id="xHskLN" name="GrainBusyDisplay.cpp" compile="1" resource="0"
+              file="Source/Gui/GrainBusyDisplay.cpp"/>
+        <FILE id="eSZxN6" name="GrainBusyDisplay.h" compile="0" resource="0"
+              file="Source/Gui/GrainBusyDisplay.h"/>
       </GROUP>
       <GROUP id="{901EFCD3-3854-74C6-2517-A6378D9050C8}" name="Random">
         <FILE id="eTazcq" name="Random.h" compile="0" resource="0" file="Source/Random.h"/>
