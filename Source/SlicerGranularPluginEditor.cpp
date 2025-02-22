@@ -71,6 +71,8 @@ void GranularEditorCommon::displayGrainDescriptions() {
 	waveformAndPositionComponent.wc.removeMarkers(WaveformComponent::MarkerType::CurrentPosition);
 	for (auto gd : grainDescriptions){
 		waveformAndPositionComponent.wc.addMarker(gd);
+		grainBusyDisplay.setStatus(gd.grain_id, gd.voice, gd.busy);
+		grainBusyDisplay.repaint();
 	}
 }
 void GranularEditorCommon::handleGrainDescriptionBroadcast(){

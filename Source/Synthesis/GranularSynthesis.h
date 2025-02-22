@@ -82,6 +82,7 @@ struct GranularVoiceSharedState {
 	// random generators are uniquely seeded per voice.
 	BoxMuller _gaussian_rng;
 	ExponentialRandomNumberGenerator _expo_rng;
+	int _voice_id;
 };
 //========================================================================================================================================
 

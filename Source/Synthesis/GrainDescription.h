@@ -12,7 +12,9 @@
 namespace nvs::gran {
 struct GrainDescription {
 	// a struct to communicate upstream (from actual realtime granular synthesis) about the coarse description of a given grain's current state
+	int voice;// i wanted these 'voice' and 'grain_id' to be const but then i couldnt simply use copy constructor and don't have it in me now to redesign that
 	int grain_id;
+	
 	double position;
 	double sample_playback_rate;
 	float window;

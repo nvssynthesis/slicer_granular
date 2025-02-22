@@ -30,7 +30,9 @@ std::vector<nvs::gran::GrainDescription> GranularSynthesizer::getGrainDescriptio
 	for (const auto &v : voices) {
 		if (GranularVoice const * const gv = dynamic_cast<GranularVoice * const>(v)){
 			std::vector<nvs::gran::GrainDescription> const theseDescriptions = gv->getGrainDescriptions();
-			grainDescriptions.insert(grainDescriptions.end(), theseDescriptions.begin(), theseDescriptions.end());
+			for (const auto &desc : theseDescriptions) {
+				grainDescriptions.push_back(desc);
+			}
 		}
 		else {
 			assert(false);
@@ -44,6 +46,7 @@ void GranularSynthesizer::initializeVoices() {
 	totalNumGrains_ = 0;
 	for (int i = 0; i < num_voices; ++i) {
 		auto voice = new GranularVoice(std::make_unique<nvs::gran::genGranPoly1>(&_synth_shared_state, seed));
+		voice->setVoiceId(i);
 		addVoice(voice);
 		totalNumGrains_ += voice->getNumGrains();
 		++seed;

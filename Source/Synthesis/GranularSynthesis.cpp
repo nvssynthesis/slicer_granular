@@ -317,6 +317,7 @@ GrainDescription genGrain1::getGrainDescription() const {
 	auto const N = _synth_shared_state->_buffer._wave_block.getNumSamples();
 
 	GrainDescription gd;
+	gd.voice = _voice_shared_state->_voice_id;
 	gd.grain_id = _grain_id;
 	gd.position = nvs::gen::wrap01(_sample_index / N);
 	gd.sample_playback_rate = _waveform_read_rate;

@@ -19,11 +19,7 @@ class GrainBusyDisplay	:	public juce::Component
 	// otherwise just the outline
 	// from outside, the dimensions this is given should be S * N_GRAINS, S * N_VOICES
 {
-public:
-	GrainBusyDisplay() {
-		setStatus(N_GRAINS / 2, N_VOICES / 2, true);
-	}
-	
+public:	
 	void paint(juce::Graphics &g) override;
 	void resized() override;
 	
