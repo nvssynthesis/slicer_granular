@@ -331,13 +331,13 @@ namespace {	// anonymous namespace for local helper functions
 float calculateTransposeMultiplier(float const ratioBasedOnNote, float const ratioBasedOnTranspose){
 	return memoryless::clamp(ratioBasedOnNote * ratioBasedOnTranspose, 0.001f, 1000.f);
 }
-double calculateDurationInSamples(double latchedDuration, double length, double timingSampleRateCompensate_ratio, double sampleRate){
+double calculateDurationInSamples(double latchedDuration, double compensatedLength, double sampleRate){
 	double constexpr maxLengthInSeconds = 20.0;
 	double constexpr minLengthInSeconds = 0.001;	// 1 ms
 	double const maxLengthInSamples = maxLengthInSeconds * sampleRate;
 	double const minLengthInSamples = minLengthInSeconds * sampleRate;
-	auto const clippedLength = nvs::memoryless::clamp(length, minLengthInSamples, maxLengthInSamples);
-	return latchedDuration * clippedLength * timingSampleRateCompensate_ratio;
+	auto const clippedLength = nvs::memoryless::clamp(compensatedLength, minLengthInSamples, maxLengthInSamples);
+	return latchedDuration * clippedLength;
 }
 float calculateWindow(double const accum, double const duration, float const transpositionMultiplier, float const skew, float plateau){
 	assert(transpositionMultiplier > 0.f);
@@ -420,10 +420,10 @@ genGrain1::outs genGrain1::operator()(float const trig_in){
 	double const file_sample_rate_compensate_ratio = calculateSampleReadRate(playback_sr, file_sr);
 
 	size_t const length = static_cast<double>(wave_block.getNumSamples());
-	double const duration_in_samps = calculateDurationInSamples(_duration_ler(should_open_latches), length,
-																1.f/file_sample_rate_compensate_ratio,	// was timing_sample_rate_compensate_ratio
+	size_t const compensatedLength = length / file_sample_rate_compensate_ratio;
+	double const duration_in_samps = calculateDurationInSamples(_duration_ler(should_open_latches), compensatedLength,
 																playback_sr);
-	assert (duration_in_samps < length);
+	assert (duration_in_samps <= compensatedLength);
 	float const latch_skew_result = memoryless::clamp(_skew_lgr(should_open_latches), 0.001f, 0.999f);
 	
 	float const duration_pitch_compensation_factor = getDurationPitchCompensationFactor(_synth_shared_state->_settings._duration_pitch_compensation, _waveform_read_rate);
