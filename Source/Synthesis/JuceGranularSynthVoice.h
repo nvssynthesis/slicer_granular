@@ -98,9 +98,6 @@ public:
 		return nvs::gran::genGranPoly1::getNumGrains();
 	}
 	void setLogger(std::function<void(const juce::String&)> loggerFunction);
-	void setVoiceId(int new_id) {
-		_voice_shared_state._voice_id = new_id;
-	}
 private:
 	std::unique_ptr<nvs::gran::genGranPoly1> granularSynthGuts;
 	nvs::gran::GranularVoiceSharedState _voice_shared_state;

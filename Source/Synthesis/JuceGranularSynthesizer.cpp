@@ -45,8 +45,7 @@ void GranularSynthesizer::initializeVoices() {
 	unsigned long seed = 1234567890UL;
 	totalNumGrains_ = 0;
 	for (int i = 0; i < num_voices; ++i) {
-		auto voice = new GranularVoice(std::make_unique<nvs::gran::genGranPoly1>(&_synth_shared_state, seed));
-		voice->setVoiceId(i);
+		auto voice = new GranularVoice(std::make_unique<nvs::gran::genGranPoly1>(&_synth_shared_state, i, seed));
 		addVoice(voice);
 		totalNumGrains_ += voice->getNumGrains();
 		++seed;

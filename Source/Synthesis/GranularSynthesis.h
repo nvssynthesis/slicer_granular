@@ -88,7 +88,7 @@ struct GranularVoiceSharedState {
 
 class genGranPoly1 {
 public:
-	genGranPoly1(GranularSynthSharedState *const synth_shared_state, unsigned long seed = 1234567890UL);
+	genGranPoly1(GranularSynthSharedState *const synth_shared_state, int voice_id, unsigned long seed = 1234567890UL);
 	virtual ~genGranPoly1() = default;
 	//====================================================================================
 	void setSampleRate(double sampleRate);
@@ -261,6 +261,19 @@ protected:
     
     nvs::gen::accum<double> _accum; // accumulates samplewise and resets from gate on, goes to windowing and sample lookup!
     
+	struct ReadBounds {
+		double begin {0.0};	// default normalized
+		double end	 {1.0};	// default normalized
+		double length() const {
+			assert (end > begin);
+			return end - begin;
+		}
+		ReadBounds operator*(double mult) {
+			return ReadBounds{this->begin * mult, this->end * mult};
+		}
+	};
+	ReadBounds _normalizedReadBounds;// defaults to normalized read bounds. TSN variant can adjust effective read bounds (changing begin and end based on event positions/durations).
+	
     double _sample_index {0.0};
     float _waveform_read_rate {0.0};
     float _window {0.f};

@@ -37,12 +37,13 @@ inline float fastSemitonesToRatio(float semitones){
 	return nvs::util::semitonesRatioTable(semitones);
 }
 
-genGranPoly1::genGranPoly1(GranularSynthSharedState *const synth_shared_state, unsigned long seed)
+genGranPoly1::genGranPoly1(GranularSynthSharedState *const synth_shared_state, int voice_id, unsigned long seed)
 :
 _synth_shared_state { synth_shared_state },
 _voice_shared_state {
 	._gaussian_rng {seed},
-	._expo_rng {seed + 123456789UL}
+	._expo_rng {seed + 123456789UL},
+	._voice_id = voice_id
 },
 _grains(N_GRAINS, genGrain1(_synth_shared_state, &_voice_shared_state) ),
 _normalizer(1.f / std::sqrt(static_cast<float>(std::clamp(N_GRAINS, 1UL, 10000UL)))),
@@ -419,7 +420,8 @@ genGrain1::outs genGrain1::operator()(float const trig_in){
 
 	double const file_sample_rate_compensate_ratio = calculateSampleReadRate(playback_sr, file_sr);
 
-	size_t const length = static_cast<double>(wave_block.getNumSamples());
+	ReadBounds const denormedReadBounds = _normalizedReadBounds * static_cast<double>(_synth_shared_state->_buffer._wave_block.getNumSamples());
+	size_t const length = denormedReadBounds.length();
 	size_t const compensatedLength = length / file_sample_rate_compensate_ratio;
 	double const duration_in_samps = calculateDurationInSamples(_duration_ler(should_open_latches), compensatedLength,
 																playback_sr);
