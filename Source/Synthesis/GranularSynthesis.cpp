@@ -60,6 +60,14 @@ void genGranPoly1::setSampleRate(double sample_rate){
 	_phasor_internal_trig.setSampleRate(sample_rate);
 	_synth_shared_state->_playback_sample_rate = sample_rate;
 }
+void genGranPoly1::setReadBounds(ReadBounds newReadBounds) {
+	for (auto &g : _grains){
+		// for now, we will just have all grains use same read bounds.
+		// however, we may want to have some prorortions of grains using different readbounds in the future.
+		g.setReadBounds(newReadBounds);
+	}
+}
+
 void genGranPoly1::setLogger(std::function<void(const juce::String&)> loggerFunction) {
 	assert(_synth_shared_state);
 	_synth_shared_state->_logger_func = loggerFunction;

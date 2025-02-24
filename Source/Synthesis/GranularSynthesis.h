@@ -84,6 +84,21 @@ struct GranularVoiceSharedState {
 	ExponentialRandomNumberGenerator _expo_rng;
 	int _voice_id;
 };
+
+//========================================================================================================================================
+
+struct ReadBounds {
+	double begin {0.0};	// default normalized
+	double end	 {1.0};	// default normalized
+	double length() const {
+		assert (end > begin);
+		return end - begin;
+	}
+	ReadBounds operator*(double mult) {
+		return ReadBounds{this->begin * mult, this->end * mult};
+	}
+};
+
 //========================================================================================================================================
 
 class genGranPoly1 {
@@ -159,6 +174,7 @@ public:
 	inline std::array<float, 2> operator()(float triggerIn){
 		return doProcess(triggerIn);
 	}
+	void setReadBounds(ReadBounds newReadBounds) ;
 	std::vector<GrainDescription> getGrainDescriptions() const;
 	void setLogger(std::function<void(const juce::String&)> loggerFunction);
 protected:
@@ -233,6 +249,9 @@ public:
 		float audio_R 	{0.f};
 	};
 	
+	void setReadBounds(ReadBounds newReadBounds){
+		_normalizedReadBounds = newReadBounds;
+	}
 	outs operator()(float const trig_in);
 	
 	GrainDescription getGrainDescription() const;
@@ -261,17 +280,6 @@ protected:
     
     nvs::gen::accum<double> _accum; // accumulates samplewise and resets from gate on, goes to windowing and sample lookup!
     
-	struct ReadBounds {
-		double begin {0.0};	// default normalized
-		double end	 {1.0};	// default normalized
-		double length() const {
-			assert (end > begin);
-			return end - begin;
-		}
-		ReadBounds operator*(double mult) {
-			return ReadBounds{this->begin * mult, this->end * mult};
-		}
-	};
 	ReadBounds _normalizedReadBounds;// defaults to normalized read bounds. TSN variant can adjust effective read bounds (changing begin and end based on event positions/durations).
 	
     double _sample_index {0.0};
