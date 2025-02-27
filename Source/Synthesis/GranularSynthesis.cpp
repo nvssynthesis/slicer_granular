@@ -188,26 +188,6 @@ void genGranPoly1::doSetPanRandomness(float randomness){
 	for (auto &g : _grains)
 		g.setPanRand(randomness);
 }
-namespace {
-auto checkNan(float a){
-	return a != a;
-}
-auto checkInf(float a){
-	return std::isinf(a);
-}
-bool checkNanOrInf(std::span<float> sp) {
-	for (auto const &a : sp){
-		if (checkNan(a) || checkInf(a)){
-			return true;
-		}
-	}
-	return false;
-}
-template<size_t N>
-bool checkNanOrInf(std::array<float, N> sp) {
-	return checkNanOrInf(std::span<float>(sp));
-}
-}
 std::array<float, 2> genGranPoly1::doProcess(float trigger_in){
 	std::array<float, 2> output {0.f, 0.f};
 	
@@ -241,7 +221,7 @@ std::array<float, 2> genGranPoly1::doProcess(float trigger_in){
 	output[0] = audio_out_L * _normalizer;
 	output[1] = audio_out_R * _normalizer;
 
-	if (checkNanOrInf(output)){
+	if (nvs::util::checkNanOrInf(output)){
 		return {};
 	}
 	return output;
@@ -487,7 +467,7 @@ genGrain1::outs genGrain1::operator()(float const trig_in){
 	
 	processBusyness(_window, _busy_histo, o);
 	
-	if (checkNanOrInf(std::array<float, 2>{o.audio_L, o.audio_R})){
+	if (nvs::util::checkNanOrInf(std::array<float, 2>{o.audio_L, o.audio_R})){
 		return {};
 	}
 	

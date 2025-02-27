@@ -11,8 +11,31 @@
 #pragma once
 #include "sprout/math.hpp"
 //#include "sprout/math/constants.hpp"
+#include <span>
+
 namespace nvs {
 namespace util {
+
+inline auto checkNan(float a){
+	return a != a;
+}
+inline auto checkInf(float a){
+	return std::isinf(a);
+}
+inline bool checkNanOrInf(std::span<float> sp) {
+	for (auto const &a : sp){
+		if (checkNan(a) || checkInf(a)){
+			return true;
+		}
+	}
+	return false;
+}
+template<size_t N>
+inline bool checkNanOrInf(std::array<float, N> sp) {
+	return checkNanOrInf(std::span<float>(sp));
+}
+
+
 inline float scale(float val, float min, float range){
 	return (val - min) / range;
 }
@@ -46,9 +69,7 @@ struct SemitonesRatioTable {
 		return values[iidx];
 	}
 };
-
 static SemitonesRatioTable<-60, 60, 240> semitonesRatioTable;
-
 
 template<typename T>
 class RMS {
