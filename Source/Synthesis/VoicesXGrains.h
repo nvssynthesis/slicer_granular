@@ -12,14 +12,14 @@
 
 static constexpr size_t N_GRAINS =
 #if defined(DEBUG_BUILD) | defined(DEBUG) | defined(_DEBUG)
-								15;
+								12;
 #else
-								25;
+								18;
 #endif
 
 constexpr static int N_VOICES =
 #if defined(DEBUG_BUILD) | defined(DEBUG) | defined(_DEBUG)
 										2;
 #else
-										8;
+										3;
 #endif
