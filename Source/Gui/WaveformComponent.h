@@ -92,7 +92,6 @@ private:
  */
 class WaveformAndPositionComponent	:	public juce::Component
 ,										public juce::Slider::Listener
-,										public juce::ChangeBroadcaster
 {
 public:
 	WaveformAndPositionComponent(int sourceSamplesPerThumbnailSample,

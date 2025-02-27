@@ -209,6 +209,7 @@ double WaveformAndPositionComponent::getPositionSliderValue() const {
 void WaveformAndPositionComponent::sliderValueChanged (juce::Slider *slider) {
 	if (slider == &positionSlider._slider){
 		// this is used to update the timbre space component (for TSN version)
-		sendChangeMessage();
+#pragma message ("don't want to send change message to affect timbre space")
+//		sendChangeMessage();
 	}
 }
