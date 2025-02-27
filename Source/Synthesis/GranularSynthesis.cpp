@@ -345,12 +345,15 @@ float calculateTransposeMultiplier(float const ratioBasedOnNote, float const rat
 	return memoryless::clamp(ratioBasedOnNote * ratioBasedOnTranspose, 0.001f, 1000.f);
 }
 double calculateDurationInSamples(double latchedDuration, double compensatedLength, double sampleRate){
+	using nvs::memoryless::clamp;
+#pragma message("this clamping of randomized duration should be improved")
+	auto const clippedNormalizedDuration = clamp(latchedDuration, 0.0, 1.0);
 	double constexpr maxLengthInSeconds = 20.0;
 	double constexpr minLengthInSeconds = 0.001;	// 1 ms
 	double const maxLengthInSamples = maxLengthInSeconds * sampleRate;
 	double const minLengthInSamples = minLengthInSeconds * sampleRate;
-	auto const clippedLength = nvs::memoryless::clamp(compensatedLength, minLengthInSamples, maxLengthInSamples);
-	return latchedDuration * clippedLength;
+	auto const clippedLength = clamp(compensatedLength, minLengthInSamples, maxLengthInSamples);
+	return clippedNormalizedDuration * clippedLength;
 }
 float calculateWindow(double const accum, double const duration, float const transpositionMultiplier, float const skew, float plateau){
 	assert(transpositionMultiplier > 0.f);
@@ -444,8 +447,9 @@ genGrain1::outs genGrain1::operator()(float const trig_in){
 	size_t const length = denormedReadBounds.end - denormedReadBounds.begin;
 
 	size_t const compensatedLength = length / file_sample_rate_compensate_ratio;
+	
 	double const duration_in_samps = calculateDurationInSamples(_duration_ler(should_open_latches), compensatedLength,
-																playback_sr);
+																playback_sr);	// take _synth_shared_state->_settings._center_position_at_env_peak as param to determine if it should clip normalized duration to 0-1?
 	assert (duration_in_samps <= compensatedLength);
 	float const latch_skew_result = memoryless::clamp(_skew_lgr(should_open_latches), 0.001f, 0.999f);
 	
