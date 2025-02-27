@@ -256,7 +256,7 @@ public:
 	
 	GrainDescription getGrainDescription() const;
 	
-protected:
+private:
 	GranularSynthSharedState *const _synth_shared_state;
 	GranularVoiceSharedState *const _voice_shared_state;
 	

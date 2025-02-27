@@ -28,6 +28,8 @@ std::vector<double> WaveformComponent::getNormalizedOnsets() const {
 }
 
 void WaveformComponent::addMarker(double onsetPosition) {
+	assert (onsetPosition >= 0.0);
+	assert (onsetPosition <= 1.0);
 	auto it = std::lower_bound(onsetMarkerList.begin(), onsetMarkerList.end(), onsetPosition,
 							   [](const OnsetMarker& marker, double position) {
 								   return marker.position < position;

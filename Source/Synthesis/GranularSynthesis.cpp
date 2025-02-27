@@ -45,13 +45,14 @@ _voice_shared_state {
 	._expo_rng {seed + 123456789UL},
 	._voice_id = voice_id
 },
-_grains(N_GRAINS, genGrain1(_synth_shared_state, &_voice_shared_state) ),
 _normalizer(1.f / std::sqrt(static_cast<float>(std::clamp(N_GRAINS, 1UL, 10000UL)))),
 _grain_indices(N_GRAINS),
 _speed_ler(_voice_shared_state._expo_rng,  {10.f, 0.f})
 {
+	assert (_grains.size() == 0);
+	_grains.reserve(N_GRAINS);
 	for (int i = 0; i < N_GRAINS; ++i){
-		_grains[i].setId(i);
+		_grains.emplace_back(_synth_shared_state, &_voice_shared_state, i);
 	}
 	std::iota(_grain_indices.begin(), _grain_indices.end(), 0);
 }
@@ -61,6 +62,10 @@ void genGranPoly1::setSampleRate(double sample_rate){
 	_synth_shared_state->_playback_sample_rate = sample_rate;
 }
 void genGranPoly1::setReadBounds(ReadBounds newReadBounds) {
+	assert (newReadBounds.begin < newReadBounds.end);
+	assert ((newReadBounds.begin >= 0.0) && (newReadBounds.begin <= 1.0));
+	assert ((newReadBounds.end >= 0.0) && (newReadBounds.end <= 1.0));
+	
 	for (auto &g : _grains){
 		// for now, we will just have all grains use same read bounds.
 		// however, we may want to have some prorortions of grains using different readbounds in the future.
@@ -265,7 +270,9 @@ genGrain1::genGrain1(GranularSynthSharedState *const synth_shared_state,
 ,	_skew_lgr(_voice_shared_state->_gaussian_rng, {0.5f, 0.f})
 ,	_plateau_lgr(_voice_shared_state->_gaussian_rng, {1.f, 0.f})
 ,	_pan_lgr(_voice_shared_state->_gaussian_rng, {0.5f, 0.23f})
-{}
+{
+	std::cout << "voice id: " << _voice_shared_state->_voice_id << " grain id: " << _grain_id << " begin: " << _normalizedReadBounds.begin << " end: " <<  _normalizedReadBounds.end << '\n';
+}
 void genGrain1::setRatioBasedOnNote(float ratioForNote){
 	_ratio_based_on_note = ratioForNote;
 }
