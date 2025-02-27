@@ -62,7 +62,6 @@ void genGranPoly1::setSampleRate(double sample_rate){
 	_synth_shared_state->_playback_sample_rate = sample_rate;
 }
 void genGranPoly1::setReadBounds(ReadBounds newReadBounds) {
-	assert (newReadBounds.begin < newReadBounds.end);
 	assert ((newReadBounds.begin >= 0.0) && (newReadBounds.begin <= 1.0));
 	assert ((newReadBounds.end >= 0.0) && (newReadBounds.end <= 1.0));
 	
@@ -190,12 +189,12 @@ void genGranPoly1::doSetPanRandomness(float randomness){
 		g.setPanRand(randomness);
 }
 namespace {
-auto checkNan = [](float a){
+auto checkNan(float a){
 	return a != a;
-};
-auto checkInf = [](float a){
+}
+auto checkInf(float a){
 	return std::isinf(a);
-};
+}
 bool checkNanOrInf(std::span<float> sp) {
 	for (auto const &a : sp){
 		if (checkNan(a) || checkInf(a)){
@@ -210,7 +209,7 @@ bool checkNanOrInf(std::array<float, N> sp) {
 }
 }
 std::array<float, 2> genGranPoly1::doProcess(float trigger_in){
-	std::array<float, 2> output;
+	std::array<float, 2> output {0.f, 0.f};
 	
 	// update phasor's frequency only if _triggerHisto.val is true
 	float const freq_tmp = _speed_ler(static_cast<bool>(_trigger_histo.val)); // used to clamp by percentage of mu. should no longer be necessary.
@@ -270,9 +269,7 @@ genGrain1::genGrain1(GranularSynthSharedState *const synth_shared_state,
 ,	_skew_lgr(_voice_shared_state->_gaussian_rng, {0.5f, 0.f})
 ,	_plateau_lgr(_voice_shared_state->_gaussian_rng, {1.f, 0.f})
 ,	_pan_lgr(_voice_shared_state->_gaussian_rng, {0.5f, 0.23f})
-{
-	std::cout << "voice id: " << _voice_shared_state->_voice_id << " grain id: " << _grain_id << " begin: " << _normalizedReadBounds.begin << " end: " <<  _normalizedReadBounds.end << '\n';
-}
+{}
 void genGrain1::setRatioBasedOnNote(float ratioForNote){
 	_ratio_based_on_note = ratioForNote;
 }
@@ -388,11 +385,12 @@ double calculateCenterOfEnvelope(bool const center_envelope_at_env_peak, float c
 }
 double calculateSampleIndex(double const accum,
 							double const normalized_position,
+							double const sample_left_bound,
 							double const sample_right_bound,
 							double const sample_rate_compensate_ratio,
 							double const center_of_env)
 {
-	double const position_in_samps = normalized_position * (sample_right_bound);
+	double const position_in_samps = sample_left_bound + normalized_position * (sample_right_bound - sample_left_bound);
 	double const sample_index = sample_rate_compensate_ratio * (accum - center_of_env) + position_in_samps;
 	return sample_index;
 }
@@ -435,8 +433,14 @@ genGrain1::outs genGrain1::operator()(float const trig_in){
 
 	double const file_sample_rate_compensate_ratio = calculateSampleReadRate(playback_sr, file_sr);
 
-	ReadBounds const denormedReadBounds = _normalizedReadBounds * static_cast<double>(_synth_shared_state->_buffer._wave_block.getNumSamples());
-	size_t const length = denormedReadBounds.length();
+	auto const buffLength = _synth_shared_state->_buffer._wave_block.getNumSamples();
+	ReadBounds denormedReadBounds = _normalizedReadBounds * static_cast<double>(buffLength);
+	if (denormedReadBounds.end < denormedReadBounds.begin){
+		denormedReadBounds.end += buffLength;	// now this can be longer than the actual number of samples in the buffer. should be taken care of by wrapping in peek().
+		assert (denormedReadBounds.end > denormedReadBounds.begin);
+	}
+	size_t const length = denormedReadBounds.end - denormedReadBounds.begin;
+
 	size_t const compensatedLength = length / file_sample_rate_compensate_ratio;
 	double const duration_in_samps = calculateDurationInSamples(_duration_ler(should_open_latches), compensatedLength,
 																playback_sr);
@@ -454,7 +458,8 @@ genGrain1::outs genGrain1::operator()(float const trig_in){
 	
 	_sample_index = calculateSampleIndex(_accum.val,							// double const accum
 										 _position_lgr(should_open_latches),	// double const normalized_position
-										 length,								// double const sample_right_bound
+										 denormedReadBounds.begin, 				// double const sample_left_bound
+										 denormedReadBounds.end,				// double const sample_right_bound
 										 file_sample_rate_compensate_ratio,		// double const sample_rate_compensate_ratio
 										 center_of_env);						// double const center_of_env
 
