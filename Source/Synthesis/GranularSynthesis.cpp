@@ -377,10 +377,12 @@ float getDurationPitchCompensationFactor(float const duration_pitch_compensation
 	assert (duration_pitch_compensation_amount <= 1.f);
 	return waveform_read_rate * duration_pitch_compensation_amount + (1.f - duration_pitch_compensation_amount);
 }
-double calculateCenterOfEnvelope(bool const center_envelope_at_env_peak, float const skew, double const sr_compensated_duration, float const sample_playback_rate){
+double calculateCenterOfEnvelope(double const normalized_position, double const sr_compensated_duration, float const skew,
+								 float const sample_playback_rate, bool const center_envelope_at_env_peak)
+{
 	double const center_of_env = center_envelope_at_env_peak ?
 		skew * sr_compensated_duration * sample_playback_rate
-		: 0.0;
+		: sr_compensated_duration * normalized_position;
 	return center_of_env;
 }
 double calculateSampleIndex(double const accum,
@@ -451,17 +453,20 @@ genGrain1::outs genGrain1::operator()(float const trig_in){
 	
 	_accum(_waveform_read_rate, static_cast<bool>(should_open_latches));
 
-	auto const center_of_env = calculateCenterOfEnvelope(_synth_shared_state->_settings._center_position_at_env_peak,	// bool const center_envelope_at_env_peak
-														 latch_skew_result,												// float const skew
+	auto const norm_pos = _position_lgr(should_open_latches);
+	// double const normalized_position, double const sr_compensated_duration, float const skew, float const sample_playback_rate, bool const center_envelope_at_env_peak
+	auto const center_of_env = calculateCenterOfEnvelope(norm_pos,														// double const normalized_position
 														 duration_in_samps,												// double const sr_compensated_duration
-														 duration_pitch_compensation_factor);							// float const sample_playback_rate
+														 latch_skew_result,												// float const skew
+														 duration_pitch_compensation_factor,							// float const sample_playback_rate
+														 _synth_shared_state->_settings._center_position_at_env_peak);	// bool const center_envelope_at_env_peak
 	
-	_sample_index = calculateSampleIndex(_accum.val,							// double const accum
-										 _position_lgr(should_open_latches),	// double const normalized_position
-										 denormedReadBounds.begin, 				// double const sample_left_bound
-										 denormedReadBounds.end,				// double const sample_right_bound
-										 file_sample_rate_compensate_ratio,		// double const sample_rate_compensate_ratio
-										 center_of_env);						// double const center_of_env
+	_sample_index = calculateSampleIndex(_accum.val,								// double const accum
+										 norm_pos,		// double const normalized_position
+										 denormedReadBounds.begin, 					// double const sample_left_bound
+										 denormedReadBounds.end,					// double const sample_right_bound
+										 file_sample_rate_compensate_ratio,			// double const sample_rate_compensate_ratio
+										 center_of_env);							// double const center_of_env
 
 	_window = calculateWindow(_accum.val,							// double const accum
 							  duration_in_samps,					// double const duration
