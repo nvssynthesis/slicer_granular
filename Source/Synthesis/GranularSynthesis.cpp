@@ -205,7 +205,7 @@ bool checkNanOrInf(std::span<float> sp) {
 }
 template<size_t N>
 bool checkNanOrInf(std::array<float, N> sp) {
-	checkNanOrInf(std::span<float>(sp));
+	return checkNanOrInf(std::span<float>(sp));
 }
 }
 std::array<float, 2> genGranPoly1::doProcess(float trigger_in){
