@@ -39,6 +39,7 @@ protected:
 	void handleSampleManagementBroadcast();
 	void handleGrainDescriptionBroadcast();
 	//===============================================================================
+//#ifndef TSN
 	WaveformAndPositionComponent waveformAndPositionComponent;
 	GrainBusyDisplay grainBusyDisplay;
 	FileSelectorComponent fileComp;

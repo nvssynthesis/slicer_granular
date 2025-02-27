@@ -169,6 +169,10 @@ WaveformAndPositionComponent::WaveformAndPositionComponent(int sourceSamplesPerT
 	addAndMakeVisible(&positionSlider._slider);
 }
 	
+void WaveformAndPositionComponent::hideSlider() {
+	positionSlider._slider.setVisible(false);
+	repaint();
+}
 void WaveformAndPositionComponent::resized()
 {
 	auto const localBounds = getLocalBounds();
@@ -176,10 +180,12 @@ void WaveformAndPositionComponent::resized()
 	auto const totalHeight = localBounds.getHeight();
 	auto const reservedHeight = totalHeight * 0.9;
 
+	bool const sliderVisible = positionSlider._slider.isVisible();
+	
 	juce::Rectangle<int> const wcRect = [&]{	// limit scope via instantly-called lambda
 		auto const heightDiff = totalHeight - reservedHeight;
 		auto const waveformY = localBounds.getY() + (heightDiff * 0.5);
-		auto const waveformHeight = reservedHeight * 0.8f;
+		auto const waveformHeight = sliderVisible ? reservedHeight * 0.8f : reservedHeight;
 		
 		auto const waveformWidth = localBounds.getWidth() * 1.0;
 		auto const waveformWidthDiff = localBounds.getWidth() - waveformWidth;
@@ -190,7 +196,8 @@ void WaveformAndPositionComponent::resized()
 		return wcRect;	// return rectangle as that's all we need from this scope
 	}();
 	
-	{	// limit scope for drawing slider
+	if (sliderVisible)
+	{
 		auto const sliderHeight = reservedHeight - wcRect.getHeight();
 		int const widthIncrease = 14;
 		auto const sliderWidth = wcRect.getWidth() + widthIncrease;

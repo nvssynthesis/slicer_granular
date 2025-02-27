@@ -101,8 +101,12 @@ public:
 	void resized() override;
 	void paint (juce::Graphics& g) override;
 	
-	void sliderValueChanged (juce::Slider *slider) override;
-	double getPositionSliderValue() const;
+	void hideSlider();	// effectively makes it function as just the waveformComponent. I don't want to simply use that though because then the slicer_granular version has to change a bunch of code based on #ifdef TSN.
+	
+	//========================================================================================
+	void sliderValueChanged (juce::Slider *slider) override;	// apt for removal?
+	double getPositionSliderValue() const;						// apt for removal?
+	//========================================================================================
 
 	WaveformComponent wc; // externally accessible 
 private:
