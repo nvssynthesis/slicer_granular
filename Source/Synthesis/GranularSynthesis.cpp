@@ -444,7 +444,12 @@ genGrain1::outs genGrain1::operator()(float const trig_in){
 	
 	_accum(_waveform_read_rate, static_cast<bool>(should_open_latches));
 
-	auto const norm_pos = _position_lgr(should_open_latches);
+	auto norm_pos = _position_lgr(should_open_latches);
+	if (!(_synth_shared_state->_settings._center_position_at_env_peak)) {
+#pragma message("this doesn't reeeally have anything to do with centering the position at envelope peak. but it's tied to it since we want that seeting off for TSN version, and we also want this clamped within an event in the same situation.")
+#pragma message("consider clipping it more softly so it doesnt totally go against statistics")
+		norm_pos = memoryless::clamp(norm_pos, 0.0, 1.0);
+	}
 	// double const normalized_position, double const sr_compensated_duration, float const skew, float const sample_playback_rate, bool const center_envelope_at_env_peak
 	auto const center_of_env = calculateCenterOfEnvelope(norm_pos,														// double const normalized_position
 														 duration_in_samps,												// double const sr_compensated_duration

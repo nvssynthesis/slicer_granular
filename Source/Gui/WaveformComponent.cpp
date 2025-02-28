@@ -93,7 +93,6 @@ void WaveformComponent::drawMarker(juce::Graphics& g, MarkerVariant marker)
 		float y0 = getLocalBounds().getY();
 		float y1 = getLocalBounds().getBottom();
 		assert (y1 > y0);
-		float const regionHeight = y1 - y0;
 		auto l = juce::Line<float>(juce::Point<float>{xPos, y0}, juce::Point<float>{xPos, y1});
 		std::visit([&](const auto &marker) {
 			processLine(g, l, marker);
@@ -173,6 +172,7 @@ void WaveformAndPositionComponent::hideSlider() {
 	positionSlider._slider.setVisible(false);
 	repaint();
 }
+
 void WaveformAndPositionComponent::resized()
 {
 	auto const localBounds = getLocalBounds();
