@@ -245,9 +245,7 @@ public:
 		float audio_R 	{0.f};
 	};
 	
-	void setReadBounds(ReadBounds newReadBounds){
-		_normalizedReadBounds = newReadBounds;
-	}
+	void setReadBounds(ReadBounds newReadBounds);
 	outs operator()(float const trig_in);
 	
 	GrainDescription getGrainDescription() const;
@@ -277,6 +275,7 @@ private:
     nvs::gen::accum<double> _accum; // accumulates samplewise and resets from gate on, goes to windowing and sample lookup!
     
 	ReadBounds _normalizedReadBounds;// defaults to normalized read bounds. TSN variant can adjust effective read bounds (changing begin and end based on event positions/durations).
+	ReadBounds _upcomingNormalizedReadBounds;
 	
     double _sample_index {0.0};
     float _waveform_read_rate {0.0};

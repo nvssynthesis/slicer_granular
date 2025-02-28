@@ -403,6 +403,10 @@ void processBusyness(float const window, nvs::gen::history<float> &busyHistory, 
 }
 }	// end anonymous namespace
 
+void genGrain1::setReadBounds(ReadBounds newReadBounds){
+	_upcomingNormalizedReadBounds = newReadBounds;
+}
+
 genGrain1::outs genGrain1::operator()(float const trig_in){
 	assert(_synth_shared_state);
 	auto const playback_sr = _synth_shared_state->_playback_sample_rate;
@@ -418,6 +422,9 @@ genGrain1::outs genGrain1::operator()(float const trig_in){
 
 	double const file_sample_rate_compensate_ratio = calculateSampleReadRate(playback_sr, file_sr);
 
+	if (should_open_latches){
+		_normalizedReadBounds = _upcomingNormalizedReadBounds;
+	}
 	auto const buffLength = _synth_shared_state->_buffer._wave_block.getNumSamples();
 	ReadBounds denormedReadBounds = _normalizedReadBounds * static_cast<double>(buffLength);
 	if (denormedReadBounds.end < denormedReadBounds.begin){
@@ -446,7 +453,7 @@ genGrain1::outs genGrain1::operator()(float const trig_in){
 														 _synth_shared_state->_settings._center_position_at_env_peak);	// bool const center_envelope_at_env_peak
 	
 	_sample_index = calculateSampleIndex(_accum.val,								// double const accum
-										 norm_pos,		// double const normalized_position
+										 norm_pos,									// double const normalized_position
 										 denormedReadBounds.begin, 					// double const sample_left_bound
 										 denormedReadBounds.end,					// double const sample_right_bound
 										 file_sample_rate_compensate_ratio,			// double const sample_rate_compensate_ratio
