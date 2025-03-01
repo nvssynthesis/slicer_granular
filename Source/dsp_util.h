@@ -40,6 +40,47 @@ inline float scale(float val, float min, float range){
 	return (val - min) / range;
 }
 
+template <typename float_t>
+inline float_t tanh_pade_3_2(float_t x) {
+	auto const x2 = x * x;
+	return x * (15.0 + x2) / (15.0 + 6.0 * x2);
+}
+template <typename float_t>
+inline float_t tanh_pade_5_6(float_t x) {
+	auto const x2 = x * x;
+	auto const x4 = x2 * x2;
+	auto const x6 = x2 * x4;
+	return x * (10395.0 + 1260.0 * x2 +21.0 * x4) / (10395.0 + 4725.0 * x2 + 210.0 * x4 + x6);
+}
+
+template <typename float_t>
+inline float_t tanh_pade_7_6(float_t x){
+	auto const x2 = x * x;
+	auto const x4 = x2 * x2;
+	auto const x6 = x2 * x4;
+	return x * (135135.0 + 17325.0 * x2 + 378.0 * x4 + x6) / (135135.0 + 62370.0 * x2 + 3150.0 * x4 + 28.0 * x6);
+}
+
+template <typename float_t>
+inline float_t log_pade(float_t x) {
+	assert (x > -1.f);
+	return juce::dsp::FastMathApproximations::logNPlusOne(x - 1.f);
+}
+template <typename float_t>
+inline float_t exp_pade(float_t x) {
+	return juce::dsp::FastMathApproximations::exp(x);
+}
+template <typename float_t>
+inline float_t pow_pade(float_t base, float_t expo){
+	return exp_pade(log_pade(base) * expo);
+}
+template <typename float_t, float_t base>
+inline float_t pow_fixed_base(float_t expo){
+	// pow(x, y) = exp(ln(x) * y)
+	constexpr float_t lnx = ln(base);
+	return exp_pade(lnx * expo);
+}
+
 template<int minSemitones, int maxSemitones, int reso>
 struct SemitonesRatioTable {
 	constexpr static float semitoneRatio = static_cast<float>(1.059463094359295);

@@ -24,13 +24,20 @@
 #include "fmt/core.h"
 #endif
 
+#define pade true
 
 namespace nvs::gran {
 
 template <typename float_t>
 float semitonesToRatio(float_t semitones){
 	constexpr float_t semitoneRatio = static_cast<float_t>(1.059463094359295);
+	
+#if(pade)
+	float_t transpositionRatio = pow_fixed_base<float_t, semitoneRatio>(semitones);
+#else
 	float_t transpositionRatio = std::pow(semitoneRatio, semitones);
+#endif
+	
 	return transpositionRatio;
 }
 inline float fastSemitonesToRatio(float semitones){
@@ -344,9 +351,14 @@ float calculateWindow(double const accum, double const duration, float const tra
 	
 	plateau = memoryless::clamp_low(plateau, 0.000001f);
 	win *= plateau;
+#define tanh nvs::util::tanh_pade_3_2
 	win = gen::parzen(tanh(win)) / gen::parzen(tanh(plateau));
 	if (plateau < 1.0){
-		win = pow(win, 1.0 / plateau);
+#if pade
+		win = nvs::util::pow_pade(win, 1.f / plateau);
+#else
+		win = pow(win, 1.f / plateau);
+#endif
 	}
 	return win;
 }
