@@ -24,7 +24,7 @@
 #include "fmt/core.h"
 #endif
 
-#define pade true
+#define pade false	// unfortunately, this optimization did not seem to clearly improve performance.
 
 namespace nvs::gran {
 
@@ -431,12 +431,21 @@ genGrain1::outs genGrain1::operator()(float const trig_in){
 	bool const should_open_latches = _busy_histo.val ? false : static_cast<bool>(trig_in);
 	
 	_waveform_read_rate = calculateTransposeMultiplier(_ratio_for_note_latch(_ratio_based_on_note, should_open_latches), 							fastSemitonesToRatio(_transpose_lgr(should_open_latches)));
+	_accum(_waveform_read_rate, static_cast<bool>(should_open_latches));
 
 	double const file_sample_rate_compensate_ratio = calculateSampleReadRate(playback_sr, file_sr);
 
 	if (should_open_latches){
 		_normalizedReadBounds = _upcomingNormalizedReadBounds;
 	}
+	
+	if (_normalizedReadBounds.end - _normalizedReadBounds.begin == 0.0){	// protection for initialization case
+		_window = 0.f;
+		writeAudioToOuts(0.f, 0.f, o);
+		processBusyness(_window, _busy_histo, o);
+		return o;
+	}
+	
 	auto const buffLength = _synth_shared_state->_buffer._wave_block.getNumSamples();
 	ReadBounds denormedReadBounds = _normalizedReadBounds * static_cast<double>(buffLength);
 	if (denormedReadBounds.end < denormedReadBounds.begin){
@@ -454,7 +463,6 @@ genGrain1::outs genGrain1::operator()(float const trig_in){
 	
 	float const duration_pitch_compensation_factor = getDurationPitchCompensationFactor(_synth_shared_state->_settings._duration_pitch_compensation, _waveform_read_rate);
 	
-	_accum(_waveform_read_rate, static_cast<bool>(should_open_latches));
 
 	auto norm_pos = _position_lgr(should_open_latches);
 	if (!(_synth_shared_state->_settings._center_position_at_env_peak)) {
@@ -481,7 +489,7 @@ genGrain1::outs genGrain1::operator()(float const trig_in){
 							  duration_pitch_compensation_factor,	// float const transpositionMultiplier
 							  latch_skew_result,					// float const skew
 							  _plateau_lgr(should_open_latches));	// float plateau
-							  
+
 	float const vel_amplitude = _amplitude_for_note_latch(_amplitude_based_on_note, should_open_latches);
 
 	float const sample = calculateSample(wave_block, _sample_index, _window, vel_amplitude);

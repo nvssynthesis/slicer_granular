@@ -66,18 +66,69 @@ inline float_t log_pade(float_t x) {
 	assert (x > -1.f);
 	return juce::dsp::FastMathApproximations::logNPlusOne(x - 1.f);
 }
-template <typename float_t>
-inline float_t exp_pade(float_t x) {
-	return juce::dsp::FastMathApproximations::exp(x);
+inline double exp2_pade_22(double x){
+	assert (x >= 0.0);
+	auto x2 = x*x;
+	auto num = 1.0 + 0.34657359 * x + 0.04003775 * x2;
+	auto den = 1.0 + -0.34657359 * x + 0.04003775 * x2;
+	return num / den;
 }
+inline double exp2_pade_33(double x){
+	assert (x >= 0.0);
+	double x2 = x*x;
+	double x3 = x * x2;
+	double num = 1.0 + 0.34657359*x + 0.0480453*x2 + 0.00277521*x3;
+	double den = 1.0 + -0.34657359*x + 0.0480453*x2 + -0.00277521*x3;
+	return num / den;
+}
+
+inline auto mod(double n, double d) {
+	return fmod(fmod(n, d) + d, d);
+}
+
+// works for all x, but doesn't handle overflow properly
+inline double exp2_mod(double x)
+{
+	auto const frac = mod(x, 1.0);
+	auto const pade = exp2_pade_22(frac);
+	
+	auto const fl = (int) floor(x);
+	auto res = scalbn(pade, fl);
+	return res;
+}
+
+inline double exp_opt(double x) {
+	constexpr double ln2 = sprout::log(2.0);
+	static_assert (ln2 > 0.6931471);
+	static_assert (ln2 < 0.6931472);
+	constexpr double inv_ln2 = 1.0 / ln2;
+	
+	return exp2_mod(x * inv_ln2);
+}
+
 template <typename float_t>
 inline float_t pow_pade(float_t base, float_t expo){
-	return exp_pade(log_pade(base) * expo);
+	if (base == 0.0){
+		return 0.0;
+	}
+	assert (expo > 0.f);
+	assert (expo == expo);
+	assert (!std::isinf(expo));
+	
+	auto const lnx = log(base);
+	assert (lnx == lnx);
+	assert (!std::isinf(lnx));
+	assert (lnx < 6.0);
+	
+	auto const y = exp_opt(lnx * expo);
+	assert (y == y);
+	assert (!std::isinf(y));
+	return y;
 }
 template <typename float_t, float_t base>
 inline float_t pow_fixed_base(float_t expo){
 	// pow(x, y) = exp(ln(x) * y)
-	constexpr float_t lnx = ln(base);
+	constexpr float_t lnx = log(base);
 	return exp_pade(lnx * expo);
 }
 

@@ -89,7 +89,7 @@ struct GranularVoiceSharedState {
 
 struct ReadBounds {
 	double begin {0.0};	// default normalized
-	double end	 {1.0};	// default normalized
+	double end	 {0.0};	// default 0 length
 	ReadBounds operator*(double mult) {
 		return ReadBounds{begin * mult, end * mult};
 	}
