@@ -416,7 +416,7 @@ void processBusyness(float const window, nvs::gen::history<float> &busyHistory, 
 }	// end anonymous namespace
 
 void genGrain1::setReadBounds(ReadBounds newReadBounds){
-	_upcomingNormalizedReadBounds = newReadBounds;
+	_upcoming_normalized_read_bounds = newReadBounds;
 }
 
 genGrain1::outs genGrain1::operator()(float const trig_in){
@@ -436,10 +436,10 @@ genGrain1::outs genGrain1::operator()(float const trig_in){
 	double const file_sample_rate_compensate_ratio = calculateSampleReadRate(playback_sr, file_sr);
 
 	if (should_open_latches){
-		_normalizedReadBounds = _upcomingNormalizedReadBounds;
+		_normalized_read_bounds = _upcoming_normalized_read_bounds;
 	}
 	
-	if (_normalizedReadBounds.end - _normalizedReadBounds.begin == 0.0){	// protection for initialization case
+	if (_normalized_read_bounds.end - _normalized_read_bounds.begin == 0.0){	// protection for initialization case
 		_window = 0.f;
 		writeAudioToOuts(0.f, 0.f, o);
 		processBusyness(_window, _busy_histo, o);
@@ -447,7 +447,7 @@ genGrain1::outs genGrain1::operator()(float const trig_in){
 	}
 	
 	auto const buffLength = _synth_shared_state->_buffer._wave_block.getNumSamples();
-	ReadBounds denormedReadBounds = _normalizedReadBounds * static_cast<double>(buffLength);
+	ReadBounds denormedReadBounds = _normalized_read_bounds * static_cast<double>(buffLength);
 	if (denormedReadBounds.end < denormedReadBounds.begin){
 		denormedReadBounds.end += buffLength;	// now this can be longer than the actual number of samples in the buffer. should be taken care of by wrapping in peek().
 		assert (denormedReadBounds.end > denormedReadBounds.begin);

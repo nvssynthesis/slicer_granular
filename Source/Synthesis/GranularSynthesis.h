@@ -274,8 +274,8 @@ private:
     
     nvs::gen::accum<double> _accum; // accumulates samplewise and resets from gate on, goes to windowing and sample lookup!
     
-	ReadBounds _normalizedReadBounds;// defaults to normalized read bounds. TSN variant can adjust effective read bounds (changing begin and end based on event positions/durations).
-	ReadBounds _upcomingNormalizedReadBounds;
+	ReadBounds _normalized_read_bounds;// defaults to normalized read bounds. TSN variant can adjust effective read bounds (changing begin and end based on event positions/durations).
+	ReadBounds _upcoming_normalized_read_bounds;
 	
     double _sample_index {0.0};
     float _waveform_read_rate {0.0};
