@@ -369,6 +369,23 @@ juce::AudioProcessorValueTreeState::ParameterLayout Slicer_granularAudioProcesso
 	}
 	layout.add(std::move(navigationParams));
 #endif
+	
+	auto scannerParams = std::make_unique<juce::AudioProcessorParameterGroup>("Scanner", "ScannerParams", "|");
+	
+	for (size_t i =
+#ifdef TSN
+		 static_cast<size_t>(params_e::count_nav_lfo_params)
+#else
+		 static_cast<size_t>(params_e::count_envelope_params)
+#endif
+							  + 1;
+		 i < static_cast<size_t>(params_e::count_pos_scan_params);
+		 ++i){
+		params_e param = static_cast<params_e>(i);
+		scannerParams->addChild(a(param));
+	}
+	layout.add(std::move(scannerParams));
+	
 	return layout;
 }
 

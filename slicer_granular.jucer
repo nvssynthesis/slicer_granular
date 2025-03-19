@@ -5,7 +5,7 @@
               pluginCharacteristicsValue="pluginIsSynth,pluginWantsMidiIn"
               pluginManufacturer="nvssynthesis" cppLanguageStandard="20" headerPath="/Users/nicholassolem/development/boost_1_80_0&#10;/Users/nicholassolem/development/eigen-3.4.0&#10;/Users/nicholassolem/development/nvs_maps&#10;/Users/nicholassolem/development/nvs_libraries&#10;/Users/nicholassolem/development/thirdparty/Signalsmith&#10;/Users/nicholassolem/development/thirdparty/frozen/include&#10;/Users/nicholassolem/development/thirdparty/Sprout&#10;/Users/nicholassolem/development/thirdparty/fmt/include&#10;/Users/nicholassolem/development/thirdparty/Xoshiro-cpp"
               companyName="nvssynthesis" companyWebsite="https://nvssynthesis.github.io/"
-              version="0.1.4" pluginAUIsSandboxSafe="1" pluginManufacturerCode="Nvss"
+              version="0.1.5" pluginAUIsSandboxSafe="1" pluginManufacturerCode="Nvss"
               pluginCode="Slgr" pluginFormats="buildAU,buildStandalone,buildVST3"
               pluginAUMainType="'aumu'">
   <MAINGROUP id="QmNeTI" name="slicer-granular">
@@ -53,6 +53,10 @@
         <FILE id="geROs9" name="VoicesXGrains.h" compile="0" resource="0" file="Source/Synthesis/VoicesXGrains.h"/>
       </GROUP>
       <GROUP id="{8B05BF9B-9113-5CDB-91DE-1C951D8F5910}" name="Gui">
+        <FILE id="VbWIVG" name="ScannerParameterPage.cpp" compile="1" resource="0"
+              file="Source/Gui/ScannerParameterPage.cpp"/>
+        <FILE id="DuCw17" name="ScannerParameterPage.h" compile="0" resource="0"
+              file="Source/Gui/ScannerParameterPage.h"/>
         <FILE id="MH0zIT" name="EnvelopeParameterPage.cpp" compile="1" resource="0"
               file="Source/Gui/EnvelopeParameterPage.cpp"/>
         <FILE id="hzGEX2" name="EnvelopeParameterPage.h" compile="0" resource="0"

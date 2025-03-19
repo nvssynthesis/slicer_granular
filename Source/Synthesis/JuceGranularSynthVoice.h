@@ -35,7 +35,9 @@ class GranularVoice	:	public juce::SynthesiserVoice
 public:
 	GranularVoice(std::unique_ptr<nvs::gran::genGranPoly1> synthGuts)
 	:	granularSynthGuts{std::move(synthGuts)}
-	{}
+	{
+		granularSynthGuts->setReadBounds({0.0, 1.0});
+	}
 	void setCurrentPlaybackSampleRate(double sampleRate) override;
 
 	void prepareToPlay(double sampleRate, int samplesPerBlock);	// why not override??

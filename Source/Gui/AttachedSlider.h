@@ -20,7 +20,8 @@ struct AttachedSlider {
 				   juce::Slider::TextEntryBoxPosition entryPos = juce::Slider::TextBoxBelow)
 	:
 	_slider(),
-	_attachment(apvts, getParamName(param), _slider)
+	_attachment(apvts, ::getParamName(param), _slider),
+	_param_name(::getParamName(param))
 	{
 		_slider.setSliderStyle(sliderStyle);
 		_slider.setNormalisableRange(getNormalizableRange<double>(param));
@@ -32,4 +33,8 @@ struct AttachedSlider {
 	
 	Slider _slider;
 	SliderAttachment _attachment;
+	
+	std::string getParamName() const { return _param_name; }
+private:
+	std::string _param_name;
 };

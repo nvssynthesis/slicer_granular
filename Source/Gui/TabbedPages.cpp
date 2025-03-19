@@ -15,4 +15,5 @@ TabbedPagesComponent::TabbedPagesComponent (juce::AudioProcessorValueTreeState &
 {
 	addTab ("Granular Parameters", juce::Colours::transparentWhite, new GranularMainParametersPage(apvts), true);
 	addTab ("Envelope Parameters", juce::Colours::transparentWhite, new EnvelopeParametersPage(apvts), true);
+	addTab ("Scanner Parameters", juce::Colours::transparentWhite, new ScannerParameterPage(apvts), true);
 }
