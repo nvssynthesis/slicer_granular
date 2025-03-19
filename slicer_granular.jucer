@@ -26,6 +26,7 @@
         <FILE id="qvhP4H" name="misc_util.cpp" compile="1" resource="0" file="Source/misc_util.cpp"/>
         <FILE id="OW557g" name="dsp_util.h" compile="0" resource="0" file="Source/dsp_util.h"/>
         <FILE id="AcOWtc" name="nvs_gen.h" compile="0" resource="0" file="nvs_libraries/nvs_libraries/include/nvs_gen.h"/>
+        <FILE id="u7NNz9" name="nvs_LFO.h" compile="0" resource="0" file="nvs_libraries/nvs_libraries/include/nvs_LFO.h"/>
         <FILE id="DcXofS" name="plotting.h" compile="0" resource="0" file="Source/plotting.h"/>
         <FILE id="BN5JES" name="DataStructures.h" compile="0" resource="0"
               file="Source/DataStructures.h"/>

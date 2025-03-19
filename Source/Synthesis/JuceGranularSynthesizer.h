@@ -62,6 +62,27 @@ public:
 			envelopeParamSet<Start + 1, End>(apvts);
 		}
 	}
+	
+	template <auto Start, auto End>
+	constexpr void scannerParamSet(juce::AudioProcessorValueTreeState &apvts){
+		if constexpr (Start < End){
+			juce::SynthesiserVoice* voice = getVoice(Start);
+			if (GranularVoice* granularVoice = dynamic_cast<GranularVoice*>(voice)){
+#ifdef TSN
+				granularVoice->scannerParamSet<static_cast<int>(params_e::count_nav_lfo_params)+1,
+#else
+				granularVoice->scannerParamSet<static_cast<int>(params_e::count_envelope_params)+1,
+#endif
+												static_cast<int>(params_e::count_pos_scan_params)>
+												(apvts);
+			}
+			else {
+				jassert (false);
+			}
+			scannerParamSet<Start + 1, End>(apvts);
+		}
+	}
+	
 	void setLogger(std::function<void(const juce::String&)> loggerFunction);
 	bool hasLogger() const {
 		return _synth_shared_state._logger_func != nullptr;

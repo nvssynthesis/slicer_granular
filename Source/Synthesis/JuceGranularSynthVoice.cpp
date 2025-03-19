@@ -65,7 +65,6 @@ bool GranularVoice::isVoiceActive() const {
 	return adsr.isActive();
 }
 
-
 void GranularVoice::renderNextBlock (juce::AudioBuffer< float > &outputBuffer, int startSample, int numSamples)
 {
 	float trigger = 0.f;

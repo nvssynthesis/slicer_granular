@@ -122,6 +122,18 @@ static const inline  std::map<params_e, paramPropsTuple> paramMap {
 	{params_e::pos_scan_amount, {0.f,   1.f, 0.f,      1.f,  false,     0.f,    "Scanner Amount"}}
 };
 
+static constexpr int NUM_MAIN_PARAMS = static_cast<int>(params_e::count_main_granular_params);
+static constexpr int NUM_ENV_PARAMS = static_cast<int>(params_e::count_envelope_params) - static_cast<int>(params_e::count_main_granular_params) - 1;
+
+static constexpr int NUM_SCANNER_PARAMS = static_cast<int>(params_e::count_pos_scan_params) -
+#ifdef TSN
+																								static_cast<int>(params_e::count_nav_lfo_params) - 1;
+static constexpr int NUM_NAVIGATION_PARAMS = static_cast<int>(params_e::count_nav_lfo_params) - static_cast<int>(params_e::count_envelope_params) - 1;
+#else
+																								static_cast<int>(params_e::count_envelope_params) - 1;
+#endif
+static_assert(NUM_ENV_PARAMS == 4);
+static_assert(NUM_SCANNER_PARAMS == 2);
 
 [[maybe_unused]]
 static auto getParamName(params_e p){

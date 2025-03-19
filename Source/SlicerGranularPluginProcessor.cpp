@@ -272,6 +272,8 @@ void Slicer_granularAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
 	
 	granular_synth_juce->granularMainParamSet<0, GranularSynthesizer::getNumVoices()>(apvts);	// this just sets the params internal to the granular synth (effectively a voice)
 	granular_synth_juce->envelopeParamSet<0, GranularSynthesizer::getNumVoices()>(apvts);
+	granular_synth_juce->scannerParamSet<0, GranularSynthesizer::getNumVoices()>(apvts);
+	
 	granular_synth_juce->renderNextBlock(buffer,
 						  midiMessages,
 						  0,

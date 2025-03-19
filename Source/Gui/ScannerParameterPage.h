@@ -23,14 +23,7 @@ struct ScannerParameterPage	:	public juce::Component
 
 private:
 	juce::ADSR::Parameters scannerParameters;
-	static constexpr int numParams =
-		static_cast<int>(params_e::count_pos_scan_params )
-#ifdef TSN
-		- static_cast<int>(params_e::count_nav_lfo_params )
-#else
-		- static_cast<int>(params_e::count_envelope_params)
-#endif
-		- 1;
+	static constexpr int numParams = NUM_SCANNER_PARAMS;
 	static_assert(numParams == 2);
 	
 	std::array<AttachedSlider, numParams> scannerSliders;

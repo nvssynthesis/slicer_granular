@@ -88,6 +88,22 @@ public:
 			envelopeParamSet<Start + 1, End>(apvts);
 		}
 	}
+	template <auto Start, auto End>
+	constexpr void scannerParamSet(juce::AudioProcessorValueTreeState &apvts) {
+		float tmp;
+		if constexpr (Start < End){
+			constexpr params_e p = static_cast<params_e>(Start);
+			tmp = *apvts.getRawParameterValue(getParamElement<p, param_elem_e::name>());
+			float *last = lastScannerParamsMap.at(p);
+			if (tmp != *last){
+				*last = tmp;
+				granMembrSetFunc setFunc = scannerParamSetterMap.at(p);
+				(granularSynthGuts.get()->*setFunc)(tmp);	// could replace with std::invoke
+			}
+			scannerParamSet<Start + 1, End>(apvts);
+		}
+	}
+	
 	void setAmpAttack(float newAttack);
 	void setAmpDecay(float newDecay);
 	void setAmpSustain(float newSustain);
@@ -110,9 +126,7 @@ private:
 	juce::ADSR adsr;
 	juce::ADSR::Parameters adsrParameters {0.1, 0.3, 0.5, 0.05};
 	
-	
 	std::function<void(const juce::String&)> logger = nullptr;
-
 	
 	float lastTranspose 	{getParamDefault(params_e::transpose)};
 	float lastPosition 		{getParamDefault(params_e::position)};
@@ -134,11 +148,15 @@ private:
 	float lastAmpDecay 		{getParamDefault(params_e::amp_decay)};
 	float lastAmpSustain 	{getParamDefault(params_e::amp_sustain)};
 	float lastAmpRelease 	{getParamDefault(params_e::amp_release)};
+	
+	float lastPositionScanAmount	{getParamDefault(params_e::pos_scan_amount)};
+	float lastPositionScanRate		{getParamDefault(params_e::pos_scan_rate)};
+	
 
 #if (STATIC_MAP | FROZEN_MAP)
 	using granMembrSetFunc = void(nvs::gran::genGranPoly1::*) (float);
 
-	static constexpr inline MAP<params_e, granMembrSetFunc, static_cast<size_t>(params_e::count_main_granular_params)>
+	static constexpr inline MAP<params_e, granMembrSetFunc, NUM_MAIN_PARAMS>
 	paramSetterMap {
 		std::make_pair<params_e, granMembrSetFunc>(params_e::transpose, 		&nvs::gran::genGranPoly1::setTranspose),
 		std::make_pair<params_e, granMembrSetFunc>(params_e::position, 			&nvs::gran::genGranPoly1::setPosition),
@@ -156,17 +174,23 @@ private:
 		std::make_pair<params_e, granMembrSetFunc>(params_e::pan_randomness, 	&nvs::gran::genGranPoly1::setPanRandomness),
 	};
 	using juceVoiceSetFunc = void(GranularVoice::*) (float);
-	static constexpr inline MAP<params_e, juceVoiceSetFunc, 4> envParamSetterMap {
-		std::make_pair<params_e, juceVoiceSetFunc>(params_e::amp_attack, &GranularVoice::setAmpAttack),
-		std::make_pair<params_e, juceVoiceSetFunc>(params_e::amp_decay, &GranularVoice::setAmpDecay),
-		std::make_pair<params_e, juceVoiceSetFunc>(params_e::amp_sustain, &GranularVoice::setAmpSustain),
-		std::make_pair<params_e, juceVoiceSetFunc>(params_e::amp_release, &GranularVoice::setAmpRelease),
+	static constexpr inline MAP<params_e, juceVoiceSetFunc, NUM_ENV_PARAMS> envParamSetterMap {
+		std::make_pair<params_e, juceVoiceSetFunc>(params_e::amp_attack, 	&GranularVoice::setAmpAttack),
+		std::make_pair<params_e, juceVoiceSetFunc>(params_e::amp_decay, 	&GranularVoice::setAmpDecay),
+		std::make_pair<params_e, juceVoiceSetFunc>(params_e::amp_sustain,	&GranularVoice::setAmpSustain),
+		std::make_pair<params_e, juceVoiceSetFunc>(params_e::amp_release,	&GranularVoice::setAmpRelease),
+	};
+	
+	static constexpr inline MAP<params_e, granMembrSetFunc, NUM_SCANNER_PARAMS>
+	scannerParamSetterMap {
+		std::make_pair<params_e, granMembrSetFunc>(params_e::pos_scan_amount, 	&nvs::gran::genGranPoly1::setScannerAmount),
+		std::make_pair<params_e, granMembrSetFunc>(params_e::pos_scan_rate, 	&nvs::gran::genGranPoly1::setScannerRate),
 	};
 	/*
 	 this map is unnecessary because these pointed-to floats are never called by name. could just use an std::array<float, static_cast<size_t>(params_e::count)> lastParams
 	 */
-	MAP<params_e, float *, static_cast<size_t>(params_e::count_main_granular_params)>
-	lastGranularMainParamsMap{
+	MAP<params_e, float *, NUM_MAIN_PARAMS>
+	lastGranularMainParamsMap {
 		std::make_pair<params_e, float *>(params_e::transpose, 	&lastTranspose),
 		std::make_pair<params_e, float *>(params_e::position, 	&lastPosition),
 		std::make_pair<params_e, float *>(params_e::speed, 		&lastSpeed),
@@ -182,12 +206,17 @@ private:
 		std::make_pair<params_e, float *>(params_e::plat_randomness, 	&lastPlateauRand),
 		std::make_pair<params_e, float *>(params_e::pan_randomness, 	&lastPanRand)
 	};
-	MAP<params_e, float *, 4>
+	MAP<params_e, float *, NUM_ENV_PARAMS>
 	lastEnvelopeParamsMap{
 		std::make_pair<params_e, float *>(params_e::amp_attack,		&lastAmpAttack),
 		std::make_pair<params_e, float *>(params_e::amp_decay,		&lastAmpDecay),
 		std::make_pair<params_e, float *>(params_e::amp_sustain,	&lastAmpSustain),
 		std::make_pair<params_e, float *>(params_e::amp_release,	&lastAmpRelease)
+	};
+	MAP<params_e, float *, NUM_SCANNER_PARAMS>
+	lastScannerParamsMap {
+		std::make_pair<params_e, float *>(params_e::pos_scan_amount,	&lastPositionScanAmount),
+		std::make_pair<params_e, float *>(params_e::pos_scan_rate,		&lastPositionScanRate)
 	};
 #endif
 	

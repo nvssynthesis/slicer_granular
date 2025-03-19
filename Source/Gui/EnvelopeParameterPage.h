@@ -23,10 +23,7 @@ struct EnvelopeParametersPage	:	public juce::Component
 
 private:
 	juce::ADSR::Parameters ampEnvParameters;
-	static constexpr int numParams =
-		static_cast<int>(params_e::count_envelope_params)
-		- static_cast<int>(params_e::count_main_granular_params)
-		- 1;
+	static constexpr int numParams = NUM_ENV_PARAMS;
 	static_assert(numParams == 4);
 	
 	std::array<AttachedSlider, numParams> envelopeSliders;

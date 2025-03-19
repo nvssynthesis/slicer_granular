@@ -15,6 +15,7 @@
 
 #include "../LatchedRandom.h"
 #include "../../nvs_libraries/nvs_libraries/include/nvs_gen.h"
+#include "../../nvs_libraries/nvs_libraries/include/nvs_LFO.h"
 #include "GrainDescription.h"
 #include "VoicesXGrains.h"
 #include <JuceHeader.h>
@@ -167,6 +168,15 @@ public:
 	inline void setPanRandomness(float randomness){
 		doSetPanRandomness(randomness);
 	}
+	//=======================================================================
+	inline void setScannerAmount(float scannerAmount){
+		doSetScannerAmount(scannerAmount);
+	}
+	inline void setScannerRate(float scannerRate){
+		doSetScannerRate(scannerRate);
+	}
+	//=======================================================================
+
 	inline std::array<float, 2> operator()(float triggerIn){
 		return doProcess(triggerIn);
 	}
@@ -196,6 +206,10 @@ protected:
 	virtual void doSetSkewRandomness(float randomness);
 	virtual void doSetPlateauRandomness(float randomness);
 	virtual void doSetPanRandomness(float randomness);
+	
+	virtual void doSetScannerAmount(float scannerAmount);
+	virtual void doSetScannerRate(float scannerRate);
+	
 	std::array<float, 2> doProcess(float triggerIn);
 	
 	//================================================================================
@@ -209,6 +223,9 @@ private:
     gen::phasor<double> _phasor_internal_trig;
 
 	LatchedExponentialRandom_d _speed_ler; /*{_expo_rng, {1.f, 0.f}};*/
+	
+	nvs::lfo::simple_lfo<float> _scanner;
+	float _scanner_amount {0.f};
     
     nvs::gen::history<float> _trigger_histo;
     nvs::gen::ramp2trig<float> _ramp2trig;
@@ -276,7 +293,7 @@ private:
     
 	ReadBounds _normalized_read_bounds;// defaults to normalized read bounds. TSN variant can adjust effective read bounds (changing begin and end based on event positions/durations).
 	ReadBounds _upcoming_normalized_read_bounds;
-	
+		
     double _sample_index {0.0};
     float _waveform_read_rate {0.0};
     float _window {0.f};

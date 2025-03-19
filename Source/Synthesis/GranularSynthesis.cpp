@@ -66,6 +66,7 @@ _speed_ler(_voice_shared_state._expo_rng,  {10.f, 0.f})
 void genGranPoly1::setSampleRate(double sample_rate){
 	assert(_synth_shared_state);
 	_phasor_internal_trig.setSampleRate(sample_rate);
+	_scanner.setSampleRate(sample_rate);
 	_synth_shared_state->_playback_sample_rate = sample_rate;
 }
 void genGranPoly1::setReadBounds(ReadBounds newReadBounds) {
@@ -195,6 +196,13 @@ void genGranPoly1::doSetPanRandomness(float randomness){
 	for (auto &g : _grains)
 		g.setPanRand(randomness);
 }
+void genGranPoly1::doSetScannerAmount(float scannerAmount){
+	_scanner_amount = scannerAmount;
+}
+void genGranPoly1::doSetScannerRate(float scannerRate){
+	_scanner._freq = scannerRate;
+}
+
 std::array<float, 2> genGranPoly1::doProcess(float trigger_in){
 	std::array<float, 2> output {0.f, 0.f};
 	
@@ -202,6 +210,7 @@ std::array<float, 2> genGranPoly1::doProcess(float trigger_in){
 	float const freq_tmp = _speed_ler(static_cast<bool>(_trigger_histo.val)); // used to clamp by percentage of mu. should no longer be necessary.
 	_phasor_internal_trig.setFrequency(freq_tmp);
 	++_phasor_internal_trig;
+//	_scanner.
 	
 	float trig = _ramp2trig(_phasor_internal_trig.getPhase());
 	_trigger_histo(trig);
@@ -308,6 +317,7 @@ void genGrain1::setPlateauRand(float plateauRand){
 void genGrain1::setPanRand(float panRand){
 	_pan_lgr.setSigma(panRand);
 }
+
 float genGrain1::getBusyStatus() const{
 	return _busy_histo.val;
 }
