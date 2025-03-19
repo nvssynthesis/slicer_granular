@@ -20,14 +20,15 @@ EnvelopeParametersPage::EnvelopeParametersPage(juce::AudioProcessorValueTreeStat
 	for (auto &s : envelopeSliders){
 
 		addAndMakeVisible(s._slider);
-		s._slider.setTextValueSuffix("s");
+		if (s.getParamName() != getParamName(params_e::amp_sustain)) {
+			s._slider.setTextValueSuffix("s");
+		}
 	}
 }
 
 void EnvelopeParametersPage::resized() {
-	int constexpr nParams = 4;
 	auto const bounds = getLocalBounds();
-	int const sliderWidth = bounds.getWidth() / nParams;
+	int const sliderWidth = bounds.getWidth() / numParams;
 	int x = 0;
 	int const y = bounds.getY();
 	int const h = bounds.getHeight();
