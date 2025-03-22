@@ -156,9 +156,18 @@ void Slicer_granularAudioProcessorEditor::paint (juce::Graphics& g)
     tg.fillAll();
 
     g.drawImage(image, getLocalBounds().toFloat());
-
-    g.setColour (juce::Colours::white);
-    g.setFont (15.0f);
+	
+	{
+		g.setColour (juce::Colours::bisque);
+		g.setFont (14.0f);
+		juce::String const s = juce::String(ProjectInfo::companyName) +
+			juce::String(" ") +
+			juce::String(ProjectInfo::projectName) +
+			juce::String(" version ") +
+			juce::String(ProjectInfo::versionString) +
+			juce::String("     ");
+		g.drawText (s, getLocalBounds(), juce::Justification::bottomRight, true);
+	}
 }
 
 void Slicer_granularAudioProcessorEditor::resized()
