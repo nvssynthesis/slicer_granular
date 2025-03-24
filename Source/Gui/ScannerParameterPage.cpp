@@ -12,8 +12,8 @@
 
 ScannerParameterPage::ScannerParameterPage(juce::AudioProcessorValueTreeState &apvts)
 :	scannerSliders{
-	AttachedSlider(apvts, params_e::pos_scan_amount, juce::Slider::SliderStyle::LinearBarVertical),
-	AttachedSlider(apvts, params_e::pos_scan_rate, juce::Slider::SliderStyle::LinearBarVertical)
+				   AttachedSlider(apvts, params_e::pos_scan_amount, juce::Slider::SliderStyle::LinearBarVertical),
+				   AttachedSlider(apvts, params_e::pos_scan_rate, juce::Slider::SliderStyle::LinearBarVertical)
 }
 {
 	for (auto &s : scannerSliders){
@@ -35,3 +35,4 @@ void ScannerParameterPage::resized() {
 		x += sliderWidth;
 	}
 }
+

@@ -51,6 +51,19 @@ protected:
 	Slicer_granularAudioProcessor& audioProcessor;
 };
 
+inline void displayName(juce::Graphics& g, juce::Rectangle<int> bounds)
+{
+	g.setColour (juce::Colours::bisque);
+	g.setFont (14.0f);
+	juce::String const s = juce::String(ProjectInfo::companyName) +
+		juce::String(" ") +
+		juce::String(ProjectInfo::projectName) +
+		juce::String(" version ") +
+		juce::String(ProjectInfo::versionString) +
+		juce::String("     ");
+	g.drawText (s, bounds, juce::Justification::bottomRight, true);
+}
+
 class Slicer_granularAudioProcessorEditor  : 	public juce::AudioProcessorEditor
 ,												public GranularEditorCommon
 {
