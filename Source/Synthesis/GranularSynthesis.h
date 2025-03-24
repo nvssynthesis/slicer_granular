@@ -84,6 +84,9 @@ struct GranularVoiceSharedState {
 	BoxMuller _gaussian_rng;
 	ExponentialRandomNumberGenerator _expo_rng;
 	int _voice_id;
+	
+	nvs::lfo::simple_lfo<float> _scanner;
+	float _scanner_amount {0.f};
 };
 
 //========================================================================================================================================
@@ -223,9 +226,6 @@ private:
     gen::phasor<double> _phasor_internal_trig;
 
 	LatchedExponentialRandom_d _speed_ler; /*{_expo_rng, {1.f, 0.f}};*/
-	
-	nvs::lfo::simple_lfo<float> _scanner;
-	float _scanner_amount {0.f};
     
     nvs::gen::history<float> _trigger_histo;
     nvs::gen::ramp2trig<float> _ramp2trig;
@@ -281,6 +281,7 @@ private:
     nvs::gen::history<float> _busy_histo; // history of 'busy' boolean signal, goes to [switch 1 2]
     nvs::gen::latch<float> _ratio_for_note_latch {1.f};
     nvs::gen::latch<float> _amplitude_for_note_latch {0.f};
+	nvs::gen::latch<float> _scanner_for_position_latch {0.f};
     
 	LatchedGaussianRandom_f 	_transpose_lgr;
 	LatchedGaussianRandom_d 	_position_lgr; // latches position from gate on, goes toward dest windowing

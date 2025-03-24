@@ -66,7 +66,7 @@ _speed_ler(_voice_shared_state._expo_rng,  {10.f, 0.f})
 void genGranPoly1::setSampleRate(double sample_rate){
 	assert(_synth_shared_state);
 	_phasor_internal_trig.setSampleRate(sample_rate);
-	_scanner.setSampleRate(sample_rate);
+	_voice_shared_state._scanner.setSampleRate(sample_rate);
 	_synth_shared_state->_playback_sample_rate = sample_rate;
 }
 void genGranPoly1::setReadBounds(ReadBounds newReadBounds) {
@@ -197,10 +197,10 @@ void genGranPoly1::doSetPanRandomness(float randomness){
 		g.setPanRand(randomness);
 }
 void genGranPoly1::doSetScannerAmount(float scannerAmount){
-	_scanner_amount = scannerAmount;
+	_voice_shared_state._scanner_amount = scannerAmount;
 }
 void genGranPoly1::doSetScannerRate(float scannerRate){
-	_scanner._freq = scannerRate;
+	_voice_shared_state._scanner._freq = scannerRate;
 }
 
 std::array<float, 2> genGranPoly1::doProcess(float trigger_in){
@@ -210,7 +210,7 @@ std::array<float, 2> genGranPoly1::doProcess(float trigger_in){
 	float const freq_tmp = _speed_ler(static_cast<bool>(_trigger_histo.val)); // used to clamp by percentage of mu. should no longer be necessary.
 	_phasor_internal_trig.setFrequency(freq_tmp);
 	++_phasor_internal_trig;
-//	_scanner.
+	_voice_shared_state._scanner.phasor();	// increment scanner phase per sample
 	
 	float trig = _ramp2trig(_phasor_internal_trig.getPhase());
 	_trigger_histo(trig);
@@ -475,8 +475,13 @@ genGrain1::outs genGrain1::operator()(float const trig_in){
 	
 
 	auto norm_pos = _position_lgr(should_open_latches);
+	auto const scanner_pos = _scanner_for_position_latch(_voice_shared_state->_scanner.phasor_offset(0.f) * _voice_shared_state->_scanner_amount, should_open_latches);
+	norm_pos = nvs::memoryless::mspWrap(norm_pos + scanner_pos);
+	assert (norm_pos >= 0.f);
+	assert (norm_pos <= 1.f);
+	
 	if (!(_synth_shared_state->_settings._center_position_at_env_peak)) {
-#pragma message("this doesn't reeeally have anything to do with centering the position at envelope peak. but it's tied to it since we want that seeting off for TSN version, and we also want this clamped within an event in the same situation.")
+#pragma message("this doesn't reeeally have anything to do with centering the position at envelope peak. but it's tied to it since we want that setting off for TSN version, and we also want this clamped within an event in the same situation.")
 #pragma message("consider clipping it more softly so it doesnt totally go against statistics")
 		norm_pos = memoryless::clamp(norm_pos, 0.0, 1.0);
 	}
