@@ -68,6 +68,14 @@ bool GranularVoice::isVoiceActive() const {
 void GranularVoice::renderNextBlock (juce::AudioBuffer< float > &outputBuffer, int startSample, int numSamples)
 {
 	if (!isVoiceActive()){
+		granularSynthGuts->clearNotes();
+		granularSynthGuts->noteOff(lastMidiNoteNumber);
+		granularSynthGuts->setGrainsIdle();
+		
+		_grainDescriptions = granularSynthGuts->getGrainDescriptions();
+		for (auto &gd : _grainDescriptions) {
+			gd.window = 0.f;
+		}
 		return;
 	}
 	
@@ -91,23 +99,8 @@ void GranularVoice::renderNextBlock (juce::AudioBuffer< float > &outputBuffer, i
 	}
 	// query grains for descriptions
 	_grainDescriptions = granularSynthGuts->getGrainDescriptions();
-	for (auto &g : _grainDescriptions) {
-		g.window *= envelope;
-	}
-	
-	if (!isVoiceActive()){
-		granularSynthGuts->clearNotes();
-		granularSynthGuts->noteOff(lastMidiNoteNumber);
-	}
-	float rms = 0.f;
-	for (auto ch = 0; ch < outputBuffer.getNumChannels(); ++ch){
-		rms += (outputBuffer.getRMSLevel(ch, 0, outputBuffer.getNumSamples()));
-		if (rms != rms){
-			logger("rms is NaN !!!!!");
-		}
-		if (std::isinf(rms)){
-			logger("rms is inf !!!!!");
-		}
+	for (auto &gd : _grainDescriptions) {
+		gd.window *= envelope;
 	}
 }
 void GranularVoice::pitchWheelMoved (int newPitchWheelValue) {

@@ -126,6 +126,7 @@ public:
 	inline void shuffleIndices(){
 		doShuffleIndices();
 	}
+	void setGrainsIdle();
 	std::vector<float> getBusyStatuses() const;
 	//=======================================================================
 	inline void setTranspose(float transpositionRatio){
@@ -255,6 +256,7 @@ public:
 	void setPlateauRand(float plateauRand);
 	void setPanRand(float panRand);
 	float getBusyStatus() const;
+	void setBusyStatus(bool newBusyStatus);
 	struct outs {
 		float next 		{0.f};
 		float busy 		{0.f};

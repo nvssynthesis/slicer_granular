@@ -137,6 +137,12 @@ std::vector<float> genGranPoly1::getBusyStatuses() const {
 	}
 	return busyStatuses;
 }
+void genGranPoly1::setGrainsIdle() {
+	for (auto &g : _grains){
+		g.setBusyStatus(false);
+	}
+}
+
 void genGranPoly1::doSetTranspose(float transposition_semitones){
 	for (auto &g : _grains)
 		g.setTranspose(transposition_semitones);
@@ -319,8 +325,11 @@ void genGrain1::setPanRand(float panRand){
 	_pan_lgr.setSigma(panRand);
 }
 
-float genGrain1::getBusyStatus() const{
+float genGrain1::getBusyStatus() const {
 	return _busy_histo.val;
+}
+void genGrain1::setBusyStatus(bool newBusyStatus) {
+	_busy_histo.val = static_cast<float>(newBusyStatus);
 }
 
 GrainDescription genGrain1::getGrainDescription() const {
