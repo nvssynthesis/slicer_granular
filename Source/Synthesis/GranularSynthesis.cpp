@@ -92,6 +92,7 @@ void genGranPoly1::doNoteOn(noteNumber_t note, velocity_t velocity){
 	_note_holder.insert(p);
 	updateNotes();
 	_phasor_internal_trig.reset();
+	_voice_shared_state._scanner.reset();
 }
 void genGranPoly1::doNoteOff(noteNumber_t note){
 	// remove from noteHolder

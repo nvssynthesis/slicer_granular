@@ -67,12 +67,16 @@ bool GranularVoice::isVoiceActive() const {
 
 void GranularVoice::renderNextBlock (juce::AudioBuffer< float > &outputBuffer, int startSample, int numSamples)
 {
+	if (!isVoiceActive()){
+		return;
+	}
+	
 	float trigger = 0.f;
 	auto totalNumOutputChannels = outputBuffer.getNumChannels();
 
-	
+	double envelope;
 	for (auto samp = startSample; samp < startSample + numSamples; ++samp){
-		double envelope = adsr.getNextSample();
+		envelope = adsr.getNextSample();
 		if (envelope != envelope) {
 			logger("ENVELOPE has NaN");
 		}
@@ -80,14 +84,16 @@ void GranularVoice::renderNextBlock (juce::AudioBuffer< float > &outputBuffer, i
 //		trigger = 0.f;
 		output[0] *= envelope;
 		output[1] *= envelope;
-		for (int channel = 0; channel < totalNumOutputChannels; ++channel)
-		{
+		for (int channel = 0; channel < totalNumOutputChannels; ++channel) {
 			auto* channelData = outputBuffer.getWritePointer (channel);
 			*(channelData + samp) += output[channel];
 		}
 	}
 	// query grains for descriptions
 	_grainDescriptions = granularSynthGuts->getGrainDescriptions();
+	for (auto &g : _grainDescriptions) {
+		g.window *= envelope;
+	}
 	
 	if (!isVoiceActive()){
 		granularSynthGuts->clearNotes();
