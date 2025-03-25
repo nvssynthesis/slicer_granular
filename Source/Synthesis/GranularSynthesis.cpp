@@ -217,12 +217,12 @@ std::array<float, 2> genGranPoly1::doProcess(float trigger_in){
 	float const freq_tmp = _speed_ler(static_cast<bool>(_trigger_histo.val)); // used to clamp by percentage of mu. should no longer be necessary.
 	_phasor_internal_trig.setFrequency(freq_tmp);
 	++_phasor_internal_trig;
-	_voice_shared_state._scanner.phasor();	// increment scanner phase per sample
-	
 	float trig = _ramp2trig(_phasor_internal_trig.getPhase());
 	_trigger_histo(trig);
-	trig = (trig == 0.f && trigger_in == 0.f) ? 0.f : 1.f;
+	trig = (!trig && !trigger_in) ? 0.f : 1.f;
 	
+	_voice_shared_state._scanner.phasor();	// increment scanner phase per sample
+
 	std::array<genGrain1::outs, N_GRAINS> _outs;
 
 	size_t idx = _grain_indices[0];
