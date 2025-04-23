@@ -241,6 +241,8 @@ public:
 					   int newId = -1);
 	
 	void setId(int newId);
+	void resetAccum();
+	void setAccum(float newVal);
 	void setRatioBasedOnNote(float ratioForNote);
 	void setAmplitudeBasedOnNote(float velocity);
 	void setTranspose(float semitones);

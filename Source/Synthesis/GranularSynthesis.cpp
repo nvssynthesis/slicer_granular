@@ -438,7 +438,12 @@ void processBusyness(float const window, nvs::gen::history<float> &busyHistory, 
 void genGrain1::setReadBounds(ReadBounds newReadBounds){
 	_upcoming_normalized_read_bounds = newReadBounds;
 }
-
+void genGrain1::resetAccum() {
+	_accum.reset();
+}
+void genGrain1::setAccum(float newVal) {
+	_accum.set(newVal);
+}
 genGrain1::outs genGrain1::operator()(float const trig_in){
 	assert(_synth_shared_state);
 	auto const playback_sr = _synth_shared_state->_playback_sample_rate;
