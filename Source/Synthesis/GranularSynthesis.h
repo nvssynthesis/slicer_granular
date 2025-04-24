@@ -85,6 +85,8 @@ struct GranularVoiceSharedState {
 	ExponentialRandomNumberGenerator _expo_rng;
 	int _voice_id;
 	
+	float trigger;
+	
 	nvs::lfo::simple_lfo<float> _scanner;
 	float _scanner_amount {0.f};
 };
@@ -247,7 +249,7 @@ public:
 	void setAmplitudeBasedOnNote(float velocity);
 	void setTranspose(float semitones);
 	void setDuration(double duration);
-	void setPosition(double position); 
+	void setPosition(double position);
 	void setSkew(float skew);
 	void setPlateau(float plateau);
 	void setPan(float pan);
@@ -271,6 +273,9 @@ public:
 	
 	GrainDescription getGrainDescription() const;
 	
+	void setFirstPlaythroughOfVoicesNote(bool isFirstPlaythrough){
+		firstPlaythroughOfVoicesNote = isFirstPlaythrough;
+	}
 private:
 	GranularSynthSharedState *const _synth_shared_state;
 	GranularVoiceSharedState *const _voice_shared_state;
@@ -279,9 +284,12 @@ private:
 		assert(_synth_shared_state != nullptr);
 		_synth_shared_state->_logger_func(s);
 	}
-
-    int _grain_id;
-    
+	
+	int _grain_id;
+	
+	bool wantsToDisableFirstPlaythroughOfVoicesNote {false};
+	bool firstPlaythroughOfVoicesNote { true };
+	
     nvs::gen::history<float> _busy_histo; // history of 'busy' boolean signal, goes to [switch 1 2]
     nvs::gen::latch<float> _ratio_for_note_latch {1.f};
     nvs::gen::latch<float> _amplitude_for_note_latch {0.f};

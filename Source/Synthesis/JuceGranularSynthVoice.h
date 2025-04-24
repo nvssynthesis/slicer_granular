@@ -51,9 +51,7 @@ public:
 	void controllerMoved (int controllerNumber, int newControllerValue) override;
 	bool canPlaySound (juce::SynthesiserSound *) override ;
 	
-	inline std::vector<nvs::gran::GrainDescription> getGrainDescriptions() const {
-		return _grainDescriptions;
-	}
+	std::vector<nvs::gran::GrainDescription> getGrainDescriptions() const;
 
 	template <auto Start, auto End>
 	constexpr void granularMainParamSet(juce::AudioProcessorValueTreeState &apvts) {

@@ -20,5 +20,7 @@ struct GrainDescription {
 	float window;
 	float pan;
 	bool busy;
+	
+	bool first_playthrough;
 };
 }	// namespace nvs::gran

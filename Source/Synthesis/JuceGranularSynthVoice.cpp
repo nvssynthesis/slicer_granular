@@ -33,10 +33,9 @@ void GranularVoice::prepareToPlay(double sampleRate, int samplesPerBlock)
 void GranularVoice::startNote (int midiNoteNumber, float velocity, juce::SynthesiserSound *sound, int currentPitchWheelPosition)
 {
 	int velIntegral = static_cast<int>(velocity * 127.f);
-	
-	if (adsr.isActive()){
-//		trigger = 1.f;
-	}
+	_voice_shared_state.trigger = 1.0;
+
+	if (adsr.isActive()) {}
 	else {
 		granularSynthGuts->clearNotes();
 		granularSynthGuts->noteOn(midiNoteNumber, velIntegral);
@@ -64,7 +63,9 @@ void GranularVoice::stopNote (float velocity, bool allowTailOff)
 bool GranularVoice::isVoiceActive() const {
 	return adsr.isActive();
 }
-
+std::vector<nvs::gran::GrainDescription> GranularVoice::getGrainDescriptions() const {
+	return _grainDescriptions;
+}
 void GranularVoice::renderNextBlock (juce::AudioBuffer< float > &outputBuffer, int startSample, int numSamples)
 {
 	if (!isVoiceActive()){
@@ -79,7 +80,6 @@ void GranularVoice::renderNextBlock (juce::AudioBuffer< float > &outputBuffer, i
 		return;
 	}
 	
-	float trigger = 0.f;
 	auto totalNumOutputChannels = outputBuffer.getNumChannels();
 
 	double envelope;
@@ -88,8 +88,9 @@ void GranularVoice::renderNextBlock (juce::AudioBuffer< float > &outputBuffer, i
 		if (envelope != envelope) {
 			logger("ENVELOPE has NaN");
 		}
-		std::array<float, 2> output = (*granularSynthGuts)(trigger);
-//		trigger = 0.f;
+		std::array<float, 2> output = (*granularSynthGuts)(_voice_shared_state.trigger);
+		_voice_shared_state.trigger = 0.f;
+		
 		output[0] *= envelope;
 		output[1] *= envelope;
 		for (int channel = 0; channel < totalNumOutputChannels; ++channel) {

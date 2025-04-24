@@ -93,6 +93,10 @@ void genGranPoly1::doNoteOn(noteNumber_t note, velocity_t velocity){
 	updateNotes();
 	_phasor_internal_trig.reset();
 	_voice_shared_state._scanner.reset();
+	
+	for (auto &g : _grains) {
+		g.setFirstPlaythroughOfVoicesNote(true);
+	}
 }
 void genGranPoly1::doNoteOff(noteNumber_t note){
 	// remove from noteHolder
@@ -344,6 +348,8 @@ GrainDescription genGrain1::getGrainDescription() const {
 	gd.window = _window;
 	gd.pan = _pan / (std::numbers::pi * 0.5f);
 	gd.busy = _busy_histo.val != 0.f;
+	
+	gd.first_playthrough = firstPlaythroughOfVoicesNote;
 	return gd;
 }
 
@@ -455,13 +461,19 @@ genGrain1::outs genGrain1::operator()(float const trig_in){
 	
 	bool const should_open_latches = _busy_histo.val ? false : static_cast<bool>(trig_in);
 	
-	_waveform_read_rate = calculateTransposeMultiplier(_ratio_for_note_latch(_ratio_based_on_note, should_open_latches), 							fastSemitonesToRatio(_transpose_lgr(should_open_latches)));
+	_waveform_read_rate = calculateTransposeMultiplier(_ratio_for_note_latch(_ratio_based_on_note, should_open_latches),
+													   fastSemitonesToRatio(_transpose_lgr(should_open_latches)));
 	_accum(_waveform_read_rate, static_cast<bool>(should_open_latches));
-
+	
 	double const file_sample_rate_compensate_ratio = calculateSampleReadRate(playback_sr, file_sr);
 
 	if (should_open_latches){
 		_normalized_read_bounds = _upcoming_normalized_read_bounds;
+		if (wantsToDisableFirstPlaythroughOfVoicesNote){
+			firstPlaythroughOfVoicesNote = false;
+			wantsToDisableFirstPlaythroughOfVoicesNote = false;
+		}
+		wantsToDisableFirstPlaythroughOfVoicesNote = true;
 	}
 	
 	if (_normalized_read_bounds.end - _normalized_read_bounds.begin == 0.0){	// protection for initialization case

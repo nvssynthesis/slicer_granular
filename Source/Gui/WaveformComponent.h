@@ -55,8 +55,9 @@ public:
 		float window;
 		float pan;
 		bool busy;
+		bool first_playthrough;
 		static PositionMarker fromGrainDescription(nvs::gran::GrainDescription const &gd){
-			return PositionMarker{gd.grain_id, gd.position, gd.sample_playback_rate, gd.window, gd.pan, gd.busy};
+			return PositionMarker{gd.grain_id, gd.position, gd.sample_playback_rate, gd.window, gd.pan, gd.busy, gd.first_playthrough};
 		}
 	};
 private:

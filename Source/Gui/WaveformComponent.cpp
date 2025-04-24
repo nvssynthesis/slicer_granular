@@ -71,13 +71,21 @@ void processLine(juce::Graphics& g, juce::Line<float> &l, WaveformComponent::Pos
 	auto const p = marker.pan;
 	auto const w = marker.window;
 	auto const busy = marker.busy;
+	auto const first_playthrough = marker.first_playthrough;
 	if (!busy){
 		assert (w == 0.f);
 	}
 	juce::Colour colour = busy ? juce::Colour(juce::Colours::lightgreen).withMultipliedBrightness(1.1f) : juce::Colour(juce::Colours::grey).withMultipliedLightness(0.9f);
-	colour = colour.withRotatedHue(log2(r) / 20.f);									// pitch affects hue
-	g.setColour(colour);
-	g.setOpacity(sqrt(w));															// envelope (window) affects opacity
+
+	if (!first_playthrough){
+		colour = colour.withRotatedHue(log2(r) / 20.f);									// pitch affects hue
+		g.setColour(colour);
+		g.setOpacity(sqrt(w));															// envelope (window) affects opacity
+	}
+	else {
+		colour = colour.withAlpha(0.f);
+		g.setColour(colour);
+	}
 	l.applyTransform(juce::AffineTransform::translation(0.0f, p * (regionHeight)));	// panning affects y position
 	l.applyTransform(juce::AffineTransform::scale(1.f, 0.5f));						// make line take up just 1 channel's worth of space (half the height)}
 }
