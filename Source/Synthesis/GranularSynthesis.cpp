@@ -94,9 +94,11 @@ void genGranPoly1::doNoteOn(noteNumber_t note, velocity_t velocity){
 	_phasor_internal_trig.reset();
 	_voice_shared_state._scanner.reset();
 	
-	for (auto &g : _grains) {
-		g.setFirstPlaythroughOfVoicesNote(true);
+#if GRAIN_UPDATE_HACK
+	for (int i = 0; i < _grains.size(); ++i) {
+		_grains[i].setFirstPlaythroughOfVoicesNote(true);
 	}
+#endif
 }
 void genGranPoly1::doNoteOff(noteNumber_t note){
 	// remove from noteHolder
@@ -348,8 +350,11 @@ GrainDescription genGrain1::getGrainDescription() const {
 	gd.window = _window;
 	gd.pan = _pan / (std::numbers::pi * 0.5f);
 	gd.busy = _busy_histo.val != 0.f;
-	
+#if GRAIN_UPDATE_HACK
 	gd.first_playthrough = firstPlaythroughOfVoicesNote;
+#else
+	gd.first_playthrough = false;
+#endif
 	return gd;
 }
 
@@ -460,6 +465,7 @@ genGrain1::outs genGrain1::operator()(float const trig_in){
 	o.next = _busy_histo.val ? trig_in : 0.f;
 	
 	bool const should_open_latches = _busy_histo.val ? false : static_cast<bool>(trig_in);
+
 	
 	_waveform_read_rate = calculateTransposeMultiplier(_ratio_for_note_latch(_ratio_based_on_note, should_open_latches),
 													   fastSemitonesToRatio(_transpose_lgr(should_open_latches)));
@@ -469,11 +475,13 @@ genGrain1::outs genGrain1::operator()(float const trig_in){
 
 	if (should_open_latches){
 		_normalized_read_bounds = _upcoming_normalized_read_bounds;
+#if GRAIN_UPDATE_HACK
 		if (wantsToDisableFirstPlaythroughOfVoicesNote){
 			firstPlaythroughOfVoicesNote = false;
 			wantsToDisableFirstPlaythroughOfVoicesNote = false;
 		}
 		wantsToDisableFirstPlaythroughOfVoicesNote = true;
+#endif
 	}
 	
 	if (_normalized_read_bounds.end - _normalized_read_bounds.begin == 0.0){	// protection for initialization case
@@ -519,18 +527,25 @@ genGrain1::outs genGrain1::operator()(float const trig_in){
 														 duration_pitch_compensation_factor,							// float const sample_playback_rate
 														 _synth_shared_state->_settings._center_position_at_env_peak);	// bool const center_envelope_at_env_peak
 	
-	_sample_index = calculateSampleIndex(_accum.val,								// double const accum
-										 norm_pos,									// double const normalized_position
-										 denormedReadBounds.begin, 					// double const sample_left_bound
-										 denormedReadBounds.end,					// double const sample_right_bound
-										 file_sample_rate_compensate_ratio,			// double const sample_rate_compensate_ratio
-										 center_of_env);							// double const center_of_env
 
 	_window = calculateWindow(_accum.val,							// double const accum
 							  duration_in_samps,					// double const duration
 							  duration_pitch_compensation_factor,	// float const transpositionMultiplier
 							  latch_skew_result,					// float const skew
 							  _plateau_lgr(should_open_latches));	// float plateau
+#if GRAIN_UPDATE_HACK
+	if (firstPlaythroughOfVoicesNote){
+		writeAudioToOuts(0.f, 0.f, o);
+		processBusyness(_window, _busy_histo, o);
+		return o;
+	}
+#endif
+	_sample_index = calculateSampleIndex(_accum.val,								// double const accum
+										 norm_pos,									// double const normalized_position
+										 denormedReadBounds.begin, 					// double const sample_left_bound
+										 denormedReadBounds.end,					// double const sample_right_bound
+										 file_sample_rate_compensate_ratio,			// double const sample_rate_compensate_ratio
+										 center_of_env);							// double const center_of_env
 
 	float const vel_amplitude = _amplitude_for_note_latch(_amplitude_based_on_note, should_open_latches);
 

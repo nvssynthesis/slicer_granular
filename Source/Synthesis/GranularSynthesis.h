@@ -287,8 +287,10 @@ private:
 	
 	int _grain_id;
 	
-	bool wantsToDisableFirstPlaythroughOfVoicesNote {false};
-	bool firstPlaythroughOfVoicesNote { true };
+	// this is hacky and would be better implemented as a sort of latch as well
+	bool wantsToDisableFirstPlaythroughOfVoicesNote {false};	// the signal to turn firstPlaythroughOfVoicesNote off
+	bool firstPlaythroughOfVoicesNote { true };// the signal indicating that the currently set parameters, via latches/latched randoms, are invalid and thus the grain should be muted
+	
 	
     nvs::gen::history<float> _busy_histo; // history of 'busy' boolean signal, goes to [switch 1 2]
     nvs::gen::latch<float> _ratio_for_note_latch {1.f};
