@@ -56,13 +56,12 @@ public:
 	//==============================================================================
 	void writeToLog(juce::String const &s);
 	virtual void loadAudioFile(juce::File const f, bool notifyEditor);
-	
-	void loadAudioFilesFolder(juce::File const folder);
 
 	juce::String getSampleFilePath() const;
 	juce::AudioFormatManager &getAudioFormatManager();
 	juce::AudioProcessorValueTreeState &getAPVTS();
-
+	juce::ValueTree &getNonAutomatableState();
+	
 	void writeGrainDescriptionData(const std::vector<nvs::gran::GrainDescription> &newData);
 	void readGrainDescriptionData(std::vector<nvs::gran::GrainDescription> &outData);
 	
@@ -82,11 +81,26 @@ public:
 	int getCurrentWaveSize() {
 		return sampleManagementGuts.sampleBuffer.getNumSamples();
 	}
+
 protected:
 	nvs::util::SampleManagementGuts sampleManagementGuts;
 	nvs::util::LoggingGuts loggingGuts;
+	
+	juce::int64 lastLogTimeMs = 0;
+	void logRateLimited(const juce::String& message, int cooldownMs)
+	{
+		auto now = juce::Time::getMillisecondCounter();
+		if (now - lastLogTimeMs >= cooldownMs)
+		{
+			lastLogTimeMs = now;
+			writeToLog(message);
+		}
+	}
+	
 	juce::AudioProcessorValueTreeState apvts;
-	std::unique_ptr<GranularSynthesizer> granular_synth_juce;
+	juce::ValueTree nonAutomatableState;
+	
+	std::unique_ptr<GranularSynthesizer> _granularSynth;
 	
 	juce::SpinLock audioBlockLock;
 	void readInAudioFileToBuffer(juce::File const f);

@@ -55,7 +55,7 @@ void GranularSynthesizer::initializeVoices() {
 }
 void GranularSynthesizer::setAudioBlock(juce::AudioBuffer<float> &waveBuffer, double newFileSampleRate, size_t fileNameHash){
 	assert(hasLogger());
-	writeToLog("GranularSynthesizer: setAudioBlock");
+	writeToLog(" setAudioBlock");
 	_synth_shared_state._buffer._wave_block = juce::dsp::AudioBlock<float>(waveBuffer);
 	_synth_shared_state._buffer._file_sample_rate = newFileSampleRate;
 	_synth_shared_state._buffer._filename_hash = fileNameHash;

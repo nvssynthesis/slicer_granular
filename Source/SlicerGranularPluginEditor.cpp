@@ -30,16 +30,14 @@ GranularEditorCommon::GranularEditorCommon (Slicer_granularAudioProcessor& p)
 GranularEditorCommon::~GranularEditorCommon() {
 	audioProcessor.removeSampleManagementGutsListener(this);
 	audioProcessor.removeMeasuredGrainDescriptionsListener(this);
+	fileComp.pushRecentFilesToFile();
 }
 
 void GranularEditorCommon::readFile (const juce::File& fileToRead)
 {
 	audioProcessor.writeToLog("Slicer_granularAudioProcessorEditor::readFile, reading " + fileToRead.getFullPathName());
 
-	if (fileToRead.isDirectory()){
-		// handle whole directory
-		audioProcessor.loadAudioFilesFolder(fileToRead);
-	}
+	if (fileToRead.isDirectory()){ /* handle whole directory */ }
 	if (! fileToRead.existsAsFile()){
 		audioProcessor.writeToLog("... in readFile, file does NOT exist as a single file. ");
 		return;
@@ -80,6 +78,8 @@ void GranularEditorCommon::handleGrainDescriptionBroadcast(){
 	waveformAndPositionComponent.wc.repaint();
 }
 void GranularEditorCommon::handleSampleManagementBroadcast(){
+	audioProcessor.writeToLog("common: handling sample management broadcast");
+	
 	auto const fileToRead = audioProcessor.getSampleFilePath();
 	notateFileComp(fileToRead);
 	drawThumbnail(fileToRead);
@@ -135,10 +135,6 @@ Slicer_granularAudioProcessorEditor::Slicer_granularAudioProcessorEditor (Slicer
 
     setSize (800, 500);
 	setResizable(true, true);
-}
-Slicer_granularAudioProcessorEditor::~Slicer_granularAudioProcessorEditor()
-{
-	fileComp.pushRecentFilesToFile();
 }
 //==============================================================================
 void Slicer_granularAudioProcessorEditor::paint (juce::Graphics& g)

@@ -69,7 +69,6 @@ class Slicer_granularAudioProcessorEditor  : 	public juce::AudioProcessorEditor
 {
 public:
     Slicer_granularAudioProcessorEditor (Slicer_granularAudioProcessor&);
-    ~Slicer_granularAudioProcessorEditor() override;
     //==============================================================================
     void paint (juce::Graphics&) override;
     void resized() override;
