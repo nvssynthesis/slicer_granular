@@ -35,8 +35,11 @@ Slicer_granularAudioProcessor::Slicer_granularAudioProcessor(std::unique_ptr<Gra
 			loggingGuts.fileLogger.logMessage(message);
 		}
 	});
-	nonAutomatableState.addChild (juce::ValueTree ("Settings"),   -1, nullptr);
-	nonAutomatableState.addChild (juce::ValueTree ("PresetInfo"), -1, nullptr);
+	nonAutomatableState.appendChild (juce::ValueTree ("Settings"), nullptr);
+
+	juce::ValueTree presetVT = nonAutomatableState.getOrCreateChildWithName("PresetInfo", nullptr);
+	presetVT.setProperty("audioFilePath", "", nullptr);
+	presetVT.setProperty("author", "", nullptr);
 }
 
 //==============================================================================
@@ -172,26 +175,41 @@ void Slicer_granularAudioProcessor::setStateInformation (const void* data, int s
 
 	if (auto nonAuto = root.getChildWithName ("NonAutomatable"); nonAuto.isValid())
 	{
+		auto settings = nonAuto.getChildWithName ("Settings");
+		if (! settings.isValid())
+		{
+			writeToLog ("setStateInformation: missing <Settings>—aborting load");
+			return;
+		}
+		// Ensure all required sub-branches are present
+		static const std::vector<juce::Identifier> requiredBranches
+		{
+			"Analysis", "BFCC", "Onset", "Pitch", "Split", "sBic"
+		};
+
+		for (auto& id : requiredBranches)
+		{
+			if (! settings.getChildWithName (id).isValid())
+			{
+				writeToLog ("setStateInformation: missing <" + id.toString() +
+							"> branch under <Settings>—aborting load");
+				return;
+			}
+		}
+		if (auto params = root.getChildWithName (apvts.state.getType()); params.isValid()){
+			apvts.replaceState (params);
+		}
+		
 		nonAutomatableState = nonAuto;
 
-		auto settings = nonAutomatableState.getChildWithName ("Settings");
-		auto presetInfo = nonAutomatableState.getChildWithName ("PresetInfo");
-
-		if (presetInfo.isValid())
+		if (auto presetInfo = nonAutomatableState.getChildWithName ("PresetInfo"); presetInfo.isValid())
 		{
-			auto path = presetInfo.getProperty (sampleManagementGuts.audioFilePathValueTreeStateIdentifier).toString();
+			auto path = presetInfo.getProperty ("sampleFilePath").toString();
 			if (path.isNotEmpty()) {
 				loadAudioFile ({ path }, true);
 			}
 		}
-
-		if (settings.isValid())
-		{
-			auto xFeature = settings.getProperty ("xFeature").toString();
-			auto yFeature = settings.getProperty ("yFeature").toString();
-			// set comboBox.setSelectedIdFromName(mode, dontSendNotification);
-			// 				setSelectedId (int newItemId, NotificationType notification=sendNotificationAsync)
-		}
+		writeToLog("Successfully replaced APVTS and NonAutomatableState\n");
 	}
 }
 
@@ -244,10 +262,7 @@ void Slicer_granularAudioProcessor::loadAudioFile(juce::File const f, bool notif
 	readInAudioFileToBuffer(f);
 	_granularSynth->setAudioBlock(sampleManagementGuts.sampleBuffer, sampleManagementGuts.lastFileSampleRate, f.getFullPathName().hash());	// maybe this could just go inside readInAudioFileToBuffer()
 	{
-		juce::Value sampleFilePathValue = nonAutomatableState.getPropertyAsValue(sampleManagementGuts.audioFilePathValueTreeStateIdentifier, nullptr, true);
-		sampleFilePathValue.setValue(f.getFullPathName());
-		sampleManagementGuts.sampleFilePath = sampleFilePathValue.toString();
-		nonAutomatableState.setProperty(sampleManagementGuts.audioFilePathValueTreeStateIdentifier, sampleFilePathValue, nullptr);
+		nonAutomatableState.getChildWithName("PresetInfo").setProperty("sampleFilePath", f.getFullPathName(), nullptr);
 	}
 	if (notifyEditor){
 		loggingGuts.fileLogger.logMessage("Processor: sending change message from loadAudioFile");
@@ -256,7 +271,7 @@ void Slicer_granularAudioProcessor::loadAudioFile(juce::File const f, bool notif
 	writeToLog("slicer: loadAudioFile exiting");
 }
 juce::String Slicer_granularAudioProcessor::getSampleFilePath() const {
-	return sampleManagementGuts.sampleFilePath;
+	return nonAutomatableState.getChildWithName("PresetInfo").getProperty("sampleFilePath");
 }
 juce::AudioProcessorValueTreeState &Slicer_granularAudioProcessor::getAPVTS(){
 	return apvts;
@@ -290,11 +305,11 @@ void Slicer_granularAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
 		}
 	}
 	if (sampleManagementGuts.sampleBuffer.getNumSamples() == 0){
-		writeToLog("processBlock:        sampleBuffer has length 0; exiting early.");
+//		writeToLog("processBlock:        sampleBuffer has length 0; exiting early.");
 		return;
 	}
 	if (numSampChans == 0){
-		writeToLog("processBlock:        sampleBuffer has no channels; exiting early.");
+//		writeToLog("processBlock:        sampleBuffer has no channels; exiting early.");
 		return;
 	}
 	
