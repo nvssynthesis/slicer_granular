@@ -27,7 +27,6 @@ struct SampleManagementGuts : public juce::ChangeBroadcaster
 	~SampleManagementGuts();
 	juce::AudioFormatManager formatManager;
 	juce::AudioBuffer<float> sampleBuffer;
-	double lastFileSampleRate { 0.0 };
 	float normalizationValue { 1.f };	// a MULTIPLIER for the overall output, based on the inverse of the absolute max value for the current sample
 };
 

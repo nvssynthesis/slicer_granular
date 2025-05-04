@@ -176,31 +176,11 @@ void Slicer_granularAudioProcessor::setStateInformation (const void* data, int s
 	if (auto nonAuto = root.getChildWithName ("NonAutomatable"); nonAuto.isValid())
 	{
 		auto settings = nonAuto.getChildWithName ("Settings");
-		if (! settings.isValid())
-		{
-			writeToLog ("setStateInformation: missing <Settings>—aborting load");
-			return;
-		}
-		// Ensure all required sub-branches are present
-		static const std::vector<juce::Identifier> requiredBranches
-		{
-			"Analysis", "BFCC", "Onset", "Pitch", "Split", "sBic"
-		};
 
-		for (auto& id : requiredBranches)
-		{
-			if (! settings.getChildWithName (id).isValid())
-			{
-				writeToLog ("setStateInformation: missing <" + id.toString() +
-							"> branch under <Settings>—aborting load");
-				return;
-			}
-		}
 		if (auto params = root.getChildWithName (apvts.state.getType()); params.isValid()){
 			apvts.replaceState (params);
 		}
 		
-		nonAutomatableState = nonAuto;
 
 		if (auto presetInfo = nonAutomatableState.getChildWithName ("PresetInfo"); presetInfo.isValid())
 		{
@@ -222,7 +202,10 @@ void Slicer_granularAudioProcessor::readInAudioFileToBuffer(juce::File const f){
 		return;
 	}
 	
-	sampleManagementGuts.lastFileSampleRate = reader->sampleRate;
+	auto sr = reader->sampleRate;
+	
+	nonAutomatableState.getChildWithName("PresetInfo").setProperty("sampleFilePath", f.getFullPathName(), nullptr);
+	nonAutomatableState.getChildWithName("PresetInfo").setProperty("sampleRate", sr, nullptr);
 	
 	std::array<juce::Range<float> , 1> normalizationRange;
 	reader->readMaxLevels(0, reader->lengthInSamples, &normalizationRange[0], 1);
@@ -246,6 +229,7 @@ void Slicer_granularAudioProcessor::readInAudioFileToBuffer(juce::File const f){
 	delete reader;
 	loggingGuts.fileLogger.logMessage("                                          ...file read successful");
 
+	_granularSynth->setAudioBlock(sampleManagementGuts.sampleBuffer, sr, f.getFullPathName().hash());	// maybe this could just go inside readInAudioFileToBuffer()
 }
 void Slicer_granularAudioProcessor::loadAudioFileAsync(juce::File const file, bool notifyEditor)
 {
@@ -260,10 +244,6 @@ void Slicer_granularAudioProcessor::loadAudioFile(juce::File const f, bool notif
 	loggingGuts.fileLogger.logMessage("                                          ...locked");
 
 	readInAudioFileToBuffer(f);
-	_granularSynth->setAudioBlock(sampleManagementGuts.sampleBuffer, sampleManagementGuts.lastFileSampleRate, f.getFullPathName().hash());	// maybe this could just go inside readInAudioFileToBuffer()
-	{
-		nonAutomatableState.getChildWithName("PresetInfo").setProperty("sampleFilePath", f.getFullPathName(), nullptr);
-	}
 	if (notifyEditor){
 		loggingGuts.fileLogger.logMessage("Processor: sending change message from loadAudioFile");
 		juce::MessageManager::callAsync([this]() { sampleManagementGuts.sendChangeMessage(); });
