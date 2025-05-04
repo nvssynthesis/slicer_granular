@@ -17,7 +17,7 @@ TabbedPagesComponent::TabbedPagesComponent (juce::AudioProcessorValueTreeState &
 	: TabbedComponent (juce::TabbedButtonBar::TabsAtTop)
 {
 	auto &bar = getTabbedButtonBar();
-	bar.setColour(juce::TabbedButtonBar::tabTextColourId, juce::Colours::lightgrey);	// colour for unselected tab text
+	bar.setColour(juce::TabbedButtonBar::tabTextColourId, juce::Colours::grey);			// colour for unselected tab text
 	bar.setColour(juce::TabbedButtonBar::frontTextColourId, juce::Colours::snow);		// colour for selected tab text
 
 	addTab ("Granular", juce::Colours::transparentWhite, new GranularMainParametersPage(apvts), true);
