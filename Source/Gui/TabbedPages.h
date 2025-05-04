@@ -10,9 +10,6 @@
 
 #pragma once
 #include <JuceHeader.h>
-#include "./GranularMainParametersPage.h"
-#include "./EnvelopeParameterPage.h"
-#include "./ScannerParameterPage.h"
 
 struct TabbedPagesComponent  : public juce::TabbedComponent
 {

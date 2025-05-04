@@ -47,17 +47,18 @@ enum class params_e {
 	amp_release,
 	
 	count_envelope_params,
-#ifdef TSN
-	nav_lfo_amount,
-	nav_lfo_rate,
-	nav_lfo_offset_x,
-	nav_lfo_offset_y,
-	
-	count_nav_lfo_params,
-#endif
+
     pos_scan_amount,
     pos_scan_rate,
     count_pos_scan_params
+	
+#ifdef TSN
+,	nav_lfo_amount,
+	nav_lfo_rate,
+	nav_lfo_offset_x,
+	nav_lfo_offset_y,
+	count_nav_lfo_params
+#endif
 };
 
 inline params_e mainToRandom(params_e mainParam){
@@ -111,26 +112,31 @@ static const inline  std::map<params_e, paramPropsTuple> paramMap {
 	{params_e::amp_decay,	{envTimingMin, envTimingMax, 0.f, 	envTimingSkew, 	false, 	0.5f, 	"Amp Env Decay"}},
 	{params_e::amp_sustain,	{0.f,   		1.f, 		 0.f, 		1.f, 		false, 	0.5f, 	"Amp Env Sustain"}},
 	{params_e::amp_release,	{envTimingMin, envTimingMax, 0.f, 	envTimingSkew, 	false, 	0.8f, 	"Amp Env Release"}},
+
+	{params_e::pos_scan_rate,   {-20.f, 20.f, 0.f,     0.3f, true,      0.f,    "Scanner Rate"}},
+	{params_e::pos_scan_amount, {0.f,   1.f, 0.f,      1.f,  false,     0.f,    "Scanner Amount"}}
+	
 #ifdef TSN
 	// 				   			min,   max,  spacing, skew, symmetrical, default, name
-	{params_e::nav_lfo_amount, 	{0.f, 	1.f, 0.f, 		1.f, false, 	0.1f, 	"Amount"}},
+,	{params_e::nav_lfo_amount, 	{0.f, 	1.f, 0.f, 		1.f, false, 	0.1f, 	"Amount"}},
 	{params_e::nav_lfo_rate, 	{0.1f, 10.f, 0.f, 		1.f, false, 	0.5f, 	"Rate"}},
 	{params_e::nav_lfo_offset_x,{-1.f,  1.f, 0.f, 		1.f, true, 		0.f, 	"X Offset"}},
 	{params_e::nav_lfo_offset_y,{-1.f,  1.f, 0.f, 		1.f, true, 		0.f, 	"Y Offset"}},
 #endif
-	{params_e::pos_scan_rate,   {-20.f, 20.f, 0.f,     0.3f, true,      0.f,    "Scanner Rate"}},
-	{params_e::pos_scan_amount, {0.f,   1.f, 0.f,      1.f,  false,     0.f,    "Scanner Amount"}}
 };
 
 static constexpr int NUM_MAIN_PARAMS = static_cast<int>(params_e::count_main_granular_params);
 static constexpr int NUM_ENV_PARAMS = static_cast<int>(params_e::count_envelope_params) - static_cast<int>(params_e::count_main_granular_params) - 1;
 
-static constexpr int NUM_SCANNER_PARAMS = static_cast<int>(params_e::count_pos_scan_params) -
+static constexpr int NUM_SCANNER_PARAMS = static_cast<int>(params_e::count_pos_scan_params) - static_cast<int>(params_e::count_envelope_params) - 1;
+
 #ifdef TSN
-																								static_cast<int>(params_e::count_nav_lfo_params) - 1;
-static constexpr int NUM_NAVIGATION_PARAMS = static_cast<int>(params_e::count_nav_lfo_params) - static_cast<int>(params_e::count_envelope_params) - 1;
+
+static constexpr int NUM_NAVIGATION_PARAMS = static_cast<int>(params_e::count_nav_lfo_params) - static_cast<int>(params_e::count_pos_scan_params) - 1;
+
+static_assert(NUM_NAVIGATION_PARAMS == 4);
 #else
-																								static_cast<int>(params_e::count_envelope_params) - 1;
+																								
 #endif
 static_assert(NUM_ENV_PARAMS == 4);
 static_assert(NUM_SCANNER_PARAMS == 2);

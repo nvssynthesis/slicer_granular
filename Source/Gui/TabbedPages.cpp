@@ -9,11 +9,18 @@
 */
 
 #include "TabbedPages.h"
+#include "./GranularMainParametersPage.h"
+#include "./EnvelopeParameterPage.h"
+#include "./ScannerParameterPage.h"
 
 TabbedPagesComponent::TabbedPagesComponent (juce::AudioProcessorValueTreeState &apvts)
 	: TabbedComponent (juce::TabbedButtonBar::TabsAtTop)
 {
-	addTab ("Granular Parameters", juce::Colours::transparentWhite, new GranularMainParametersPage(apvts), true);
-	addTab ("Envelope Parameters", juce::Colours::transparentWhite, new EnvelopeParametersPage(apvts), true);
-	addTab ("Scanner Parameters", juce::Colours::transparentWhite, new ScannerParameterPage(apvts), true);
+	auto &bar = getTabbedButtonBar();
+	bar.setColour(juce::TabbedButtonBar::tabTextColourId, juce::Colours::lightgrey);	// colour for unselected tab text
+	bar.setColour(juce::TabbedButtonBar::frontTextColourId, juce::Colours::snow);		// colour for selected tab text
+
+	addTab ("Granular", juce::Colours::transparentWhite, new GranularMainParametersPage(apvts), true);
+	addTab ("Envelope", juce::Colours::transparentWhite, new EnvelopeParametersPage(apvts), true);
+	addTab ("Scanner", juce::Colours::transparentWhite, new ScannerParameterPage(apvts), true);
 }

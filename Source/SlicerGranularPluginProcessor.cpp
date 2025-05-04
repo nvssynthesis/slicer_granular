@@ -383,10 +383,22 @@ juce::AudioProcessorValueTreeState::ParameterLayout Slicer_granularAudioProcesso
 		envelopeParams->addChild(a(param));
 	}
 	layout.add(std::move(envelopeParams));
+	
+	auto scannerParams = std::make_unique<juce::AudioProcessorParameterGroup>("Scanner", "ScannerParams", "|");
+	
+	for (size_t i =
+		 static_cast<size_t>(params_e::pos_scan_amount);
+		 i < static_cast<size_t>(params_e::count_pos_scan_params);
+		 ++i){
+		params_e param = static_cast<params_e>(i);
+		scannerParams->addChild(a(param));
+	}
+	layout.add(std::move(scannerParams));
+	
 #ifdef TSN
 	auto navigationParams = std::make_unique<juce::AudioProcessorParameterGroup>("Navigation", "NavParams", "|");
 	
-	for (size_t i = static_cast<size_t>(params_e::count_envelope_params) + 1;
+	for (size_t i = static_cast<size_t>(params_e::nav_lfo_amount);
 		 i < static_cast<size_t>(params_e::count_nav_lfo_params);
 		 ++i){
 		params_e param = static_cast<params_e>(i);
@@ -394,22 +406,6 @@ juce::AudioProcessorValueTreeState::ParameterLayout Slicer_granularAudioProcesso
 	}
 	layout.add(std::move(navigationParams));
 #endif
-	
-	auto scannerParams = std::make_unique<juce::AudioProcessorParameterGroup>("Scanner", "ScannerParams", "|");
-	
-	for (size_t i =
-#ifdef TSN
-		 static_cast<size_t>(params_e::count_nav_lfo_params)
-#else
-		 static_cast<size_t>(params_e::count_envelope_params)
-#endif
-							  + 1;
-		 i < static_cast<size_t>(params_e::count_pos_scan_params);
-		 ++i){
-		params_e param = static_cast<params_e>(i);
-		scannerParams->addChild(a(param));
-	}
-	layout.add(std::move(scannerParams));
 	
 	return layout;
 }
