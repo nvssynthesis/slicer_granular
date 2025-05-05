@@ -151,8 +151,8 @@ void Slicer_granularAudioProcessor::getStateInformation (juce::MemoryBlock& dest
 {
 	// Build a single root tree:
 	juce::ValueTree root { "PluginState" };
-	root.addChild (apvts.copyState(),       -1, nullptr);
-	root.addChild (nonAutomatableState,     -1, nullptr);
+	root.appendChild (apvts.copyState(),  nullptr);
+	root.appendChild (nonAutomatableState,  nullptr);
 
 	// XML → binary:
 	std::unique_ptr<juce::XmlElement> xml (root.createXml());
