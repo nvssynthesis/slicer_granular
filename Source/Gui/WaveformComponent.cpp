@@ -204,6 +204,8 @@ void WaveformAndPositionComponent::resized()
 		return wcRect;	// return rectangle as that's all we need from this scope
 	}();
 	
+	
+	
 	if (sliderVisible)
 	{
 		auto const sliderHeight = reservedHeight - wcRect.getHeight();
@@ -215,7 +217,36 @@ void WaveformAndPositionComponent::resized()
 		positionSlider._slider.setBounds(sliderRect);
 	}
 }
-void WaveformAndPositionComponent::paint (juce::Graphics& g) {}
+void WaveformAndPositionComponent::highlight(std::pair<double, double> rangeToHighlight)
+{
+	highlightedRange = rangeToHighlight;
+	repaint();
+}
+
+void WaveformAndPositionComponent::paint (juce::Graphics& g) {
+	auto const b = wc.getBounds();
+	if (highlightedRange.has_value()){
+		float const w = b.getWidth();
+		float const low = highlightedRange->first;
+		float const high = highlightedRange->second;
+		g.setColour(juce::Colour(juce::Colours::whitesmoke).withAlpha(0.5f));
+		if (low < high){
+			float const p0 = b.getX() + low * w;
+			float const newWidth = (high - low) * w ;
+			auto const selectedRect = b.withX(p0).withWidth(newWidth);
+			g.fillRect(selectedRect);
+		}
+		else {	// low > high
+			jassert (high != low);	// there should ave been logic in place to prevent overlapping onsets
+			float const newWidth = b.getX() + high * w;
+			auto const lowerRect = b.withWidth(newWidth);
+			g.fillRect(lowerRect);
+			float const newX = low * w;
+			auto const upperRect = b.withX(newX);
+			g.fillRect(upperRect);
+		}
+	}
+}
 
 double WaveformAndPositionComponent::getPositionSliderValue() const {
 	return positionSlider._slider.getValue();
