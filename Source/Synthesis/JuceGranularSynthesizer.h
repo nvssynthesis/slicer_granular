@@ -68,11 +68,7 @@ public:
 		if constexpr (Start < End){
 			juce::SynthesiserVoice* voice = getVoice(Start);
 			if (GranularVoice* granularVoice = dynamic_cast<GranularVoice*>(voice)){
-#ifdef TSN
-				granularVoice->scannerParamSet<static_cast<int>(params_e::count_nav_lfo_params)+1,
-#else
 				granularVoice->scannerParamSet<static_cast<int>(params_e::count_envelope_params)+1,
-#endif
 												static_cast<int>(params_e::count_pos_scan_params)>
 												(apvts);
 			}

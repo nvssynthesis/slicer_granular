@@ -53,11 +53,11 @@ enum class params_e {
     count_pos_scan_params
 	
 #ifdef TSN
-,	nav_lfo_amount,
-	nav_lfo_rate,
-	nav_lfo_offset_x,
-	nav_lfo_offset_y,
-	count_nav_lfo_params
+,	nav_lfo_2d_amount,
+	nav_lfo_2d_rate,
+	nav_lfo_2d_offset_x,
+	nav_lfo_2d_offset_y,
+	count_navigation_params
 #endif
 };
 
@@ -118,10 +118,10 @@ static const inline  std::map<params_e, paramPropsTuple> paramMap {
 	
 #ifdef TSN
 	// 				   			min,   max,  spacing, skew, symmetrical, default, name
-,	{params_e::nav_lfo_amount, 	{0.f, 	1.f, 0.f, 		1.f, false, 	0.1f, 	"Amount"}},
-	{params_e::nav_lfo_rate, 	{0.1f, 10.f, 0.f, 		1.f, false, 	0.5f, 	"Rate"}},
-	{params_e::nav_lfo_offset_x,{-1.f,  1.f, 0.f, 		1.f, true, 		0.f, 	"X Offset"}},
-	{params_e::nav_lfo_offset_y,{-1.f,  1.f, 0.f, 		1.f, true, 		0.f, 	"Y Offset"}},
+,	{params_e::nav_lfo_2d_amount, 	{0.f, 	1.f, 0.f, 		1.f, false, 	0.1f, 	"Amount"}},
+	{params_e::nav_lfo_2d_rate, 	{0.1f, 10.f, 0.f, 		1.f, false, 	0.5f, 	"Rate"}},
+	{params_e::nav_lfo_2d_offset_x,{-1.f,  1.f, 0.f, 		1.f, true, 		0.f, 	"X Offset"}},
+	{params_e::nav_lfo_2d_offset_y,{-1.f,  1.f, 0.f, 		1.f, true, 		0.f, 	"Y Offset"}},
 #endif
 };
 
@@ -132,7 +132,7 @@ static constexpr int NUM_SCANNER_PARAMS = static_cast<int>(params_e::count_pos_s
 
 #ifdef TSN
 
-static constexpr int NUM_NAVIGATION_PARAMS = static_cast<int>(params_e::count_nav_lfo_params) - static_cast<int>(params_e::count_pos_scan_params) - 1;
+static constexpr int NUM_NAVIGATION_PARAMS = static_cast<int>(params_e::count_navigation_params) - static_cast<int>(params_e::count_pos_scan_params) - 1;
 
 static_assert(NUM_NAVIGATION_PARAMS == 4);
 #else
