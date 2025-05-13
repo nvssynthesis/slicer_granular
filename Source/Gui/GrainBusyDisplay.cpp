@@ -16,7 +16,7 @@ void GrainBusyDisplay::paint(juce::Graphics &g){
 	g.fillAll();
 	
 	g.setColour(juce::Colours::black);
-	for (int i = 0; i < _statuses.size(); ++i){
+	for (size_t i = 0; i < _statuses.size(); ++i){
 		auto const voiceAndGrain = getVoiceAndGrain(i);
 		int status = _statuses[getIndex(voiceAndGrain.voice, voiceAndGrain.grain)];
 		int const x = voiceAndGrain.grain * _sizePerGrain;

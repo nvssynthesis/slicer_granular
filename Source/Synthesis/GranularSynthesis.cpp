@@ -58,7 +58,7 @@ _speed_ler(_voice_shared_state._expo_rng,  {10.f, 0.f})
 {
 	assert (_grains.size() == 0);
 	_grains.reserve(N_GRAINS);
-	for (int i = 0; i < N_GRAINS; ++i){
+	for (size_t i = 0; i < N_GRAINS; ++i){
 		_grains.emplace_back(_synth_shared_state, &_voice_shared_state, i);
 	}
 	std::iota(_grain_indices.begin(), _grain_indices.end(), 0);
@@ -370,8 +370,8 @@ double calculateDurationInSamples(double latchedDuration, double compensatedLeng
 	double constexpr minLengthInSeconds = 0.001;	// 1 ms
 	double const maxLengthInSamples = maxLengthInSeconds * sampleRate;
 	double const minLengthInSamples = minLengthInSeconds * sampleRate;
-	auto const clippedLength = clamp(compensatedLength, minLengthInSamples, maxLengthInSamples);
-	return clippedNormalizedDuration * clippedLength;
+//	auto const clippedLength = clamp(compensatedLength, minLengthInSamples, maxLengthInSamples);
+	return clamp(clippedNormalizedDuration * compensatedLength, minLengthInSamples, maxLengthInSamples);
 }
 float calculateWindow(double const accum, double const duration, float const transpositionMultiplier, float const skew, float plateau){
 	assert(transpositionMultiplier > 0.f);
@@ -457,9 +457,10 @@ void genGrain1::setAccum(float newVal) {
 }
 genGrain1::outs genGrain1::operator()(float const trig_in){
 	assert(_synth_shared_state);
+	juce::dsp::AudioBlock<float> const wave_block = _synth_shared_state->_buffer._wave_block;
 	auto const playback_sr = _synth_shared_state->_playback_sample_rate;
 	auto const file_sr = _synth_shared_state->_buffer._file_sample_rate;
-	juce::dsp::AudioBlock<float> const wave_block = _synth_shared_state->_buffer._wave_block;
+	auto const& settings = _synth_shared_state->_settings;
 	
 	outs o;
 	o.next = _busy_histo.val ? trig_in : 0.f;
@@ -497,37 +498,31 @@ genGrain1::outs genGrain1::operator()(float const trig_in){
 		denormedReadBounds.end += buffLength;	// now this can be longer than the actual number of samples in the buffer. should be taken care of by wrapping in peek().
 		assert (denormedReadBounds.end > denormedReadBounds.begin);
 	}
-	size_t const length = denormedReadBounds.end - denormedReadBounds.begin;
 
-	size_t const compensatedLength = length / file_sample_rate_compensate_ratio;
-	
+	size_t const compensatedLength = [&settings, &denormedReadBounds, buffLength, file_sample_rate_compensate_ratio](){
+		float const dur_dep_on_read_bounds = settings._duration_dependence_on_read_bounds;
+		size_t const event_length = denormedReadBounds.end - denormedReadBounds.begin;
+		size_t const cLen = static_cast<size_t>(nvs::memoryless::linterp((float)buffLength, (float)event_length, dur_dep_on_read_bounds) / file_sample_rate_compensate_ratio);
+		assert (0 < cLen);
+		return cLen;
+	}();
+
 	double const duration_in_samps = calculateDurationInSamples(_duration_ler(should_open_latches), compensatedLength,
-																playback_sr);	// take _synth_shared_state->_settings._center_position_at_env_peak as param to determine if it should clip normalized duration to 0-1?
+																playback_sr);	// take settings._center_position_at_env_peak as param to determine if it should clip normalized duration to 0-1?
 	assert (duration_in_samps <= compensatedLength);
 	float const latch_skew_result = memoryless::clamp(_skew_lgr(should_open_latches), 0.001f, 0.999f);
 	
-	float const duration_pitch_compensation_factor = getDurationPitchCompensationFactor(_synth_shared_state->_settings._duration_pitch_compensation, _waveform_read_rate);
-	
+	float const duration_pitch_compensation_factor = getDurationPitchCompensationFactor(settings._duration_pitch_compensation, _waveform_read_rate);
 
-	auto norm_pos = _position_lgr(should_open_latches);
-	auto const scanner_pos = _scanner_for_position_latch(_voice_shared_state->_scanner.phasor_offset(0.f) * _voice_shared_state->_scanner_amount, should_open_latches);
-	norm_pos = nvs::memoryless::mspWrap(norm_pos + scanner_pos);
-	assert (norm_pos >= 0.f);
-	assert (norm_pos <= 1.f);
+	double norm_pos = [this, should_open_latches](){
+		double np = _position_lgr(should_open_latches);
+		auto const scanner_pos = _scanner_for_position_latch(_voice_shared_state->_scanner.phasor_offset(0.f) * _voice_shared_state->_scanner_amount, should_open_latches);
+		np = nvs::memoryless::mspWrap(np + scanner_pos);
+		assert (np >= 0.0);
+		assert (np <= 1.0);
+		return np;
+	}();
 	
-	if (!(_synth_shared_state->_settings._center_position_at_env_peak)) {
-#pragma message("this doesn't reeeally have anything to do with centering the position at envelope peak. but it's tied to it since we want that setting off for TSN version, and we also want this clamped within an event in the same situation.")
-#pragma message("consider clipping it more softly so it doesnt totally go against statistics")
-		norm_pos = memoryless::clamp(norm_pos, 0.0, 1.0);
-	}
-	// double const normalized_position, double const sr_compensated_duration, float const skew, float const sample_playback_rate, bool const center_envelope_at_env_peak
-	auto const center_of_env = calculateCenterOfEnvelope(norm_pos,														// double const normalized_position
-														 duration_in_samps,												// double const sr_compensated_duration
-														 latch_skew_result,												// float const skew
-														 duration_pitch_compensation_factor,							// float const sample_playback_rate
-														 _synth_shared_state->_settings._center_position_at_env_peak);	// bool const center_envelope_at_env_peak
-	
-
 	_window = calculateWindow(_accum.val,							// double const accum
 							  duration_in_samps,					// double const duration
 							  duration_pitch_compensation_factor,	// float const transpositionMultiplier
@@ -540,16 +535,28 @@ genGrain1::outs genGrain1::operator()(float const trig_in){
 		return o;
 	}
 #endif
-	_sample_index = calculateSampleIndex(_accum.val,								// double const accum
-										 norm_pos,									// double const normalized_position
-										 denormedReadBounds.begin, 					// double const sample_left_bound
-										 denormedReadBounds.end,					// double const sample_right_bound
-										 file_sample_rate_compensate_ratio,			// double const sample_rate_compensate_ratio
-										 center_of_env);							// double const center_of_env
 
-	float const vel_amplitude = _amplitude_for_note_latch(_amplitude_based_on_note, should_open_latches);
+	_sample_index = [this, norm_pos, duration_in_samps, latch_skew_result, duration_pitch_compensation_factor, file_sample_rate_compensate_ratio, &settings, &denormedReadBounds](){
+		// double const normalized_position, double const sr_compensated_duration, float const skew, float const sample_playback_rate, bool const center_envelope_at_env_peak
+		auto const center_of_env = calculateCenterOfEnvelope(norm_pos,														// double const normalized_position
+															 duration_in_samps,												// double const sr_compensated_duration
+															 latch_skew_result,												// float const skew
+															 duration_pitch_compensation_factor,							// float const sample_playback_rate
+															 settings._center_position_at_env_peak);	// bool const center_envelope_at_env_peak
+				
+		return calculateSampleIndex(_accum.val,							// double const accum
+							 norm_pos,									// double const normalized_position
+							 denormedReadBounds.begin, 					// double const sample_left_bound
+							 denormedReadBounds.end,					// double const sample_right_bound
+							 file_sample_rate_compensate_ratio,			// double const sample_rate_compensate_ratio
+							 center_of_env);							// double const center_of_env
+	}();
+	
 
-	float const sample = calculateSample(wave_block, _sample_index, _window, vel_amplitude);
+	float const sample = [&](){
+		float const vel_amplitude = _amplitude_for_note_latch(_amplitude_based_on_note, should_open_latches);
+		return calculateSample(wave_block, _sample_index, _window, vel_amplitude);
+	}();
 	_pan = calculatePan(_pan_lgr(should_open_latches));
 	
 	writeAudioToOuts(sample, _pan, o);

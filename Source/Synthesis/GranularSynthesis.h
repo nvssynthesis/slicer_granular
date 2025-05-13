@@ -32,7 +32,7 @@ typedef int noteNumber_t;
 typedef int velocity_t;
 typedef std::map<noteNumber_t, velocity_t> NoteHolder;
 
-struct genGrain1;
+class genGrain1;
 
 inline double millisecondsToSamples(double ms, double sampleRate) {
 	return (ms / 1000.0) * sampleRate;
@@ -75,6 +75,7 @@ struct GranularSynthSharedState {
 	struct Settings {
 		bool _center_position_at_env_peak { true };
 		float _duration_pitch_compensation { 1.f };
+		float _duration_dependence_on_read_bounds { 0.95f };// at 0, the 'duration' parameter is a fraction of the whole file; at 1, it is a fraction of the current event within the file.
 	};
 	Settings _settings;
 };
@@ -308,7 +309,7 @@ private:
     
 	ReadBounds _normalized_read_bounds;// defaults to normalized read bounds. TSN variant can adjust effective read bounds (changing begin and end based on event positions/durations).
 	ReadBounds _upcoming_normalized_read_bounds;
-		
+	
     double _sample_index {0.0};
     float _waveform_read_rate {0.0};
     float _window {0.f};

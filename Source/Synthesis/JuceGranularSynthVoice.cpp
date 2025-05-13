@@ -32,6 +32,8 @@ void GranularVoice::prepareToPlay(double sampleRate, int samplesPerBlock)
 }
 void GranularVoice::startNote (int midiNoteNumber, float velocity, juce::SynthesiserSound *sound, int currentPitchWheelPosition)
 {
+	(void)sound;
+	
 	int velIntegral = static_cast<int>(velocity * 127.f);
 	_voice_shared_state.trigger = 1.0;
 

@@ -85,7 +85,7 @@ void GranularEditorCommon::handleSampleManagementBroadcast(){
 	drawThumbnail(fileToRead);
 }
 void GranularEditorCommon::changeListenerCallback (juce::ChangeBroadcaster* source){
-	if (dynamic_cast<nvs::util::SampleManagementGuts*>(source)){
+	if (dynamic_cast<nvs::util::SampleManagementGuts*>(source)){	// used to be received asynchronously
 		handleSampleManagementBroadcast();
 	}
 	else if (dynamic_cast<nvs::util::MeasuredData*>(source)) {

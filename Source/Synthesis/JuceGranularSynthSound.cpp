@@ -11,8 +11,10 @@
 #include "JuceGranularSynthSound.h"
 
 bool GranularSound::appliesToNote (int midiNoteNumber) {
+	(void)midiNoteNumber;
 	return true;
 }
 bool GranularSound::appliesToChannel (int midiChannel) {
+	(void)midiChannel;
 	return true;
 }

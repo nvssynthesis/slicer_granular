@@ -246,7 +246,11 @@ void Slicer_granularAudioProcessor::loadAudioFile(juce::File const f, bool notif
 	readInAudioFileToBuffer(f);
 	if (notifyEditor){
 		loggingGuts.fileLogger.logMessage("Processor: sending change message from loadAudioFile");
-		juce::MessageManager::callAsync([this]() { sampleManagementGuts.sendChangeMessage(); });
+		
+		// I do not recall why I used async for this, but there was a bug associated. I could not reproduce the bug easily either way, but I suspect it had to do with async.
+		// The bug was something along the lines of doing another analysis after one has already been performed, maybe via loading a new file. I don't recall the symptom of the bug.
+//		juce::MessageManager::callAsync([this]() { sampleManagementGuts.sendChangeMessage(); });
+		sampleManagementGuts.sendChangeMessage();
 	}
 	writeToLog("slicer: loadAudioFile exiting");
 }

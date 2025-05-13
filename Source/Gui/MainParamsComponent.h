@@ -38,8 +38,8 @@ struct MainParamsComponent	:	public juce::Component
 		int const alottedCompHeight = localBounds.getHeight();// - y + smallPad;
 		int const alottedCompWidth = localBounds.getWidth() / attachedSliderColumnArray.size();
 		
-		for (int i = 0; i < attachedSliderColumnArray.size(); ++i){
-			int left = i * alottedCompWidth + localBounds.getX();
+		for (size_t i = 0; i < attachedSliderColumnArray.size(); ++i){
+			int left = (int)i * alottedCompWidth + localBounds.getX();
 			attachedSliderColumnArray[i].setBounds(left, 0, alottedCompWidth, alottedCompHeight);
 		}
 	}
