@@ -401,6 +401,16 @@ juce::AudioProcessorValueTreeState::ParameterLayout Slicer_granularAudioProcesso
 	
 #ifdef TSN
 	auto navigationParams = std::make_unique<juce::AudioProcessorParameterGroup>("Navigation", "NavParams", "|");
+	auto navigationSelectionParams = std::make_unique<juce::AudioProcessorParameterGroup>("Selection", "NavSelParams", "|");
+
+	for (size_t i = static_cast<size_t>(params_e::nav_selection_sharpness);
+		 i < static_cast<size_t>(params_e::count_nav_selection_params);
+		 ++i){
+		params_e param = static_cast<params_e>(i);
+		navigationSelectionParams->addChild(a(param));
+	}
+	navigationParams->addChild(std::move(navigationSelectionParams));
+	
 	for (size_t i = static_cast<size_t>(params_e::nav_tendency_x);
 		 i < static_cast<size_t>(params_e::count_nav_tendency_params);
 		 ++i){

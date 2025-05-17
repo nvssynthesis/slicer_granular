@@ -60,6 +60,9 @@ enum class params_e {
 	nav_tendency_v,	// color
 	nav_tendency_w,	// color
 	count_nav_tendency_params,
+	
+	nav_selection_sharpness,
+	count_nav_selection_params,
 
 	nav_lfo_2d_amount,
 	nav_lfo_2d_shape,
@@ -76,12 +79,16 @@ enum class params_e {
 };
 
 enum class navigator_category_e {
+	selectivity,
 	lfo_2d,
 	random_walk
 };
 
 const std::map<navigator_category_e, std::vector<params_e>> categoryToParams
 {
+	{ navigator_category_e::selectivity, {
+		params_e::nav_selection_sharpness,
+	}},
 	{ navigator_category_e::lfo_2d, {
 		params_e::nav_lfo_2d_amount,
 		params_e::nav_lfo_2d_shape,
@@ -159,11 +166,13 @@ static const inline  std::map<params_e, paramPropsTuple> paramMap {
 	{params_e::nav_tendency_u,{-1.f,  1.f, 0.f, 		1.f, true, 		0.f, 	"Tendency U"}},
 	{params_e::nav_tendency_v,{-1.f,  1.f, 0.f, 		1.f, true, 		0.f, 	"Tendency V"}},
 	{params_e::nav_tendency_w,{-1.f,  1.f, 0.f, 		1.f, true, 		0.f, 	"Tendency W"}},
+	
+	{params_e::nav_selection_sharpness, {0.0, 20.0, 0.0, 0.3f, false, 	0.9,	"Selectivity"}},
 
 	{params_e::nav_lfo_2d_amount, 	{0.f, 	1.f, 0.f, 	1.f, false, 	0.1f, 	"Amount"}},
 	{params_e::nav_lfo_2d_shape, 	{0.f, 	1.f, 0.f, 	1.f, false, 	0.0f, 	"Shape"}},
-	{params_e::nav_lfo_2d_rate, 	{0.1f, 10.f, 0.f, 	1.f, false, 	0.5f, 	"Rate"}},
-	{params_e::nav_lfo_2d_response, {0.01f, 4.f, 0.f, 	0.2f, false, 	0.01f, 	"Response"}},
+	{params_e::nav_lfo_2d_rate, 	{0.1f, 10.f, 0.f, 	0.3f, false, 	0.5f, 	"Rate"}},
+	{params_e::nav_lfo_2d_response, {0.01f, 4.f, 0.f, 	1.2f, false, 	0.01f, 	"Response"}},
 	{params_e::nav_lfo_2d_overshoot, {0.55f, 24.f, 0.f, 0.3f, false, 	0.55f, 	"Overshoot"}},
 
 	// 				   						min,   max,  spacing, skew, symmetrical, default, name
@@ -181,7 +190,10 @@ static_assert(NUM_ENV_PARAMS == 4);
 static_assert(NUM_SCANNER_PARAMS == 2);
 
 #ifdef TSN
-static constexpr int NUM_LFO2D_PARAMS = static_cast<int>(params_e::count_lfo_2d_params) - static_cast<int>(params_e::count_nav_tendency_params) - 1;
+static constexpr int NUM_SELECTION_PARAMS = static_cast<int>(params_e::count_nav_selection_params) - static_cast<int>(params_e::count_nav_tendency_params) - 1;
+static_assert(NUM_SELECTION_PARAMS == 1);
+
+static constexpr int NUM_LFO2D_PARAMS = static_cast<int>(params_e::count_lfo_2d_params) - static_cast<int>(params_e::count_nav_selection_params) - 1;
 static_assert(NUM_LFO2D_PARAMS == 5);
 
 static constexpr int NUM_RANDOM_WALK_PARAMS = static_cast<int>(params_e::count_random_walk_params) - static_cast<int>(params_e::count_lfo_2d_params) - 1;
