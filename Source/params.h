@@ -53,10 +53,18 @@ enum class params_e {
     count_pos_scan_params
 	
 #ifdef TSN
-,	nav_lfo_2d_amount,
+,	nav_tendency_x,	// left-right
+	nav_tendency_y,	// up-down
+	nav_tendency_z,	// distance (shown by size and maybe shading)
+	nav_tendency_u,	// color
+	nav_tendency_v,	// color
+	nav_tendency_w,	// color
+	count_nav_tendency_params,
+
+	nav_lfo_2d_amount,
 	nav_lfo_2d_rate,
-	nav_lfo_2d_offset_x,
-	nav_lfo_2d_offset_y,
+	nav_lfo_2d_response,
+	nav_lfo_2d_overshoot,
 	count_lfo_2d_params,
 	
 	nav_random_walk_step_size,
@@ -76,8 +84,8 @@ const std::map<navigator_category_e, std::vector<params_e>> categoryToParams
 	{ navigator_category_e::lfo_2d, {
 		params_e::nav_lfo_2d_amount,
 		params_e::nav_lfo_2d_rate,
-		params_e::nav_lfo_2d_offset_x,
-		params_e::nav_lfo_2d_offset_y
+		params_e::nav_lfo_2d_response,
+		params_e::nav_lfo_2d_overshoot
 	}},
 	{ navigator_category_e::random_walk, {
 		params_e::nav_random_walk_step_size
@@ -143,10 +151,18 @@ static const inline  std::map<params_e, paramPropsTuple> paramMap {
 	
 #ifdef TSN
 	// 				   			min,   max,  spacing, skew, symmetrical, default, name
-,	{params_e::nav_lfo_2d_amount, 	{0.f, 	1.f, 0.f, 		1.f, false, 	0.1f, 	"Amount"}},
-	{params_e::nav_lfo_2d_rate, 	{0.1f, 10.f, 0.f, 		1.f, false, 	0.5f, 	"Rate"}},
-	{params_e::nav_lfo_2d_offset_x,{-1.f,  1.f, 0.f, 		1.f, true, 		0.f, 	"X Offset"}},
-	{params_e::nav_lfo_2d_offset_y,{-1.f,  1.f, 0.f, 		1.f, true, 		0.f, 	"Y Offset"}},
+,	{params_e::nav_tendency_x,{-1.f,  1.f, 0.f, 		1.f, true, 		0.f, 	"Tendency X"}},
+	{params_e::nav_tendency_y,{-1.f,  1.f, 0.f, 		1.f, true, 		0.f, 	"Tendency Y"}},
+	{params_e::nav_tendency_z,{-1.f,  1.f, 0.f, 		1.f, true, 		0.f, 	"Tendency Z"}},
+	{params_e::nav_tendency_u,{-1.f,  1.f, 0.f, 		1.f, true, 		0.f, 	"Tendency U"}},
+	{params_e::nav_tendency_v,{-1.f,  1.f, 0.f, 		1.f, true, 		0.f, 	"Tendency V"}},
+	{params_e::nav_tendency_w,{-1.f,  1.f, 0.f, 		1.f, true, 		0.f, 	"Tendency W"}},
+
+	{params_e::nav_lfo_2d_amount, 	{0.f, 	1.f, 0.f, 	1.f, false, 	0.1f, 	"Amount"}},
+	{params_e::nav_lfo_2d_rate, 	{0.1f, 10.f, 0.f, 	1.f, false, 	0.5f, 	"Rate"}},
+	{params_e::nav_lfo_2d_response, {0.01f, 4.f, 0.f, 	1.f, false, 	0.01f, 	"Response"}},
+	{params_e::nav_lfo_2d_overshoot, {0.55f, 24.f, 0.f, 0.5f, false, 	0.55f, 	"Overshoot"}},
+
 	// 				   						min,   max,  spacing, skew, symmetrical, default, name
 
 	{params_e::nav_random_walk_step_size, 	{0.f, 0.1f, 0.f,	1.f,	false,		0.01f,	"Walk Step Size"}}
@@ -162,7 +178,7 @@ static_assert(NUM_ENV_PARAMS == 4);
 static_assert(NUM_SCANNER_PARAMS == 2);
 
 #ifdef TSN
-static constexpr int NUM_LFO2D_PARAMS = static_cast<int>(params_e::count_lfo_2d_params) - static_cast<int>(params_e::count_pos_scan_params) - 1;
+static constexpr int NUM_LFO2D_PARAMS = static_cast<int>(params_e::count_lfo_2d_params) - static_cast<int>(params_e::count_nav_tendency_params) - 1;
 static_assert(NUM_LFO2D_PARAMS == 4);
 
 static constexpr int NUM_RANDOM_WALK_PARAMS = static_cast<int>(params_e::count_random_walk_params) - static_cast<int>(params_e::count_lfo_2d_params) - 1;
