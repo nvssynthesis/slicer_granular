@@ -57,8 +57,33 @@ enum class params_e {
 	nav_lfo_2d_rate,
 	nav_lfo_2d_offset_x,
 	nav_lfo_2d_offset_y,
-	count_navigation_params
+	count_lfo_2d_params,
+	
+	nav_random_walk_step_size,
+//	nav_random_walk_compensation,
+//	nav_random_walk_compensation_curve,
+	count_random_walk_params
 #endif
+};
+
+enum class navigator_category_e {
+	lfo_2d,
+	random_walk
+};
+
+const std::map<navigator_category_e, std::vector<params_e>> categoryToParams
+{
+	{ navigator_category_e::lfo_2d, {
+		params_e::nav_lfo_2d_amount,
+		params_e::nav_lfo_2d_rate,
+		params_e::nav_lfo_2d_offset_x,
+		params_e::nav_lfo_2d_offset_y
+	}},
+	{ navigator_category_e::random_walk, {
+		params_e::nav_random_walk_step_size
+//		params_e::nav_random_walk_compensation,
+//		params_e::nav_random_walk_compensation_curve
+	}}
 };
 
 inline params_e mainToRandom(params_e mainParam){
@@ -122,6 +147,9 @@ static const inline  std::map<params_e, paramPropsTuple> paramMap {
 	{params_e::nav_lfo_2d_rate, 	{0.1f, 10.f, 0.f, 		1.f, false, 	0.5f, 	"Rate"}},
 	{params_e::nav_lfo_2d_offset_x,{-1.f,  1.f, 0.f, 		1.f, true, 		0.f, 	"X Offset"}},
 	{params_e::nav_lfo_2d_offset_y,{-1.f,  1.f, 0.f, 		1.f, true, 		0.f, 	"Y Offset"}},
+	// 				   						min,   max,  spacing, skew, symmetrical, default, name
+
+	{params_e::nav_random_walk_step_size, 	{0.f, 0.1f, 0.f,	1.f,	false,		0.01f,	"Walk Step Size"}}
 #endif
 };
 
@@ -130,16 +158,17 @@ static constexpr int NUM_ENV_PARAMS = static_cast<int>(params_e::count_envelope_
 
 static constexpr int NUM_SCANNER_PARAMS = static_cast<int>(params_e::count_pos_scan_params) - static_cast<int>(params_e::count_envelope_params) - 1;
 
-#ifdef TSN
-
-static constexpr int NUM_NAVIGATION_PARAMS = static_cast<int>(params_e::count_navigation_params) - static_cast<int>(params_e::count_pos_scan_params) - 1;
-
-static_assert(NUM_NAVIGATION_PARAMS == 4);
-#else
-																								
-#endif
 static_assert(NUM_ENV_PARAMS == 4);
 static_assert(NUM_SCANNER_PARAMS == 2);
+
+#ifdef TSN
+static constexpr int NUM_LFO2D_PARAMS = static_cast<int>(params_e::count_lfo_2d_params) - static_cast<int>(params_e::count_pos_scan_params) - 1;
+static_assert(NUM_LFO2D_PARAMS == 4);
+
+static constexpr int NUM_RANDOM_WALK_PARAMS = static_cast<int>(params_e::count_random_walk_params) - static_cast<int>(params_e::count_lfo_2d_params) - 1;
+static_assert(NUM_RANDOM_WALK_PARAMS == 1);
+#endif
+
 
 [[maybe_unused]]
 static auto getParamName(params_e p){

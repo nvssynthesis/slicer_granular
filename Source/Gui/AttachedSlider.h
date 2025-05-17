@@ -15,6 +15,7 @@
 struct AttachedSlider {
 	using Slider = juce::Slider;
 	using SliderAttachment = juce::AudioProcessorValueTreeState::SliderAttachment;
+	using Label = juce::Label;
 	
 	AttachedSlider(juce::AudioProcessorValueTreeState &apvts, params_e param, Slider::SliderStyle sliderStyle,
 				   juce::Slider::TextEntryBoxPosition entryPos = juce::Slider::TextBoxBelow)
@@ -29,12 +30,20 @@ struct AttachedSlider {
 
 		_slider.setColour(Slider::ColourIds::thumbColourId, juce::Colours::palevioletred);
 		_slider.setColour(Slider::ColourIds::textBoxTextColourId, juce::Colours::lightgrey);
+		
+		_label.setText(_param_name, juce::dontSendNotification);
+		_label.setFont(juce::Font("Courier New", 13.f, juce::Font::plain));
+		_label.setJustificationType(juce::Justification::centred);
 	}
+	
 	
 	Slider _slider;
 	SliderAttachment _attachment;
+	Label _label;
 	
 	std::string getParamName() const { return _param_name; }
 private:
 	std::string _param_name;
+	
+	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AttachedSlider);
 };

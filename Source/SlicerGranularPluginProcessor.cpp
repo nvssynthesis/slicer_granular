@@ -403,11 +403,18 @@ juce::AudioProcessorValueTreeState::ParameterLayout Slicer_granularAudioProcesso
 	auto navigationParams = std::make_unique<juce::AudioProcessorParameterGroup>("Navigation", "NavParams", "|");
 	
 	for (size_t i = static_cast<size_t>(params_e::nav_lfo_2d_amount);
-		 i < static_cast<size_t>(params_e::count_navigation_params);
+		 i < static_cast<size_t>(params_e::count_lfo_2d_params);
 		 ++i){
 		params_e param = static_cast<params_e>(i);
 		navigationParams->addChild(a(param));
 	}
+	for (size_t i = static_cast<size_t>(params_e::nav_random_walk_step_size);
+		 i < static_cast<size_t>(params_e::count_random_walk_params);
+		 ++i){
+		params_e param = static_cast<params_e>(i);
+		navigationParams->addChild(a(param));
+	}
+	
 	layout.add(std::move(navigationParams));
 #endif
 	
