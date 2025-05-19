@@ -11,6 +11,10 @@
 #include "WaveformComponent.h"
 #include <ranges>
 
+#ifdef TSN
+#include "../../../Source/Synthesis/JuceTsnGranularSynthesizer.h"
+#endif
+
 WaveformComponent::WaveformComponent(int sourceSamplesPerThumbnailSample, juce::AudioFormatManager &formatManagerToUse)
 :	thumbnailCache(5), thumbnail(sourceSamplesPerThumbnailSample, formatManagerToUse, thumbnailCache)
 {
@@ -124,6 +128,36 @@ void WaveformComponent::paint(juce::Graphics& g)
 	}
 	drawMarkers(g, MarkerType::Onset);
 	drawMarkers(g, MarkerType::CurrentPosition);
+	
+	
+	auto const b = getBounds();
+	if (highlightedRange.has_value()){
+		float const w = b.getWidth();
+		float const low = highlightedRange->first;
+		float const high = highlightedRange->second;
+		g.setColour(juce::Colour(juce::Colours::whitesmoke).withAlpha(0.5f));
+		if (low < high){
+			float const p0 = b.getX() + low * w;
+			float const newWidth = (high - low) * w ;
+			auto const selectedRect = b.withX(p0).withWidth(newWidth);
+			g.fillRect(selectedRect);
+		}
+		else {	// low > high
+			jassert (high != low);	// there should ave been logic in place to prevent overlapping onsets
+			float const newWidth = b.getX() + high * w;
+			auto const lowerRect = b.withWidth(newWidth);
+			g.fillRect(lowerRect);
+			float const newX = low * w;
+			auto const upperRect = b.withX(newX);
+			g.fillRect(upperRect);
+		}
+	}
+}
+
+void WaveformComponent::highlight(std::pair<double, double> rangeToHighlight)
+{
+	highlightedRange = rangeToHighlight;
+	repaint();
 }
 
 void WaveformComponent::changeListenerCallback (juce::ChangeBroadcaster* source)
@@ -131,9 +165,19 @@ void WaveformComponent::changeListenerCallback (juce::ChangeBroadcaster* source)
 	if (source == &thumbnail){
 		thumbnailChanged();
 	}
+#ifdef TSN
+	else if (auto *tsn_synth = dynamic_cast<JuceTsnGranularSynthesizer*>(source)){
+		size_t currentIdx = tsn_synth->getCurrentIdx();
+		jassert ((currentIdx == 0) or (currentIdx < onsetMarkerList.size()));
+		auto nextIdx = (currentIdx + 1) % onsetMarkerList.size();
+		double startPos = onsetMarkerList[currentIdx].position;
+		double endPos = onsetMarkerList[nextIdx].position;
+		highlight(std::make_pair(startPos, endPos));
+	}
+#endif
 }
 	
-juce::AudioThumbnail *const WaveformComponent::getThumbnail(){
+juce::AudioThumbnail *WaveformComponent::getThumbnail(){
 /*
  not sure if it's better to:
  -	use this to expose thumbnail in order to setSource in processor (such getters are a code smell), or
@@ -217,36 +261,8 @@ void WaveformAndPositionComponent::resized()
 		positionSlider._slider.setBounds(sliderRect);
 	}
 }
-void WaveformAndPositionComponent::highlight(std::pair<double, double> rangeToHighlight)
-{
-	highlightedRange = rangeToHighlight;
-	repaint();
-}
 
-void WaveformAndPositionComponent::paint (juce::Graphics& g) {
-	auto const b = wc.getBounds();
-	if (highlightedRange.has_value()){
-		float const w = b.getWidth();
-		float const low = highlightedRange->first;
-		float const high = highlightedRange->second;
-		g.setColour(juce::Colour(juce::Colours::whitesmoke).withAlpha(0.5f));
-		if (low < high){
-			float const p0 = b.getX() + low * w;
-			float const newWidth = (high - low) * w ;
-			auto const selectedRect = b.withX(p0).withWidth(newWidth);
-			g.fillRect(selectedRect);
-		}
-		else {	// low > high
-			jassert (high != low);	// there should ave been logic in place to prevent overlapping onsets
-			float const newWidth = b.getX() + high * w;
-			auto const lowerRect = b.withWidth(newWidth);
-			g.fillRect(lowerRect);
-			float const newX = low * w;
-			auto const upperRect = b.withX(newX);
-			g.fillRect(upperRect);
-		}
-	}
-}
+void WaveformAndPositionComponent::paint (juce::Graphics& g) {}
 
 double WaveformAndPositionComponent::getPositionSliderValue() const {
 	return positionSlider._slider.getValue();

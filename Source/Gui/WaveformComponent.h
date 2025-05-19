@@ -24,7 +24,7 @@
 #include "../Synthesis/GrainDescription.h"
 
 class WaveformComponent		:	public juce::Component
-,								private juce::ChangeListener
+,								public juce::ChangeListener
 {
 public:
 	WaveformComponent(int sourceSamplesPerThumbnailSample, juce::AudioFormatManager &formatManagerToUse);
@@ -43,7 +43,7 @@ public:
 	void resized() override {}
 	void changeListenerCallback (juce::ChangeBroadcaster* source) override;
 	
-	juce::AudioThumbnail *const getThumbnail();
+	juce::AudioThumbnail *getThumbnail();
 public:
 	struct OnsetMarker {
 		double position;
@@ -79,6 +79,10 @@ private:
 	{
 		repaint();
 	}
+	
+	void highlight(std::pair<double, double> rangeToHighlight);
+	std::optional<std::pair<double, double>> highlightedRange;
+	
 	void paintContentsIfNoFileLoaded (juce::Graphics& g);
 	void paintContentsIfFileLoaded (juce::Graphics& g);
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(WaveformComponent);
@@ -102,7 +106,6 @@ public:
 	void resized() override;
 	void paint (juce::Graphics& g) override;
 
-	void highlight(std::pair<double, double> rangeToHighlight);
 	
 	void hideSlider();	// effectively makes it function as just the waveformComponent. I don't want to simply use that though because then the slicer_granular version has to change a bunch of code based on #ifdef TSN.
 	
@@ -115,8 +118,6 @@ public:
 private:
 	AttachedSlider positionSlider;
 	std::atomic<double> position;
-	
-	std::optional<std::pair<double, double>> highlightedRange;
 	
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(WaveformAndPositionComponent);
 };
