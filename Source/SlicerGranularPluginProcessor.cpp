@@ -38,7 +38,7 @@ Slicer_granularAudioProcessor::Slicer_granularAudioProcessor(std::unique_ptr<Gra
 	nonAutomatableState.appendChild (juce::ValueTree ("Settings"), nullptr);
 
 	juce::ValueTree presetVT = nonAutomatableState.getOrCreateChildWithName("PresetInfo", nullptr);
-	presetVT.setProperty("audioFilePath", "", nullptr);
+	presetVT.setProperty("sampleFilePath", "", nullptr);
 	presetVT.setProperty("author", "", nullptr);
 }
 
@@ -230,6 +230,7 @@ void Slicer_granularAudioProcessor::readInAudioFileToBuffer(juce::File const f){
 	loggingGuts.fileLogger.logMessage("                                          ...file read successful");
 
 	_granularSynth->setAudioBlock(sampleManagementGuts.sampleBuffer, sr, f.getFullPathName().hash());	// maybe this could just go inside readInAudioFileToBuffer()
+	nonAutomatableState.getChildWithName("PresetInfo").setProperty("sampleFilePath", f.getFullPathName(), nullptr);
 }
 void Slicer_granularAudioProcessor::loadAudioFileAsync(juce::File const file, bool notifyEditor)
 {

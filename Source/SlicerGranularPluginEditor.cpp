@@ -106,8 +106,15 @@ void GranularEditorCommon::timerCallback() {
 void GranularEditorCommon::filenameComponentChanged (juce::FilenameComponent* fileComponentThatHasChanged)
 {
 	audioProcessor.writeToLog("editor: filenameComponentChanged.");
+
 	if (fileComponentThatHasChanged == &fileComp){
 		const juce::File file = fileComp.getCurrentFile();
+		juce::String const prevFile = audioProcessor.getSampleFilePath();
+		if (file.getFullPathName() == prevFile){
+			// no need to load
+			return;
+		}
+		
 		audioProcessor.writeToLog("     filenameComponentChanged: source is fileComp. triggering readFile with " + file.getFullPathName());
 		if (file.existsAsFile()) {
 			audioProcessor.writeToLog(file.getFullPathName() + " exists as file.");
