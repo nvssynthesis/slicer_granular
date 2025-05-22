@@ -78,6 +78,7 @@ enum class params_e {
 #endif
 };
 
+#ifdef TSN
 enum class navigator_category_e {
 	selectivity,
 	lfo_2d,
@@ -102,6 +103,7 @@ const std::map<navigator_category_e, std::vector<params_e>> categoryToParams
 //		params_e::nav_random_walk_compensation_curve
 	}}
 };
+#endif
 
 inline params_e mainToRandom(params_e mainParam){
 	int mainInt = static_cast<int>(mainParam);

@@ -90,6 +90,8 @@ void GranularVoice::renderNextBlock (juce::AudioBuffer< float > &outputBuffer, i
 		if (envelope != envelope) {
 			logger("ENVELOPE has NaN");
 		}
+		envelope *= envelope;
+		
 		std::array<float, 2> output = (*granularSynthGuts)(_voice_shared_state.trigger);
 		_voice_shared_state.trigger = 0.f;
 		
