@@ -23,7 +23,8 @@ public:
 	_knob(apvts, mainToRandom(nonRandomParam), juce::Slider::RotaryHorizontalVerticalDrag)
 	{
 		addAndMakeVisible(&_slider._slider);
-		
+		_slider._slider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, int(float(_slider._slider.getHeight())*0.12));
+
 		_label.setText(getParamName(nonRandomParam), juce::dontSendNotification);
 		
 		_label.setJustificationType(juce::Justification::centred);
@@ -36,38 +37,58 @@ public:
 	}
 	
 	void paint(juce::Graphics& g) override {
-		_label.setFont( juce::Font("Copperplate", "Regular", proportionOfWidth(0.16f)) );
+//		_label.setFont( juce::Font("Copperplate", "Regular", proportionOfWidth(0.16f)) );
 	}
-	void resized() override {
-		float sliderProportion {0.75f};
-		float labelProportion {0.08f};
-		float knobProportion {0.17f};
-		[[maybe_unused]] float proportionSum = sliderProportion + labelProportion + knobProportion;
-		// would compare with 1 but floating point imprecision
-		jassert (proportionSum > 0.999f);
-		jassert (proportionSum < 1.001f);
-		
-		juce::Rectangle<int> localBounds = getLocalBounds();
-		localBounds.removeFromBottom(extraBottomPadding);
-		
-		int const sliderToLabelPadding = 10;
-		
-		int x(localBounds.getX()), y(localBounds.getY());
+	void resized() override
+	{
+		auto r = getLocalBounds();
+		r.removeFromBottom (extraBottomPadding);
+		auto bounds = r.toFloat();
 
-		int const sliderHeight = localBounds.getHeight() * sliderProportion - sliderToLabelPadding;
-		_slider._slider.setBounds(x, y, localBounds.getWidth(), sliderHeight);
-		y += sliderHeight;
+
+		auto const boundsHeight = bounds.getHeight();
+		std::cout << "height: " << boundsHeight << '\n';
+
+		const float sliderProportion = boundsHeight > 80 ? 0.75f : 0.0f;
+		const float labelProportion  = boundsHeight > 166 ? 0.08f : 0.0f;
+		const float knobProportion   = 0.17f;
+		const int   padding          = 10;
+
+		juce::FlexBox fb;
+		fb.flexDirection  = juce::FlexBox::Direction::column;
+		fb.justifyContent = juce::FlexBox::JustifyContent::flexStart;
+		fb.alignItems     = juce::FlexBox::AlignItems::stretch;
+
+		fb.items.add (juce::FlexItem (_slider._slider)
+						.withFlex (1.0f*sliderProportion,
+								   1.0f,//*sliderProportion,
+								   120.0f*sliderProportion));
+
+		if (labelProportion > 0){
+			fb.items.add (juce::FlexItem().withHeight ((float) padding));
+		}
+		fb.items.add (juce::FlexItem (_label)
+						.withFlex (labelProportion,
+								   1.0f,//*labelProportion,
+								   120.0f*labelProportion));
+
+		if (boundsHeight > 146){
+			fb.items.add (juce::FlexItem().withHeight ((float) padding));
+		}
+		fb.items.add (juce::FlexItem (_knob._slider)
+						.withFlex (1.0f*knobProportion,
+								   0.01f*knobProportion,
+								   120.0f*knobProportion));
+
+		fb.performLayout (bounds);
 		
-		y += sliderToLabelPadding;
-		
-		int const labelHeight = localBounds.getHeight() * labelProportion;// - labelToKnobPadding;
-		_label.setBounds(x, y, localBounds.getWidth(), labelHeight);
-		y += labelHeight;
-		
-		
-		int const knobHeight = localBounds.getHeight() * knobProportion;
-		_knob._slider.setBounds(x, y, localBounds.getWidth(), knobHeight);
-		_knobConstrainer.checkComponentBounds(&(_knob._slider));
+		int tbW = int (_slider._slider.getWidth() * 0.66f);
+		int tbH = int (_slider._slider.getHeight() * 0.12f);
+		auto textBoxStyle = boundsHeight <= 146 ? juce::Slider::NoTextBox : juce::Slider::TextBoxBelow;
+		_slider._slider.setTextBoxStyle (textBoxStyle,
+										 false,
+										 tbW,
+										 tbH);
 	}
 	void setVal(double val){
 		_slider._slider.setValue(val);
