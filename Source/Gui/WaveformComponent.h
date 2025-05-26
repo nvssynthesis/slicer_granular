@@ -80,8 +80,8 @@ private:
 		repaint();
 	}
 	
-	void highlight(std::pair<double, double> rangeToHighlight);
-	std::optional<std::pair<double, double>> highlightedRange;
+	void highlight(std::vector<std::pair<double, double>> rangeToHighlight);
+	std::optional<std::vector<std::pair<double, double>>> highlightedRange;
 	
 	void paintContentsIfNoFileLoaded (juce::Graphics& g);
 	void paintContentsIfFileLoaded (juce::Graphics& g);

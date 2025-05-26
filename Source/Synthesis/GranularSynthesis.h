@@ -188,6 +188,11 @@ public:
 		return doProcess(triggerIn);
 	}
 	void setReadBounds(ReadBounds newReadBounds) ;
+	struct WeightedReadBounds {
+		ReadBounds bounds;
+		double weight;
+	};
+	void setMultiReadBounds(std::vector<WeightedReadBounds> newReadBounds) ;
 	std::vector<GrainDescription> getGrainDescriptions() const;
 	void setLogger(std::function<void(const juce::String&)> loggerFunction);
 protected:

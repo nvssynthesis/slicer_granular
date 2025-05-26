@@ -19,6 +19,7 @@
 #include "../dsp_util.h"
 #include "../algo_util.h"
 #include <numbers>
+#include <random>
 #include <span>
 #if defined(DEBUG_BUILD) | defined(DEBUG) | defined(_DEBUG)
 #include "fmt/core.h"
@@ -43,7 +44,63 @@ float semitonesToRatio(float_t semitones){
 inline float fastSemitonesToRatio(float semitones){
 	return nvs::util::semitonesRatioTable(semitones);
 }
+namespace {
+/**
+ * Picks `numToPick` distinct bounds from `choices`, sampling each
+ * with probability ∝ its `weight`.  If `numToPick` >= choices.size(),
+ * returns all of them in arbitrary (but weighted) order.
+ */
+std::vector<ReadBounds> pickWeightedReadBounds (
+	std::vector<genGranPoly1::WeightedReadBounds> choices,
+	int                              numToPick)
+{
+	const int N = (int) choices.size();
+	if (N == 0 || numToPick <= 0)
+		return {};
 
+	// 1) Extract weights into their own array:
+	std::vector<double> weightArr;
+	weightArr.reserve(N);
+	for (auto& wrb : choices)
+		weightArr.push_back(wrb.weight);
+
+	std::mt19937 rng{ std::random_device{}() };
+	std::vector<ReadBounds> picked;
+	picked.reserve(numToPick);
+
+	if (numToPick <= N)
+	{
+		// --- WITHOUT replacement ---
+		for (int pick = 0; pick < numToPick; ++pick)
+		{
+			std::discrete_distribution<int> dist(weightArr.begin(), weightArr.end());
+			int choice = dist(rng);
+			picked.push_back( choices[choice].bounds );
+
+			// zero out that weight, then renormalize
+			weightArr[choice] = 0.0;
+			double sum = std::accumulate(weightArr.begin(), weightArr.end(), 0.0);
+			if (sum <= 0.0)
+				break;
+			for (auto& w : weightArr)
+				w /= sum;
+		}
+	}
+	else {
+		// --- WITH replacement ---
+		// we keep the original weightArr intact
+		std::discrete_distribution<int> dist(weightArr.begin(), weightArr.end());
+		for (int pick = 0; pick < numToPick; ++pick)
+		{
+			int choice = dist(rng);
+			picked.push_back( choices[choice].bounds );
+			// note: weights are unchanged, so repeats are allowed
+		}
+	}
+
+	return picked;
+}
+}
 genGranPoly1::genGranPoly1(GranularSynthSharedState *const synth_shared_state, int voice_id, unsigned long seed)
 :
 _synth_shared_state { synth_shared_state },
@@ -77,6 +134,19 @@ void genGranPoly1::setReadBounds(ReadBounds newReadBounds) {
 		// for now, we will just have all grains use same read bounds.
 		// however, we may want to have some prorortions of grains using different readbounds in the future.
 		g.setReadBounds(newReadBounds);
+	}
+}
+void genGranPoly1::setMultiReadBounds(std::vector<WeightedReadBounds> newWeightedReadBounds) {
+	
+	auto pickedWeightedReadBounds = pickWeightedReadBounds(newWeightedReadBounds, (int)_grains.size());
+	for (size_t i = 0; i < _grains.size(); ++i){
+		// for now, we will just have all grains use same read bounds.
+		// however, we may want to have some prorortions of grains using different readbounds in the future.
+		auto const bounds = pickedWeightedReadBounds[i];
+		assert ((bounds.begin >= 0.0) && (bounds.begin <= 1.0));
+		assert ((bounds.end >= 0.0) && (bounds.end <= 1.0));
+		
+		_grains[i].setReadBounds(bounds);
 	}
 }
 

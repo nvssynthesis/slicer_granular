@@ -98,6 +98,127 @@ int findNearestPoint(Timbre5DPoint p5D, juce::Array<Timbre5DPoint> timbres5D, fl
 	return idx;
 }
 
+/**
+ * Finds the K nearest points to `target` in `database`,
+ * builds softmax-style weights over those K,
+ * then either returns them all, or samples `numToPick` **without replacement**.
+ *
+ * @param  database        your full set of Timbre5DPoints
+ * @param  K               how many nearest neighbors to consider (caps at database.size())
+ * @param  numToPick       if <=0, we return all K weighted indices;
+ *                         otherwise we pick exactly numToPick **without** replacement.
+ * @param  sharpness       0=flat, >0 biases toward closer points
+ * @param  higher3Dweight  extra weighting on the 3D portion of your distance metric
+ */
+std::vector<TimbreSpaceHolder::WeightedIdx> findProbabilisticPoints(
+	const Timbre5DPoint&               target,
+	const juce::Array<Timbre5DPoint>&  database,
+	int                                K,
+	int                                numToPick,
+	double                             sharpness,
+	float                              higher3Dweight = 0.01f)
+{
+	// 1) handle empty DB
+	if (database.isEmpty())
+		return {};
+
+	// 2) compute squared distances
+	std::vector<std::pair<double,int>> distIdx;
+	distIdx.reserve (database.size());
+	for (int i = 0; i < database.size(); ++i)
+	{
+		auto const& p = database.getReference(i);
+		double dx = p.get2D().getX() - target.get2D().getX();
+		double dy = p.get2D().getY() - target.get2D().getY();
+		auto   u1 = p.get3D();
+		auto   u2 = target.get3D();
+		double du = u1[0] - u2[0],
+			   dv = u1[1] - u2[1],
+			   dz = u1[2] - u2[2];
+
+		double d2 = dx*dx + dy*dy
+				  + higher3Dweight * (du*du + dv*dv + dz*dz);
+		distIdx.emplace_back (d2, i);
+	}
+
+	// 3) keep only the K nearest
+	K = std::min<int> (K, (int) distIdx.size());
+	std::nth_element (
+		distIdx.begin(),
+		distIdx.begin() + K,
+		distIdx.end(),
+		[](auto& a, auto& b){ return a.first < b.first; });
+	distIdx.resize (K);
+
+	// 4) build “softmax” weights = exp(−sharpness * (d / dmax))
+	double dmax = 0;
+	for (auto& di : distIdx)
+		dmax = std::max (dmax, di.first);
+
+	// if all distances zero, give uniform weights
+	std::vector<double> weights;
+	weights.reserve (K);
+	if (dmax <= 0)
+	{
+		weights.assign (K, 1.0 / K);
+	}
+	else
+	{
+		for (auto& di : distIdx)
+			weights.push_back (std::exp ( - sharpness * (di.first / dmax) ));
+
+		// normalize
+		double sum = std::accumulate (weights.begin(), weights.end(), 0.0);
+		for (auto& w : weights)
+			w /= sum;
+	}
+
+	using WeightedIdx = TimbreSpaceHolder::WeightedIdx;
+	// 5) build result vector of all weighted indices
+	std::vector<WeightedIdx> allW;
+	allW.reserve (K);
+	for (int i = 0; i < K; ++i)
+		allW.push_back ({ distIdx[i].second, weights[i] });
+
+	// 6a) if caller just wants the full distribution, return it:
+	if (numToPick <= 0 || numToPick >= K)
+		return allW;
+
+	// 6b) otherwise sample numToPick *without replacement*
+	//     by repeatedly drawing from the discrete distribution
+	//     then zeroing out that weight and re-normalizing.
+	std::vector<WeightedIdx> picked;
+	picked.reserve (numToPick);
+
+	// extract weights into their own vector
+	std::vector<double> weightArr;
+	weightArr.reserve(allW.size());
+	for (auto& wi : allW)
+		weightArr.push_back(wi.weight);
+	
+	std::mt19937 rng { std::random_device{}() };
+	for (int pick = 0; pick < numToPick; ++pick)
+	{
+		// construct the discrete_distribution over the weights
+		std::discrete_distribution<int> dist(weightArr.begin(), weightArr.end());
+
+		int choice = dist(rng);
+		picked.push_back(allW[choice]);
+
+		// zero out that weight so it's never picked again
+		weightArr[choice] = 0.0;
+
+		// re-normalize the remaining weights in-place
+		double rem = std::accumulate(weightArr.begin(), weightArr.end(), 0.0);
+		if (rem <= 0.0)
+			break;  // no weight left
+
+		for (auto& w : weightArr)
+			w /= rem;
+	}
+
+	return picked;
+}
 int findProbabilisticPoint(
 	const Timbre5DPoint& target,
 	juce::Array<Timbre5DPoint> database,
@@ -162,11 +283,11 @@ int findProbabilisticPoint(
 }
 }	// end anonymous namespace
 
-void TimbreSpaceHolder::setCurrentPointFromNearest(Timbre5DPoint p5D) {
-	setCurrentPointIdx(findNearestPoint(p5D, timbres5D));
-}
 void TimbreSpaceHolder::setProbabilisticPointFromTarget(const Timbre5DPoint& target, int K_neighbors, double sharpness, float higher3Dweight){
-	setCurrentPointIdx(findProbabilisticPoint(target, timbres5D, K_neighbors, sharpness, higher3Dweight));
+	if (timbres5D.size() == 0){
+		return;
+	}
+	setCurrentPointIndices(findProbabilisticPoints(target, timbres5D, K_neighbors, sharpness, higher3Dweight));
 }
 
 /*

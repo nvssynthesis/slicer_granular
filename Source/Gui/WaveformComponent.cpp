@@ -132,29 +132,31 @@ void WaveformComponent::paint(juce::Graphics& g)
 	
 	auto const b = getBounds();
 	if (highlightedRange.has_value()){
-		float const w = b.getWidth();
-		float const low = highlightedRange->first;
-		float const high = highlightedRange->second;
-		g.setColour(juce::Colour(juce::Colours::whitesmoke).withAlpha(0.5f));
-		if (low < high){
-			float const p0 = b.getX() + low * w;
-			float const newWidth = (high - low) * w ;
-			auto const selectedRect = b.withX(p0).withWidth(newWidth);
-			g.fillRect(selectedRect);
-		}
-		else {	// low > high
-			jassert (high != low);	// there should ave been logic in place to prevent overlapping onsets
-			float const newWidth = b.getX() + high * w;
-			auto const lowerRect = b.withWidth(newWidth);
-			g.fillRect(lowerRect);
-			float const newX = low * w;
-			auto const upperRect = b.withX(newX);
-			g.fillRect(upperRect);
+		for (auto const &r : *highlightedRange){
+			float const w = b.getWidth();
+			float const low = r.first;
+			float const high = r.second;
+			g.setColour(juce::Colour(juce::Colours::whitesmoke).withAlpha(0.5f));
+			if (low < high){
+				float const p0 = b.getX() + low * w;
+				float const newWidth = (high - low) * w ;
+				auto const selectedRect = b.withX(p0).withWidth(newWidth);
+				g.fillRect(selectedRect);
+			}
+			else {	// low > high
+				jassert (high != low);	// there should ave been logic in place to prevent overlapping onsets
+				float const newWidth = b.getX() + high * w;
+				auto const lowerRect = b.withWidth(newWidth);
+				g.fillRect(lowerRect);
+				float const newX = low * w;
+				auto const upperRect = b.withX(newX);
+				g.fillRect(upperRect);
+			}
 		}
 	}
 }
 
-void WaveformComponent::highlight(std::pair<double, double> rangeToHighlight)
+void WaveformComponent::highlight(std::vector<std::pair<double, double>> rangeToHighlight)
 {
 	highlightedRange = rangeToHighlight;
 	repaint();
@@ -167,12 +169,32 @@ void WaveformComponent::changeListenerCallback (juce::ChangeBroadcaster* source)
 	}
 #ifdef TSN
 	else if (auto *tsn_synth = dynamic_cast<JuceTsnGranularSynthesizer*>(source)){
-		size_t currentIdx = tsn_synth->getCurrentIdx();
-		jassert ((currentIdx == 0) or (currentIdx < onsetMarkerList.size()));
-		auto nextIdx = (currentIdx + 1) % onsetMarkerList.size();
-		double startPos = onsetMarkerList[currentIdx].position;
-		double endPos = onsetMarkerList[nextIdx].position;
-		highlight(std::make_pair(startPos, endPos));
+		nvs::util::TimbreSpaceHolder::WeightedPoints currentIndices = tsn_synth->getCurrentIndices();
+		std::vector<std::pair<double, double>> ranges;
+		ranges.reserve(currentIndices.size());
+		
+		auto near_eq = [](double a, double b){
+			double eps = std::numeric_limits<double>::lowest() * 10.0;
+			if (std::abs(a - b) < eps){
+				return true;
+			}
+			return false;
+		};
+		
+		for (auto const &wi : currentIndices){
+			auto currentIdx = wi.idx;
+			jassert ((currentIdx == 0) or (currentIdx < (int)onsetMarkerList.size()));
+			auto nextIdx = (currentIdx + 1) % onsetMarkerList.size();
+			double startPos = onsetMarkerList[currentIdx].position;
+			double endPos = onsetMarkerList[nextIdx].position;
+			
+			
+			jassert (!near_eq(startPos, endPos));
+			
+			ranges.push_back(std::make_pair(startPos, endPos));
+		}
+		
+		highlight(ranges);
 	}
 #endif
 }

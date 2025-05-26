@@ -32,28 +32,39 @@ struct Timbre5DPoint {
 
 class TimbreSpaceHolder {
 public:
+	struct WeightedIdx
+	{
+		int idx{0};
+		double weight{0.0}; // normalized probability (sums to 1 over all returned)
+	};
+	
+	using WeightedPoints = std::vector<WeightedIdx>;
+	
 	void add5DPoint(timbre2DPoint p2D, std::array<float, 3> p3D);
 	void clear();
 	
 	juce::Array<nvs::util::Timbre5DPoint> &getTimbreSpace() {
 		return timbres5D;
 	}
-	int getCurrentPointIdx() const {
-		return currentPointIdx;
+	WeightedPoints getCurrentPointIndices() const {
+		return currentPointIndices;
 	}
-	void setCurrentPointFromNearest(Timbre5DPoint p5D);
 	void setProbabilisticPointFromTarget(const Timbre5DPoint& target, int K_neighbors, double sharpness, float higher3Dweight=0.f);
 
 private:
 	juce::Array<nvs::util::Timbre5DPoint> timbres5D;
 	
 	// safe private setter
-	void setCurrentPointIdx(int newIdx) {
-		jassert (0 <= newIdx);
-		jassert ((newIdx < timbres5D.size()) or ((timbres5D.size()==0) and (newIdx == 0)));
-		currentPointIdx = newIdx;
+	void setCurrentPointIndices(WeightedPoints &&newWeightedIndices) {
+		jassert (newWeightedIndices.size() > 0);
+		
+		for (auto const &widx : newWeightedIndices){
+			jassert (0 <= widx.idx);
+			jassert ((widx.idx < timbres5D.size()) or ((timbres5D.size()==0) and (widx.idx == 0)));
+		}
+		currentPointIndices = newWeightedIndices;
 	}
-	int currentPointIdx {0};
+	WeightedPoints currentPointIndices {{},{},{},{}};
 };
 
 constexpr bool inRange0_1(float x){
