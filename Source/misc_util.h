@@ -88,7 +88,7 @@ struct SampleManagementGuts : public juce::ChangeBroadcaster
 	~SampleManagementGuts();
 	juce::AudioFormatManager formatManager;
 	juce::AudioBuffer<float> sampleBuffer;
-	float normalizationValue { 1.f };	// a MULTIPLIER for the overall output, based on the inverse of the absolute max value for the current sample
+	juce::int64 hash;
 };
 
 struct MeasuredData : public juce::ChangeBroadcaster

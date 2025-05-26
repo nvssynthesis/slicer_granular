@@ -23,6 +23,8 @@
 #include "fmt/core.h"
 #include "../Synthesis/GrainDescription.h"
 
+
+
 class WaveformComponent		:	public juce::Component
 ,								public juce::ChangeListener
 {
@@ -43,7 +45,7 @@ public:
 	void resized() override {}
 	void changeListenerCallback (juce::ChangeBroadcaster* source) override;
 	
-	juce::AudioThumbnail *getThumbnail();
+	void setThumbnailSource (const juce::AudioBuffer<float> *newSource, double sampleRate, juce::int64 hashCode);
 public:
 	struct OnsetMarker {
 		double position;

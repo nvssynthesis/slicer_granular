@@ -83,6 +83,9 @@ public:
 	bool hasLogger() const {
 		return _synth_shared_state._logger_func != nullptr;
 	}
+	nvs::gran::GranularSynthSharedState const &viewSynthSharedState() {
+		return _synth_shared_state;
+	}
 protected:
 	constexpr static int num_voices = N_VOICES;
 	nvs::gran::GranularSynthSharedState _synth_shared_state;

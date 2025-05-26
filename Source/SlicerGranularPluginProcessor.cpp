@@ -192,13 +192,17 @@ void Slicer_granularAudioProcessor::setStateInformation (const void* data, int s
 		writeToLog("Successfully replaced APVTS and NonAutomatableState\n");
 	}
 }
+nvs::gran::GranularSynthSharedState const &Slicer_granularAudioProcessor::viewSynthSharedState(){
+	jassert (_granularSynth != nullptr);
+	return _granularSynth->viewSynthSharedState();
+}
 
 void Slicer_granularAudioProcessor::readInAudioFileToBuffer(juce::File const f){
-	loggingGuts.fileLogger.logMessage("                                          ...reading file" + f.getFullPathName());
+	writeToLog("                                          ...reading file" + f.getFullPathName());
 	
 	juce::AudioFormatReader *reader = sampleManagementGuts.formatManager.createReaderFor(f);
 	if (!reader){
-		std::cerr << "could not read file: " << f.getFullPathName() << "\n";
+		writeToLog("could not read file: " + f.getFullPathName());
 		return;
 	}
 	
@@ -214,10 +218,10 @@ void Slicer_granularAudioProcessor::readInAudioFileToBuffer(juce::File const f){
 	
 	auto normVal = std::max(std::abs(min), std::abs(max));
 	if (normVal > 0.f){
-		sampleManagementGuts.normalizationValue = 1.f / normVal;
+		normVal = 1.f / normVal;
 	} else {
-		std::cerr << "either the sample is digital silence, or something's gone wrong\n";
-		sampleManagementGuts.normalizationValue = 1.f;
+		writeToLog("either the sample is digital silence, or something's gone wrong");
+		normVal = 1.f;
 	}
 	int lengthInSamps = static_cast<int>(reader->lengthInSamples);
 	sampleManagementGuts.sampleBuffer.setSize(reader->numChannels, lengthInSamps);
@@ -225,10 +229,13 @@ void Slicer_granularAudioProcessor::readInAudioFileToBuffer(juce::File const f){
 	reader->read(sampleManagementGuts.sampleBuffer.getArrayOfWritePointers(),	// float *const *destChannels
 				 reader->numChannels,		// int numDestChannels
 				 0,							// int64 startSampleInSource
-				 lengthInSamps);	// int numSamplesToRead
+				 lengthInSamps);			// int numSamplesToRead
+	
+	sampleManagementGuts.sampleBuffer.applyGain (normVal);
+	
 	delete reader;
-	loggingGuts.fileLogger.logMessage("                                          ...file read successful");
-
+	writeToLog("                                          ...file read successful");
+	
 	_granularSynth->setAudioBlock(sampleManagementGuts.sampleBuffer, sr, f.getFullPathName().hash());	// maybe this could just go inside readInAudioFileToBuffer()
 	nonAutomatableState.getChildWithName("PresetInfo").setProperty("sampleFilePath", f.getFullPathName(), nullptr);
 }

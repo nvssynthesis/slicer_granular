@@ -82,6 +82,7 @@ public:
 		return sampleManagementGuts.sampleBuffer.getNumSamples();
 	}
 
+	nvs::gran::GranularSynthSharedState const &viewSynthSharedState();
 protected:
 	nvs::util::SampleManagementGuts sampleManagementGuts;
 	nvs::util::LoggingGuts loggingGuts;

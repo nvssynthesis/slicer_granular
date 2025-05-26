@@ -21,7 +21,7 @@ GranularEditorCommon::GranularEditorCommon (Slicer_granularAudioProcessor& p)
 	fileComp.setCurrentFile(audioProcessor.getSampleFilePath(), false);
 	auto const fileToRead = audioProcessor.getSampleFilePath();
 	notateFileComp(fileToRead);
-	drawThumbnail(fileToRead);
+	drawThumbnail();
 	startTimer(100);
 	
 	fileComp.addListener (this);
@@ -33,35 +33,22 @@ GranularEditorCommon::~GranularEditorCommon() {
 	fileComp.pushRecentFilesToFile();
 }
 
-void GranularEditorCommon::readFile (const juce::File& fileToRead)
-{
-	audioProcessor.writeToLog("Slicer_granularAudioProcessorEditor::readFile, reading " + fileToRead.getFullPathName());
-
-	if (fileToRead.isDirectory()){ /* handle whole directory */ }
-	if (! fileToRead.existsAsFile()){
-		audioProcessor.writeToLog("... in readFile, file does NOT exist as a single file. ");
-		return;
-	}
-	
-	audioProcessor.writeToLog("... in readFile, file exists as a single file. ");
-
-	juce::String fn = fileToRead.getFullPathName();
-
-	audioProcessor.writeToLog("fileToRead: " + fn);
-	audioProcessor.loadAudioFile(fileToRead, false);
-	notateFileComp(fn);
-	drawThumbnail(fn);
-}
-
 void GranularEditorCommon::notateFileComp(juce::String const &sampleFilePath){
 	audioProcessor.writeToLog("Notating fileComp with " + sampleFilePath);
 	fileComp.setCurrentFile(sampleFilePath, true, juce::dontSendNotification);
 }
-void GranularEditorCommon::drawThumbnail(juce::String const &sampleFilePath){
-	auto thumbnail = waveformAndPositionComponent.wc.getThumbnail();
-	if (thumbnail){
-		thumbnail->setSource (new juce::FileInputSource (sampleFilePath));	// owned by thumbnail, no worry about delete
+void GranularEditorCommon::drawThumbnail(){
+	auto const &synthBuffer = audioProcessor.viewSynthSharedState()._buffer;
+
+	if (sampleManagementGuts == nullptr){
+		return;
 	}
+	jassert (sampleManagementGuts->sampleBuffer.getNumSamples() > 0);
+	jassert (sampleManagementGuts->sampleBuffer.getNumChannels() > 0);
+	jassert (synthBuffer._file_sample_rate > 0);
+
+	waveformAndPositionComponent.wc.setThumbnailSource(&sampleManagementGuts->sampleBuffer,	// do not worry about dangling reference; the thumbnail will internally copy the data as needed to draw waveform
+													   synthBuffer._file_sample_rate, synthBuffer._filename_hash);
 }
 //============================================= ChangeListener - related =======================================================
 void GranularEditorCommon::displayGrainDescriptions() {
@@ -82,10 +69,11 @@ void GranularEditorCommon::handleSampleManagementBroadcast(){
 	
 	auto const fileToRead = audioProcessor.getSampleFilePath();
 	notateFileComp(fileToRead);
-	drawThumbnail(fileToRead);
+	drawThumbnail();
 }
 void GranularEditorCommon::changeListenerCallback (juce::ChangeBroadcaster* source){
-	if (dynamic_cast<nvs::util::SampleManagementGuts*>(source)){	// used to be received asynchronously
+	if (auto *smg = dynamic_cast<nvs::util::SampleManagementGuts*>(source)){	// used to be received asynchronously
+		sampleManagementGuts = smg;
 		handleSampleManagementBroadcast();
 	}
 	else if (dynamic_cast<nvs::util::MeasuredData*>(source)) {
@@ -118,10 +106,7 @@ void GranularEditorCommon::filenameComponentChanged (juce::FilenameComponent* fi
 		audioProcessor.writeToLog("     filenameComponentChanged: source is fileComp. triggering readFile with " + file.getFullPathName());
 		if (file.existsAsFile()) {
 			audioProcessor.writeToLog(file.getFullPathName() + " exists as file.");
-			audioProcessor.loadAudioFile(file, false);  // Ensure this is thread-safe
-			auto const fileToRead = audioProcessor.getSampleFilePath();
-			notateFileComp(fileToRead);
-			drawThumbnail(fileToRead);
+			audioProcessor.loadAudioFile(file, true);  // Ensure this is thread-safe
 		}
 	}
 }

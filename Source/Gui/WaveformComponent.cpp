@@ -199,13 +199,8 @@ void WaveformComponent::changeListenerCallback (juce::ChangeBroadcaster* source)
 #endif
 }
 	
-juce::AudioThumbnail *WaveformComponent::getThumbnail(){
-/*
- not sure if it's better to:
- -	use this to expose thumbnail in order to setSource in processor (such getters are a code smell), or
- -	just make a public setSource method in WaveformComponent to call from AudioProcessor. disadvantage: have to #include the WaveformComponent in AudioProcessor, which feels wrong because its basically a GUI element.
- */
-	return &thumbnail;
+void WaveformComponent::setThumbnailSource (const juce::AudioBuffer<float> *newSource, double sampleRate, juce::int64 hashCode){
+	thumbnail.setSource(newSource, sampleRate, hashCode);
 }
 
 void WaveformComponent::paintContentsIfNoFileLoaded (juce::Graphics& g)

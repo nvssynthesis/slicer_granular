@@ -31,15 +31,13 @@ struct GranularEditorCommon	:	public juce::ChangeListener
 	// Timer
 	void timerCallback() override;
 protected:
-	void readFile (const juce::File& fileToRead);
-	void drawThumbnail(juce::String const &sampleFilePath);
+	void drawThumbnail();
 	void notateFileComp(juce::String const &sampleFilePath);
 	virtual void displayGrainDescriptions();
 	
 	void handleSampleManagementBroadcast();
 	void handleGrainDescriptionBroadcast();
 	//===============================================================================
-//#ifndef TSN
 	WaveformAndPositionComponent waveformAndPositionComponent;
 	GrainBusyDisplay grainBusyDisplay;
 	FileSelectorComponent fileComp;
@@ -49,6 +47,7 @@ protected:
 	std::vector<nvs::gran::GrainDescription> grainDescriptions;
 	
 	Slicer_granularAudioProcessor& audioProcessor;
+	nvs::util::SampleManagementGuts *sampleManagementGuts {nullptr};
 };
 
 inline void displayName(juce::Graphics& g, juce::Rectangle<int> bounds)
