@@ -47,10 +47,11 @@ public:
 
 
 		auto const boundsHeight = bounds.getHeight();
-		std::cout << "height: " << boundsHeight << '\n';
+		auto const boundsWidth = bounds.getWidth();
+		std::cout << "width: " << boundsWidth << " height: " << boundsHeight << '\n';
 
 		const float sliderProportion = boundsHeight > 80 ? 0.75f : 0.0f;
-		const float labelProportion  = boundsHeight > 166 ? 0.08f : 0.0f;
+		const float labelProportion  = ((boundsWidth > 51) and (boundsHeight > 166)) ? 0.08f : 0.0f;
 		const float knobProportion   = 0.17f;
 		const int   padding          = 10;
 
@@ -84,7 +85,7 @@ public:
 		
 		int tbW = int (_slider._slider.getWidth() * 0.66f);
 		int tbH = int (_slider._slider.getHeight() * 0.12f);
-		auto textBoxStyle = boundsHeight <= 146 ? juce::Slider::NoTextBox : juce::Slider::TextBoxBelow;
+		auto textBoxStyle = ((boundsWidth > 66) and (boundsHeight > 146)) ? juce::Slider::TextBoxBelow : juce::Slider::NoTextBox;
 		_slider._slider.setTextBoxStyle (textBoxStyle,
 										 false,
 										 tbW,
