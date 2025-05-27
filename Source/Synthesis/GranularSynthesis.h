@@ -104,6 +104,21 @@ struct ReadBounds {
 
 //========================================================================================================================================
 
+struct GrainwisePostProcessing
+{
+	float operator()(float x);	// single channel
+	
+	std::array<float, 2> operator()(std::array<float, 2> x){	// apply single to both channels
+		std::array<float, 2> retval {0.f, 0.f};
+		for (size_t i = 0; i < x.size(); ++i){
+			retval[i] = operator()(x[i]);
+		}
+		return retval;
+	}
+	float drive {1.0f};
+	float makeup_gain {1.0f};
+};
+
 class genGranPoly1 {
 public:
 	genGranPoly1(GranularSynthSharedState *const synth_shared_state, int voice_id, unsigned long seed = 1234567890UL);
@@ -183,7 +198,13 @@ public:
 		doSetScannerRate(scannerRate);
 	}
 	//=======================================================================
-
+	inline void setFxGrainDrive(float grainDrive){
+		doSetFxGrainDrive(grainDrive);
+	}
+	inline void setFxMakeupGain(float makeupGain){
+		doSetFxMakeupGain(makeupGain);
+	}
+	//=======================================================================
 	inline std::array<float, 2> operator()(float triggerIn){
 		return doProcess(triggerIn);
 	}
@@ -221,6 +242,9 @@ protected:
 	
 	virtual void doSetScannerAmount(float scannerAmount);
 	virtual void doSetScannerRate(float scannerRate);
+	
+	virtual void doSetFxGrainDrive(float drive);
+	virtual void doSetFxMakeupGain(float gain);
 	
 	std::array<float, 2> doProcess(float triggerIn);
 	
@@ -265,6 +289,10 @@ public:
 	void setSkewRand(float skewRand);
 	void setPlateauRand(float plateauRand);
 	void setPanRand(float panRand);
+	// grainwise fx
+	void setFxGrainDrive(float drive);
+	void setFxMakeupGain(float gain);
+	
 	float getBusyStatus() const;
 	void setBusyStatus(bool newBusyStatus);
 	struct outs {
@@ -315,6 +343,8 @@ private:
 	ReadBounds _normalized_read_bounds;// defaults to normalized read bounds. TSN variant can adjust effective read bounds (changing begin and end based on event positions/durations).
 	ReadBounds _upcoming_normalized_read_bounds;
 	
+	GrainwisePostProcessing _postProcessing;
+	
     double _sample_index {0.0};
     float _waveform_read_rate {0.0};
     float _window {0.f};
@@ -322,6 +352,8 @@ private:
     
     float _ratio_based_on_note {1.f}; // =1.f. later this may change according to a settable concert pitch
     float _amplitude_based_on_note {0.f};
+	float _grain_drive {1.0f};
+	float _grain_makeup_gain {1.0f};
 };
 
 }	// namespace granular

@@ -54,6 +54,8 @@
         <FILE id="geROs9" name="VoicesXGrains.h" compile="0" resource="0" file="Source/Synthesis/VoicesXGrains.h"/>
       </GROUP>
       <GROUP id="{8B05BF9B-9113-5CDB-91DE-1C951D8F5910}" name="Gui">
+        <FILE id="v5KyAV" name="FxPage.cpp" compile="1" resource="0" file="Source/Gui/FxPage.cpp"/>
+        <FILE id="YuHZpB" name="FxPage.h" compile="0" resource="0" file="Source/Gui/FxPage.h"/>
         <FILE id="VbWIVG" name="ScannerParameterPage.cpp" compile="1" resource="0"
               file="Source/Gui/ScannerParameterPage.cpp"/>
         <FILE id="DuCw17" name="ScannerParameterPage.h" compile="0" resource="0"

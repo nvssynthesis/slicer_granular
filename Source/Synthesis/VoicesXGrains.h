@@ -21,5 +21,5 @@ constexpr static int N_VOICES =
 #if defined(DEBUG_BUILD) | defined(DEBUG) | defined(_DEBUG)
 										2;
 #else
-										4;
+										8;
 #endif

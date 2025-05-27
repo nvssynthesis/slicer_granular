@@ -102,6 +102,22 @@ public:
 		}
 	}
 	
+	template <auto Start, auto End>
+	constexpr void fxParamSet(juce::AudioProcessorValueTreeState &apvts) {
+		float tmp;
+		if constexpr (Start < End){
+			constexpr params_e p = static_cast<params_e>(Start);
+			tmp = *apvts.getRawParameterValue(getParamElement<p, param_elem_e::name>());
+			float *last = lastFxParamsMap.at(p);
+			if (tmp != *last){
+				*last = tmp;
+				granMembrSetFunc setFunc = scannerFxSetterMap.at(p);
+				(granularSynthGuts.get()->*setFunc)(tmp);	// could replace with std::invoke
+			}
+			fxParamSet<Start + 1, End>(apvts);
+		}
+	}
+	
 	void setAmpAttack(float newAttack);
 	void setAmpDecay(float newDecay);
 	void setAmpSustain(float newSustain);
@@ -150,6 +166,8 @@ private:
 	float lastPositionScanAmount	{getParamDefault(params_e::pos_scan_amount)};
 	float lastPositionScanRate		{getParamDefault(params_e::pos_scan_rate)};
 	
+	float lastFxGrainDrive	{getParamDefault(params_e::fx_grain_drive)};
+	float lastFxMakeupGain	{getParamDefault(params_e::fx_makeup_gain)};
 
 #if (STATIC_MAP | FROZEN_MAP)
 	using granMembrSetFunc = void(nvs::gran::genGranPoly1::*) (float);
@@ -184,6 +202,11 @@ private:
 		std::make_pair<params_e, granMembrSetFunc>(params_e::pos_scan_amount, 	&nvs::gran::genGranPoly1::setScannerAmount),
 		std::make_pair<params_e, granMembrSetFunc>(params_e::pos_scan_rate, 	&nvs::gran::genGranPoly1::setScannerRate),
 	};
+	static constexpr inline MAP<params_e, granMembrSetFunc, NUM_FX_PARAMS>
+	scannerFxSetterMap {
+		std::make_pair<params_e, granMembrSetFunc>(params_e::fx_grain_drive, 	&nvs::gran::genGranPoly1::setFxGrainDrive),
+		std::make_pair<params_e, granMembrSetFunc>(params_e::fx_makeup_gain, 	&nvs::gran::genGranPoly1::setFxMakeupGain)
+	};
 	/*
 	 this map is unnecessary because these pointed-to floats are never called by name. could just use an std::array<float, static_cast<size_t>(params_e::count)> lastParams
 	 */
@@ -215,6 +238,11 @@ private:
 	lastScannerParamsMap {
 		std::make_pair<params_e, float *>(params_e::pos_scan_amount,	&lastPositionScanAmount),
 		std::make_pair<params_e, float *>(params_e::pos_scan_rate,		&lastPositionScanRate)
+	};
+	MAP<params_e, float *, NUM_FX_PARAMS>
+	lastFxParamsMap {
+		std::make_pair<params_e, float *>(params_e::fx_grain_drive,		&lastFxGrainDrive),
+		std::make_pair<params_e, float *>(params_e::fx_makeup_gain,		&lastFxMakeupGain)
 	};
 #endif
 	

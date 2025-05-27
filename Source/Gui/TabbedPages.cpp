@@ -12,6 +12,7 @@
 #include "./GranularMainParametersPage.h"
 #include "./EnvelopeParameterPage.h"
 #include "./ScannerParameterPage.h"
+#include "./FxPage.h"
 
 TabbedPagesComponent::TabbedPagesComponent (juce::AudioProcessorValueTreeState &apvts)
 	: TabbedComponent (juce::TabbedButtonBar::TabsAtTop)
@@ -23,4 +24,5 @@ TabbedPagesComponent::TabbedPagesComponent (juce::AudioProcessorValueTreeState &
 	addTab ("Granular", juce::Colours::transparentWhite, new GranularMainParametersPage(apvts), true);
 	addTab ("Envelope", juce::Colours::transparentWhite, new EnvelopeParametersPage(apvts), true);
 	addTab ("Scanner", juce::Colours::transparentWhite, new ScannerParameterPage(apvts), true);
+	addTab ("Fx", juce::Colours::transparentWhite, new FxParameterPage(apvts), true);
 }

@@ -285,6 +285,16 @@ void genGranPoly1::doSetScannerAmount(float scannerAmount){
 void genGranPoly1::doSetScannerRate(float scannerRate){
 	_voice_shared_state._scanner._freq = scannerRate;
 }
+void genGranPoly1::doSetFxGrainDrive(float drive){
+	for (auto &g : _grains){
+		g.setFxGrainDrive(drive);
+	}
+}
+void genGranPoly1::doSetFxMakeupGain(float gain){
+	for (auto &g : _grains){
+		g.setFxMakeupGain(gain);
+	}
+}
 
 std::array<float, 2> genGranPoly1::doProcess(float trigger_in){
 	std::array<float, 2> output {0.f, 0.f};
@@ -401,6 +411,13 @@ void genGrain1::setPanRand(float panRand){
 	_pan_lgr.setSigma(panRand);
 }
 
+void genGrain1::setFxGrainDrive(float drive){
+	_grain_drive = drive;
+}
+void genGrain1::setFxMakeupGain(float gain){
+	_grain_makeup_gain = gain;
+}
+
 float genGrain1::getBusyStatus() const {
 	return _busy_histo.val;
 }
@@ -504,8 +521,8 @@ float calculateSample(juce::dsp::AudioBlock<float> const wave_block, double cons
 float calculatePan(float pan_latch_val){
 	return memoryless::clamp(pan_latch_val, 0.f, 1.f) * std::numbers::pi * 0.5f;
 }
-void writeAudioToOuts(float const sample, float const pan_latch_val, genGrain1::outs &outs){
-	std::array<float, 2> const lr = gen::pol2car(sample, pan_latch_val);
+void writeAudioToOuts(float const sample, float const pan_latch_val, GrainwisePostProcessing &postProcessing, genGrain1::outs &outs){
+	std::array<float, 2> const lr = postProcessing(gen::pol2car(sample, pan_latch_val));
 	outs.audio_L = lr[0];
 	outs.audio_R = lr[1];
 }
@@ -524,6 +541,16 @@ void genGrain1::resetAccum() {
 }
 void genGrain1::setAccum(float newVal) {
 	_accum.set(newVal);
+}
+float GrainwisePostProcessing::operator()(float x){
+	float retval {0.f};
+	jassert (drive > 0);
+	x *= drive;
+	retval = (2.f * x) / (1.f + std::sqrt(1.f + std::abs(x)));
+	retval /= (2.f * drive) / (1.f + std::sqrt(1.f + std::abs(drive)));
+	jassert(makeup_gain > 0.f);
+	retval *= makeup_gain;
+	return retval;
 }
 genGrain1::outs genGrain1::operator()(float const trig_in){
 	assert(_synth_shared_state);
@@ -546,6 +573,8 @@ genGrain1::outs genGrain1::operator()(float const trig_in){
 
 	if (should_open_latches){
 		_normalized_read_bounds = _upcoming_normalized_read_bounds;
+		_postProcessing.drive = _grain_drive;
+		_postProcessing.makeup_gain = _grain_makeup_gain;
 #if GRAIN_UPDATE_HACK
 		if (wantsToDisableFirstPlaythroughOfVoicesNote){
 			firstPlaythroughOfVoicesNote = false;
@@ -555,9 +584,10 @@ genGrain1::outs genGrain1::operator()(float const trig_in){
 #endif
 	}
 	
+	
 	if (_normalized_read_bounds.end - _normalized_read_bounds.begin == 0.0){	// protection for initialization case
 		_window = 0.f;
-		writeAudioToOuts(0.f, 0.f, o);
+		writeAudioToOuts(0.f, 0.f, _postProcessing, o);
 		processBusyness(_window, _busy_histo, o);
 		return o;
 	}
@@ -629,7 +659,7 @@ genGrain1::outs genGrain1::operator()(float const trig_in){
 	}();
 	_pan = calculatePan(_pan_lgr(should_open_latches));
 	
-	writeAudioToOuts(sample, _pan, o);
+	writeAudioToOuts(sample, _pan, _postProcessing, o);
 	
 	processBusyness(_window, _busy_histo, o);
 	

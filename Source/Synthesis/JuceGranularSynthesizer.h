@@ -78,6 +78,21 @@ public:
 			scannerParamSet<Start + 1, End>(apvts);
 		}
 	}
+	template <auto Start, auto End>
+	constexpr void fxParamSet(juce::AudioProcessorValueTreeState &apvts){
+		if constexpr (Start < End){
+			juce::SynthesiserVoice* voice = getVoice(Start);
+			if (GranularVoice* granularVoice = dynamic_cast<GranularVoice*>(voice)){
+				granularVoice->fxParamSet<static_cast<int>(params_e::fx_grain_drive),
+												static_cast<int>(params_e::count_fx_params)>
+												(apvts);
+			}
+			else {
+				jassert (false);
+			}
+			fxParamSet<Start + 1, End>(apvts);
+		}
+	}
 	
 	void setLogger(std::function<void(const juce::String&)> loggerFunction);
 	bool hasLogger() const {

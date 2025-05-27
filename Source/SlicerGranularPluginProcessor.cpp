@@ -308,11 +308,19 @@ void Slicer_granularAudioProcessor::processBlock (juce::AudioBuffer<float>& buff
 	_granularSynth->granularMainParamSet<0, GranularSynthesizer::getNumVoices()>(apvts);	// this just sets the params internal to the granular synth (effectively a voice)
 	_granularSynth->envelopeParamSet<0, GranularSynthesizer::getNumVoices()>(apvts);
 	_granularSynth->scannerParamSet<0, GranularSynthesizer::getNumVoices()>(apvts);
+	_granularSynth->fxParamSet<0, GranularSynthesizer::getNumVoices()>(apvts);
 	
 	_granularSynth->renderNextBlock(buffer,
 						  midiMessages,
 						  0,
 						  buffer.getNumSamples());
+	
+	for (int i=0; i < buffer.getNumChannels(); ++i){
+		auto const *rp = buffer.getReadPointer(i);
+		for (int j = 0; j < buffer.getNumSamples(); ++j){
+//			jassert ((rp[j] > -1.0f) and (rp[j] < 1.0f));
+		}
+	}
 	
 	std::vector<nvs::gran::GrainDescription> descriptions = _granularSynth->getGrainDescriptions();
 	writeGrainDescriptionData(descriptions);
@@ -440,6 +448,14 @@ juce::AudioProcessorValueTreeState::ParameterLayout Slicer_granularAudioProcesso
 	
 	layout.add(std::move(navigationParams));
 #endif
+	auto fxParams = std::make_unique<juce::AudioProcessorParameterGroup>("Effects", "FxParams", "|");
+	for (size_t i = static_cast<size_t>(params_e::fx_grain_drive);
+		 i < static_cast<size_t>(params_e::count_fx_params);
+		 ++i){
+		params_e param = static_cast<params_e>(i);
+		fxParams->addChild(a(param));
+	}
+	layout.add(std::move(fxParams));
 	
 	return layout;
 }

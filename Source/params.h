@@ -50,10 +50,10 @@ enum class params_e {
 
     pos_scan_amount,
     pos_scan_rate,
-    count_pos_scan_params
+    count_pos_scan_params,
 	
 #ifdef TSN
-,	nav_tendency_x,	// left-right
+	nav_tendency_x,	// left-right
 	nav_tendency_y,	// up-down
 	nav_tendency_z,	// distance (shown by size and maybe shading)
 	nav_tendency_u,	// color
@@ -74,8 +74,12 @@ enum class params_e {
 	nav_random_walk_step_size,
 //	nav_random_walk_compensation,
 //	nav_random_walk_compensation_curve,
-	count_random_walk_params
+	count_random_walk_params,
 #endif
+	
+	fx_grain_drive,
+	fx_makeup_gain,
+	count_fx_params
 };
 
 #ifdef TSN
@@ -158,11 +162,11 @@ static const inline  std::map<params_e, paramPropsTuple> paramMap {
 	{params_e::amp_release,	{envTimingMin, envTimingMax, 0.f, 	envTimingSkew, 	false, 	0.8f, 	"Amp Env Release"}},
 
 	{params_e::pos_scan_rate,   {-20.f, 20.f, 0.f,     0.3f, true,      0.f,    "Scanner Rate"}},
-	{params_e::pos_scan_amount, {0.f,   1.f, 0.f,      1.f,  false,     0.f,    "Scanner Amount"}}
+	{params_e::pos_scan_amount, {0.f,   1.f, 0.f,      1.f,  false,     0.f,    "Scanner Amount"}},
 	
 #ifdef TSN
 	// 				   			min,   max,  spacing, skew, symmetrical, default, name
-,	{params_e::nav_tendency_x,{-1.f,  1.f, 0.f, 		1.f, true, 		0.f, 	"Tendency X"}},
+	{params_e::nav_tendency_x,{-1.f,  1.f, 0.f, 		1.f, true, 		0.f, 	"Tendency X"}},
 	{params_e::nav_tendency_y,{-1.f,  1.f, 0.f, 		1.f, true, 		0.f, 	"Tendency Y"}},
 	{params_e::nav_tendency_z,{-1.f,  1.f, 0.f, 		1.f, true, 		0.f, 	"Tendency Z"}},
 	{params_e::nav_tendency_u,{-1.f,  1.f, 0.f, 		1.f, true, 		0.f, 	"Tendency U"}},
@@ -179,8 +183,10 @@ static const inline  std::map<params_e, paramPropsTuple> paramMap {
 
 	// 				   						min,   max,  spacing, skew, symmetrical, default, name
 
-	{params_e::nav_random_walk_step_size, 	{0.f, 0.1f, 0.f,	1.f,	false,		0.01f,	"Walk Step Size"}}
+	{params_e::nav_random_walk_step_size, 	{0.f, 0.1f, 0.f,	1.f,	false,		0.01f,	"Walk Step Size"}},
 #endif
+	{params_e::fx_grain_drive,		{0.01f, 1000.f, 	0.f, 0.2f, false, 1.0f, "Grain Drive"}},
+	{params_e::fx_makeup_gain,		{0.001f, 	20.f, 	0.f, 0.2f, false, 1.0f, "Makeup Gain"}}
 };
 
 static constexpr int NUM_MAIN_PARAMS = static_cast<int>(params_e::count_main_granular_params);
@@ -202,6 +208,13 @@ static constexpr int NUM_RANDOM_WALK_PARAMS = static_cast<int>(params_e::count_r
 static_assert(NUM_RANDOM_WALK_PARAMS == 1);
 #endif
 
+static constexpr int NUM_FX_PARAMS = static_cast<int>(params_e::count_fx_params) -
+#ifdef TSN
+static_cast<int>(params_e::count_random_walk_params) - 1;
+#else
+static_cast<int>(params_e::count_pos_scan_params) - 1;
+#endif
+static_assert(NUM_FX_PARAMS == 2);
 
 [[maybe_unused]]
 static auto getParamName(params_e p){
