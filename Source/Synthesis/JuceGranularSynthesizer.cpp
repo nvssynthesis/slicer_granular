@@ -29,14 +29,14 @@ std::vector<nvs::gran::GrainDescription> GranularSynthesizer::getGrainDescriptio
 	grainDescriptions.reserve(totalNumGrains_);
 
 	for (const auto &v : voices) {
-		if (GranularVoice const * const gv = dynamic_cast<GranularVoice * const>(v)){
+		if (GranularVoice const *const gv = dynamic_cast<GranularVoice *const>(v)){
 			std::vector<nvs::gran::GrainDescription> const theseDescriptions = gv->getGrainDescriptions();
 			for (const auto &desc : theseDescriptions) {
 				grainDescriptions.push_back(desc);
 			}
 		}
 		else {
-			assert(false);
+			jassert(false);
 		}
 	}
 	return grainDescriptions;
@@ -46,7 +46,7 @@ void GranularSynthesizer::initializeVoices() {
 	unsigned long seed = 1234567890UL;
 	totalNumGrains_ = 0;
 	for (int i = 0; i < num_voices; ++i) {
-		auto voice = new GranularVoice(std::make_unique<nvs::gran::PolyGrain>(&_synth_shared_state, i, seed));
+		auto voice = new GranularVoice(&_synth_shared_state, seed, i);
 		addVoice(voice);
 		totalNumGrains_ += voice->getNumGrains();
 		++seed;

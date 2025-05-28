@@ -300,13 +300,12 @@ void SlicerGranularAudioProcessor::processBlock (juce::AudioBuffer<float>& buffe
 		}
 	}
 	if (sampleManagementGuts.sampleBuffer.getNumSamples() == 0){
-//		writeToLog("processBlock:        sampleBuffer has length 0; exiting early.");
 		return;
 	}
 	if (numSampChans == 0){
-//		writeToLog("processBlock:        sampleBuffer has no channels; exiting early.");
 		return;
 	}
+	
 	
 	_granularSynth->renderNextBlock(buffer,
 						  midiMessages,

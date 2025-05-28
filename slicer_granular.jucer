@@ -27,14 +27,11 @@
         <FILE id="OW557g" name="dsp_util.h" compile="0" resource="0" file="Source/dsp_util.h"/>
         <FILE id="AcOWtc" name="nvs_gen.h" compile="0" resource="0" file="nvs_libraries/nvs_libraries/include/nvs_gen.h"/>
         <FILE id="u7NNz9" name="nvs_LFO.h" compile="0" resource="0" file="nvs_libraries/nvs_libraries/include/nvs_LFO.h"/>
-        <FILE id="DcXofS" name="plotting.h" compile="0" resource="0" file="Source/plotting.h"/>
         <FILE id="BN5JES" name="DataStructures.h" compile="0" resource="0"
               file="Source/DataStructures.h"/>
       </GROUP>
       <GROUP id="{126AF7A9-91AB-8ACB-5E93-B28D33988481}" name="Params">
         <FILE id="pLnhaL" name="params.h" compile="0" resource="0" file="Source/Params/params.h"/>
-        <FILE id="dALzsM" name="GranularParameterMapping.h" compile="0" resource="0"
-              file="Source/Params/GranularParameterMapping.h"/>
       </GROUP>
       <GROUP id="{BC0357AF-85B3-3B4A-11BC-B4C71511F210}" name="Synthesis">
         <FILE id="jndSe6" name="GrainDescription.h" compile="0" resource="0"
@@ -58,6 +55,9 @@
         <FILE id="geROs9" name="VoicesXGrains.h" compile="0" resource="0" file="Source/Synthesis/VoicesXGrains.h"/>
       </GROUP>
       <GROUP id="{8B05BF9B-9113-5CDB-91DE-1C951D8F5910}" name="Gui">
+        <FILE id="geE4c2" name="SliderColumn.h" compile="0" resource="0" file="Source/Gui/SliderColumn.h"/>
+        <FILE id="jNw0CK" name="AttachedSlider.h" compile="0" resource="0"
+              file="Source/Gui/AttachedSlider.h"/>
         <FILE id="F5y1Ol" name="BasicParameterPage.cpp" compile="1" resource="0"
               file="Source/Gui/BasicParameterPage.cpp"/>
         <FILE id="iFOINC" name="BasicParameterPage.h" compile="0" resource="0"
@@ -70,13 +70,10 @@
         <FILE id="dhH3GX" name="TabbedPages.h" compile="0" resource="0" file="Source/Gui/TabbedPages.h"/>
         <FILE id="KBau54" name="FileSelectorComponent.h" compile="0" resource="0"
               file="Source/Gui/FileSelectorComponent.h"/>
-        <FILE id="jNw0CK" name="AttachedSlider.h" compile="0" resource="0"
-              file="Source/Gui/AttachedSlider.h"/>
-        <FILE id="geE4c2" name="SliderColumn.h" compile="0" resource="0" file="Source/Gui/SliderColumn.h"/>
-        <FILE id="fKuezH" name="WaveformComponent.h" compile="0" resource="0"
-              file="Source/Gui/WaveformComponent.h"/>
         <FILE id="kHjXJe" name="WaveformComponent.cpp" compile="1" resource="0"
               file="Source/Gui/WaveformComponent.cpp"/>
+        <FILE id="fKuezH" name="WaveformComponent.h" compile="0" resource="0"
+              file="Source/Gui/WaveformComponent.h"/>
         <FILE id="xHskLN" name="GrainBusyDisplay.cpp" compile="1" resource="0"
               file="Source/Gui/GrainBusyDisplay.cpp"/>
         <FILE id="eSZxN6" name="GrainBusyDisplay.h" compile="0" resource="0"

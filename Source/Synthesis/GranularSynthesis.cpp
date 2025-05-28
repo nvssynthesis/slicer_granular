@@ -101,29 +101,26 @@ std::vector<ReadBounds> pickWeightedReadBounds (
 	return picked;
 }
 }
-PolyGrain::PolyGrain(GranularSynthSharedState *const synth_shared_state, int voice_id, unsigned long seed)
+PolyGrain::PolyGrain(GranularSynthSharedState *const synth_shared_state,
+					 GranularVoiceSharedState *const voice_shared_state)
 :
 _synth_shared_state { synth_shared_state },
-_voice_shared_state {
-	._gaussian_rng {seed},
-	._expo_rng {seed + 123456789UL},
-	._voice_id = voice_id
-},
+_voice_shared_state(voice_shared_state),
 _normalizer(1.f / std::sqrt(static_cast<float>(std::clamp(N_GRAINS, 1UL, 10000UL)))),
 _grain_indices(N_GRAINS),
-_speed_ler(_voice_shared_state._expo_rng,  {10.f, 0.f})
+_speed_ler(_voice_shared_state->_expo_rng,  {10.f, 0.f})
 {
 	assert (_grains.size() == 0);
 	_grains.reserve(N_GRAINS);
 	for (size_t i = 0; i < N_GRAINS; ++i){
-		_grains.emplace_back(_synth_shared_state, &_voice_shared_state, i);
+		_grains.emplace_back(_synth_shared_state, _voice_shared_state, i);
 	}
 	std::iota(_grain_indices.begin(), _grain_indices.end(), 0);
 }
 void PolyGrain::setSampleRate(double sample_rate){
 	assert(_synth_shared_state);
 	_phasor_internal_trig.setSampleRate(sample_rate);
-	_voice_shared_state._scanner.setSampleRate(sample_rate);
+	_voice_shared_state->_scanner.setSampleRate(sample_rate);
 	_synth_shared_state->_playback_sample_rate = sample_rate;
 }
 void PolyGrain::setReadBounds(ReadBounds newReadBounds) {
@@ -162,7 +159,7 @@ void PolyGrain::doNoteOn(noteNumber_t note, velocity_t velocity){
 	_note_holder.insert(p);
 	updateNotes();
 	_phasor_internal_trig.reset();
-	_voice_shared_state._scanner.reset();
+	_voice_shared_state->_scanner.reset();
 	
 #if GRAIN_UPDATE_HACK
 	for (int i = 0; i < _grains.size(); ++i) {
@@ -203,7 +200,7 @@ void PolyGrain::doClearNotes(){
 }
 void PolyGrain::doShuffleIndices(){
 	std::shuffle(_grain_indices.begin(), _grain_indices.end(),
-				 _voice_shared_state._gaussian_rng.getGenerator());
+				 _voice_shared_state->_gaussian_rng.getGenerator());
 }
 std::vector<float> PolyGrain::getBusyStatuses() const {
 	std::vector<float> busyStatuses;
@@ -219,83 +216,17 @@ void PolyGrain::setGrainsIdle() {
 	}
 }
 
-void PolyGrain::doSetTranspose(float transposition_semitones){
-	for (auto &g : _grains)
-		g.setTranspose(transposition_semitones);
-}
-void PolyGrain::doSetSpeed(float new_speed){
-	assert (new_speed > 0.01f);
-	assert (new_speed < 11025.f);
-	_speed_ler.setMu(new_speed);
-}
-void PolyGrain::doSetPosition(double position_normalized){
-	//	position_normalized = nvs::memoryless::clamp<double>(position_normalized, 0.0, 1.0);
-	for (auto &g : _grains)
-		g.setPosition(position_normalized);
-}
-void PolyGrain::doSetDuration(double dur_norm){
-	for (auto &g : _grains)
-		g.setDuration(dur_norm);
-}
-void PolyGrain::doSetSkew(float skew){
-	skew = nvs::memoryless::clamp<float>(skew, 0.001, 0.999);
-	for (auto &g : _grains)
-		g.setSkew(skew);
-}
-void PolyGrain::doSetPlateau(float plateau){
-	for (auto &g : _grains)
-		g.setPlateau(plateau);
-}
-void PolyGrain::doSetPan(float pan){
-	for (auto &g : _grains)
-		g.setPan(pan);
-}
-
-void PolyGrain::doSetTransposeRandomness(float randomness){
-	randomness *= 24.f;
-	for (auto &g : _grains)
-		g.setTransposeRand(randomness);
-}
-void PolyGrain::doSetPositionRandomness(double randomness){
-	for (auto &g : _grains)
-		g.setPositionRand(randomness);
-}
-void PolyGrain::doSetDurationRandomness(double randomness){
-	for (auto &g : _grains)
-		g.setDurationRand(randomness);
-}
-void PolyGrain::doSetSpeedRandomness(float randomness){
-	_speed_ler.setSigma(randomness);
-}
-void PolyGrain::doSetSkewRandomness(float randomness){
-	for (auto &g : _grains)
-		g.setSkewRand(randomness);
-}
-void PolyGrain::doSetPlateauRandomness(float randomness){
-	for (auto &g : _grains)
-		g.setPlateauRand(randomness);
-}
-void PolyGrain::doSetPanRandomness(float randomness){
-	for (auto &g : _grains)
-		g.setPanRand(randomness);
-}
-void PolyGrain::doSetScannerAmount(float scannerAmount){
-	_voice_shared_state._scanner_amount = scannerAmount;
-}
-void PolyGrain::doSetScannerRate(float scannerRate){
-	_voice_shared_state._scanner._freq = scannerRate;
-}
-void PolyGrain::doSetFxGrainDrive(float drive){
+void PolyGrain::setParams() {
+	auto const &apvts = _synth_shared_state->_apvts;
+	_speed_ler.setMu(*apvts.getRawParameterValue("speed"));
+	_speed_ler.setSigma(*apvts.getRawParameterValue("speed_rand"));
+	_voice_shared_state->_scanner._freq = *apvts.getRawParameterValue("scanner_rate");
+	_voice_shared_state->_scanner_amount = *apvts.getRawParameterValue("scanner_amount");
+	
 	for (auto &g : _grains){
-		g.setFxGrainDrive(drive);
+		g.setParams();
 	}
 }
-void PolyGrain::doSetFxMakeupGain(float gain){
-	for (auto &g : _grains){
-		g.setFxMakeupGain(gain);
-	}
-}
-
 std::array<float, 2> PolyGrain::doProcess(float trigger_in){
 	std::array<float, 2> output {0.f, 0.f};
 	
@@ -307,7 +238,7 @@ std::array<float, 2> PolyGrain::doProcess(float trigger_in){
 	_trigger_histo(trig);
 	trig = (!trig && !trigger_in) ? 0.f : 1.f;
 	
-	_voice_shared_state._scanner.phasor();	// increment scanner phase per sample
+	_voice_shared_state->_scanner.phasor();	// increment scanner phase per sample
 
 	std::array<Grain::outs, N_GRAINS> _outs;
 
@@ -346,6 +277,27 @@ std::vector<GrainDescription> PolyGrain::getGrainDescriptions() const {
 }
 
 //=====================================================================================
+void Grain::setParams(){
+	auto const &apvts = _synth_shared_state->_apvts;
+	_transpose_lgr.setMu(*apvts.getRawParameterValue("transpose"));
+	_transpose_lgr.setSigma(24.0f * (*apvts.getRawParameterValue("transpose_rand")));
+	_duration_ler.setMu(*apvts.getRawParameterValue("duration"));
+	_duration_ler.setSigma(*apvts.getRawParameterValue("duration_rand"));
+	float const pos = *apvts.getRawParameterValue("position");
+	_position_lgr.setMu(pos);
+	_position_lgr.setSigma(*apvts.getRawParameterValue("position_rand"));
+	_skew_lgr.setMu(*apvts.getRawParameterValue("skew"));
+	_skew_lgr.setSigma(*apvts.getRawParameterValue("skew_rand"));
+	_plateau_lgr.setMu(*apvts.getRawParameterValue("plateau"));
+	_plateau_lgr.setSigma(*apvts.getRawParameterValue("plateau_rand"));
+	_pan_lgr.setMu(1.f - *apvts.getRawParameterValue("pan"));	// makes more sense internally to reverse this
+	_pan_lgr.setSigma(*apvts.getRawParameterValue("pan_rand"));
+	
+	_grain_drive = *apvts.getRawParameterValue("fx_grain_drive");
+	std::cout << "drive: " << _grain_drive << '\n';
+	_grain_makeup_gain = *apvts.getRawParameterValue("fx_makeup_gain");
+}
+
 Grain::Grain(GranularSynthSharedState *const synth_shared_state,
 					 GranularVoiceSharedState *const voice_shared_state,
 					 int newId)
@@ -369,53 +321,6 @@ void Grain::setAmplitudeBasedOnNote(float velocity){
 }
 void Grain::setId(int newId){
 	_grain_id = newId;
-}
-void Grain::setTranspose(float ratio){
-	_transpose_lgr.setMu(ratio);
-}
-void Grain::setDuration(double dur_norm){
-	assert (dur_norm <= 1.0);
-	assert (dur_norm >= 0.0);
-	_duration_ler.setMu(dur_norm);
-}
-void Grain::setPosition(double position){
-	_position_lgr.setMu(position);
-}
-void Grain::setSkew(float skew){
-	_skew_lgr.setMu(skew);
-}
-void Grain::setPlateau(float plateau){
-	_plateau_lgr.setMu(plateau);
-}
-void Grain::setPan(float pan){
-	assert ((pan >= 0.f) and (pan <= 1.f));
-	// reverse effective control to correspond better with gui representation
-	_pan_lgr.setMu(1.f - pan);
-}
-void Grain::setTransposeRand(float transposeRand){
-	_transpose_lgr.setSigma(transposeRand);
-}
-void Grain::setDurationRand(double durationRand){
-	_duration_ler.setSigma(durationRand);
-}
-void Grain::setPositionRand(double positionRand){
-	_position_lgr.setSigma(positionRand);
-}
-void Grain::setSkewRand(float skewRand){
-	_skew_lgr.setSigma(skewRand);
-}
-void Grain::setPlateauRand(float plateauRand){
-	_plateau_lgr.setSigma(plateauRand);
-}
-void Grain::setPanRand(float panRand){
-	_pan_lgr.setSigma(panRand);
-}
-
-void Grain::setFxGrainDrive(float drive){
-	_grain_drive = drive;
-}
-void Grain::setFxMakeupGain(float gain){
-	_grain_makeup_gain = gain;
 }
 
 float Grain::getBusyStatus() const {
@@ -575,6 +480,7 @@ Grain::outs Grain::operator()(float const trig_in){
 		_normalized_read_bounds = _upcoming_normalized_read_bounds;
 		_postProcessing.drive = _grain_drive;
 		_postProcessing.makeup_gain = _grain_makeup_gain;
+
 #if GRAIN_UPDATE_HACK
 		if (wantsToDisableFirstPlaythroughOfVoicesNote){
 			firstPlaythroughOfVoicesNote = false;

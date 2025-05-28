@@ -10,10 +10,18 @@
 
 #include "JuceGranularSynthVoice.h"
 
+GranularVoice::GranularVoice(nvs::gran::GranularSynthSharedState  *const synth_shared_state, unsigned long seed, int voice_id)
+:	_synth_shared_state(synth_shared_state)
+,	_voice_shared_state {
+		._gaussian_rng {seed},
+		._expo_rng {seed + 123456789UL},
+		._voice_id = voice_id
+	}
+{
+	granularSynthGuts = std::make_unique<nvs::gran::PolyGrain>(_synth_shared_state, &_voice_shared_state);
+	granularSynthGuts->setReadBounds({0.0, 1.0});
 
-//void GranularVoice::setAudioBlock(juce::dsp::AudioBlock<float> audioBlock, double fileSampleRate){
-//	granularSynthGuts->setAudioBlock(audioBlock, fileSampleRate);
-//}
+}
 void GranularVoice::setLogger(std::function<void(const juce::String&)> loggerFunction)
 {
 	logger = loggerFunction;
@@ -35,7 +43,7 @@ void GranularVoice::startNote (int midiNoteNumber, float velocity, juce::Synthes
 	(void)sound;
 	
 	int velIntegral = static_cast<int>(velocity * 127.f);
-	_voice_shared_state.trigger = 1.0;
+//	_voice_shared_state.trigger = 1.0;
 
 	if (adsr.isActive()) {}
 	else {
@@ -81,7 +89,8 @@ void GranularVoice::renderNextBlock (juce::AudioBuffer< float > &outputBuffer, i
 		}
 		return;
 	}
-	
+	granularSynthGuts->setParams();
+
 	auto totalNumOutputChannels = outputBuffer.getNumChannels();
 
 	double envelope;
@@ -92,8 +101,8 @@ void GranularVoice::renderNextBlock (juce::AudioBuffer< float > &outputBuffer, i
 		}
 		envelope *= envelope;
 		
-		std::array<float, 2> output = (*granularSynthGuts)(_voice_shared_state.trigger);
-		_voice_shared_state.trigger = 0.f;
+		std::array<float, 2> output = (*granularSynthGuts)(0.f /*_voice_shared_state.trigger*/);
+//		_voice_shared_state.trigger = 0.f;
 		
 		output[0] *= envelope;
 		output[1] *= envelope;

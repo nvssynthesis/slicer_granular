@@ -124,7 +124,8 @@ struct GrainwisePostProcessing
 
 class PolyGrain {
 public:
-	PolyGrain(GranularSynthSharedState *const synth_shared_state, int voice_id, unsigned long seed = 1234567890UL);
+	PolyGrain(GranularSynthSharedState *const synth_shared_state,
+			  GranularVoiceSharedState *const voice_shared_state);
 	virtual ~PolyGrain() = default;
 	//====================================================================================
 	void setSampleRate(double sampleRate);
@@ -150,64 +151,6 @@ public:
 	void setGrainsIdle();
 	std::vector<float> getBusyStatuses() const;
 	//=======================================================================
-	inline void setTranspose(float transpositionRatio){
-		doSetTranspose(transpositionRatio);
-	}
-	inline void setSpeed(float newSpeed){
-		doSetSpeed(newSpeed);
-	}
-	inline void setPosition(float positionNormalized){
-		doSetPosition(positionNormalized);
-	}
-	inline void setDuration(float dur_ms){
-		doSetDuration(static_cast<double>(dur_ms));
-	}
-	inline void setSkew(float skew){
-		doSetSkew(skew);
-	}
-	inline void setPlateau(float plateau){
-		doSetPlateau(plateau);
-	}
-	inline void setPan(float pan){
-		doSetPan(pan);
-	}
-	//=======================================================================
-	inline void setTransposeRandomness(float randomness){
-		doSetTransposeRandomness(randomness);
-	}
-	inline void setPositionRandomness(float randomness){
-		doSetPositionRandomness(static_cast<double>(randomness));
-	}
-	inline void setDurationRandomness(float randomness){
-		doSetDurationRandomness(static_cast<double>(randomness));
-	}
-	inline void setSpeedRandomness(float randomness){
-		doSetSpeedRandomness(randomness);
-	}
-	inline void setSkewRandomness(float randomness){
-		doSetSkewRandomness(randomness);
-	}
-	inline void setPlateauRandomness(float randomness){
-		doSetPlateauRandomness(randomness);
-	}
-	inline void setPanRandomness(float randomness){
-		doSetPanRandomness(randomness);
-	}
-	//=======================================================================
-	inline void setScannerAmount(float scannerAmount){
-		doSetScannerAmount(scannerAmount);
-	}
-	inline void setScannerRate(float scannerRate){
-		doSetScannerRate(scannerRate);
-	}
-	//=======================================================================
-	inline void setFxGrainDrive(float grainDrive){
-		doSetFxGrainDrive(grainDrive);
-	}
-	inline void setFxMakeupGain(float makeupGain){
-		doSetFxMakeupGain(makeupGain);
-	}
-	//=======================================================================
 	inline std::array<float, 2> operator()(float triggerIn){
 		return doProcess(triggerIn);
 	}
@@ -219,6 +162,8 @@ public:
 	void setMultiReadBounds(std::vector<WeightedReadBounds> newReadBounds) ;
 	std::vector<GrainDescription> getGrainDescriptions() const;
 	void setLogger(std::function<void(const juce::String&)> loggerFunction);
+	
+	void setParams();
 protected:
 	//================================================================================
 	virtual void doNoteOn(noteNumber_t note, velocity_t velocity);	// reassign to noteHolder
@@ -226,34 +171,13 @@ protected:
 	virtual void doUpdateNotes(/*enum noteDistribution_t?*/);
 	virtual void doClearNotes();
 	virtual void doShuffleIndices();
-	
-	virtual void doSetTranspose(float transpositionRatio);
-	virtual void doSetSpeed(float newSpeed);
-	virtual void doSetPosition(double positionNormalized);
-	virtual void doSetDuration(double dur_ms);
-	virtual void doSetSkew(float skew);
-	virtual void doSetPlateau(float plateau);
-	virtual void doSetPan(float pan);
-	
-	virtual void doSetTransposeRandomness(float randomness);
-	virtual void doSetPositionRandomness(double randomness);
-	virtual void doSetDurationRandomness(double randomness);
-	virtual void doSetSpeedRandomness(float randomness);
-	virtual void doSetSkewRandomness(float randomness);
-	virtual void doSetPlateauRandomness(float randomness);
-	virtual void doSetPanRandomness(float randomness);
-	
-	virtual void doSetScannerAmount(float scannerAmount);
-	virtual void doSetScannerRate(float scannerRate);
-	
-	virtual void doSetFxGrainDrive(float drive);
-	virtual void doSetFxMakeupGain(float gain);
-	
+
 	std::array<float, 2> doProcess(float triggerIn);
 	
 	//================================================================================
 	GranularSynthSharedState *const _synth_shared_state;
-	GranularVoiceSharedState _voice_shared_state;
+	GranularVoiceSharedState *const _voice_shared_state;
+
 	std::vector<Grain> _grains;
 private:
 	float _normalizer {1.f};
@@ -280,21 +204,6 @@ public:
 	void setAccum(float newVal);
 	void setRatioBasedOnNote(float ratioForNote);
 	void setAmplitudeBasedOnNote(float velocity);
-	void setTranspose(float semitones);
-	void setDuration(double duration);
-	void setPosition(double position);
-	void setSkew(float skew);
-	void setPlateau(float plateau);
-	void setPan(float pan);
-	void setTransposeRand(float transposeRand);
-	void setDurationRand(double durationRand);
-	void setPositionRand(double positionRand);
-	void setSkewRand(float skewRand);
-	void setPlateauRand(float plateauRand);
-	void setPanRand(float panRand);
-	// grainwise fx
-	void setFxGrainDrive(float drive);
-	void setFxMakeupGain(float gain);
 	
 	float getBusyStatus() const;
 	void setBusyStatus(bool newBusyStatus);
@@ -313,6 +222,7 @@ public:
 	void setFirstPlaythroughOfVoicesNote(bool isFirstPlaythrough){
 		firstPlaythroughOfVoicesNote = isFirstPlaythrough;
 	}
+	void setParams();
 private:
 	GranularSynthSharedState *const _synth_shared_state;
 	GranularVoiceSharedState *const _voice_shared_state;
@@ -348,6 +258,7 @@ private:
 	
 	GrainwisePostProcessing _postProcessing;
 	
+	// these get used both for operator() as well as passing on to gui via getGrainDescription
     double _sample_index {0.0};
     float _waveform_read_rate {0.0};
     float _window {0.f};
@@ -355,6 +266,7 @@ private:
     
     float _ratio_based_on_note {1.f}; // =1.f. later this may change according to a settable concert pitch
     float _amplitude_based_on_note {0.f};
+
 	float _grain_drive {1.0f};
 	float _grain_makeup_gain {1.0f};
 };

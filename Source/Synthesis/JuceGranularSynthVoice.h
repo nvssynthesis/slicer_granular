@@ -19,11 +19,7 @@
 class GranularVoice	:	public juce::SynthesiserVoice
 {
 public:
-	GranularVoice(std::unique_ptr<nvs::gran::PolyGrain> synthGuts)
-	:	granularSynthGuts{std::move(synthGuts)}
-	{
-		granularSynthGuts->setReadBounds({0.0, 1.0});
-	}
+	GranularVoice(nvs::gran::GranularSynthSharedState *const synth_shared_state, unsigned long seed, int voice_id);
 	void setCurrentPlaybackSampleRate(double sampleRate) override;
 
 	void prepareToPlay(double sampleRate, int samplesPerBlock);	// why not override??
@@ -52,9 +48,10 @@ public:
 	}
 	void setLogger(std::function<void(const juce::String&)> loggerFunction);
 private:
-	std::unique_ptr<nvs::gran::PolyGrain> granularSynthGuts;
+	nvs::gran::GranularSynthSharedState *_synth_shared_state {nullptr};
 	nvs::gran::GranularVoiceSharedState _voice_shared_state;
-	
+	std::unique_ptr<nvs::gran::PolyGrain> granularSynthGuts;
+
 	int lastMidiNoteNumber {0};
 	std::vector<nvs::gran::GrainDescription> _grainDescriptions;
 	juce::ADSR adsr;
