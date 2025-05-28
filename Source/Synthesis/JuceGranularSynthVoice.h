@@ -10,30 +10,16 @@
 
 #pragma once
 
-#ifndef FROZEN_MAP
-#define FROZEN_MAP 1
-#endif
-
-#if FROZEN_MAP
-	#include "frozen/map.h"
-	#define STATIC_MAP 0
-	#define MAP frozen::map
-#endif
-
-#if STATIC_MAP
-	#include "DataStructures.h"
-	#define MAP StaticMap
-#endif
-
 #include <JuceHeader.h>
 #include "./GranularSynthesis.h"
-#include "../params.h"
+#include "../Params/params.h"
+#include "../Params/GranularParameterMapping.h"
 
 
 class GranularVoice	:	public juce::SynthesiserVoice
 {
 public:
-	GranularVoice(std::unique_ptr<nvs::gran::genGranPoly1> synthGuts)
+	GranularVoice(std::unique_ptr<nvs::gran::PolyGrain> synthGuts)
 	:	granularSynthGuts{std::move(synthGuts)}
 	{
 		granularSynthGuts->setReadBounds({0.0, 1.0});
@@ -52,88 +38,22 @@ public:
 	bool canPlaySound (juce::SynthesiserSound *) override ;
 	
 	std::vector<nvs::gran::GrainDescription> getGrainDescriptions() const;
-
-	template <auto Start, auto End>
-	constexpr void granularMainParamSet(juce::AudioProcessorValueTreeState &apvts) {
-		float tmp;
-
-		if constexpr (Start < End){
-			constexpr params_e p = static_cast<params_e>(Start);
-			tmp = *apvts.getRawParameterValue(getParamElement<p, param_elem_e::name>());
-			float *last = lastGranularMainParamsMap.at(p);
-			if (tmp != *last){
-				*last = tmp;
-				granMembrSetFunc setFunc = paramSetterMap.at(p);
-				(granularSynthGuts.get()->*setFunc)(tmp);	// could replace with std::invoke
-			}
-			
-			granularMainParamSet<Start + 1, End>(apvts);
-		}
-	}
-	template <auto Start, auto End>
-	constexpr void envelopeParamSet(juce::AudioProcessorValueTreeState &apvts) {
-		float tmp;
-		if constexpr (Start < End){
-			constexpr params_e p = static_cast<params_e>(Start);
-			tmp = *apvts.getRawParameterValue(getParamElement<p, param_elem_e::name>());
-			float *last = lastEnvelopeParamsMap.at(p);
-			if (tmp != *last){
-				*last = tmp;
-				juceVoiceSetFunc setFunc = envParamSetterMap.at(p);
-				(this->*setFunc)(tmp);	// could replace with std::invoke
-			}
-			
-			envelopeParamSet<Start + 1, End>(apvts);
-		}
-	}
-	template <auto Start, auto End>
-	constexpr void scannerParamSet(juce::AudioProcessorValueTreeState &apvts) {
-		float tmp;
-		if constexpr (Start < End){
-			constexpr params_e p = static_cast<params_e>(Start);
-			tmp = *apvts.getRawParameterValue(getParamElement<p, param_elem_e::name>());
-			float *last = lastScannerParamsMap.at(p);
-			if (tmp != *last){
-				*last = tmp;
-				granMembrSetFunc setFunc = scannerParamSetterMap.at(p);
-				(granularSynthGuts.get()->*setFunc)(tmp);	// could replace with std::invoke
-			}
-			scannerParamSet<Start + 1, End>(apvts);
-		}
-	}
-	
-	template <auto Start, auto End>
-	constexpr void fxParamSet(juce::AudioProcessorValueTreeState &apvts) {
-		float tmp;
-		if constexpr (Start < End){
-			constexpr params_e p = static_cast<params_e>(Start);
-			tmp = *apvts.getRawParameterValue(getParamElement<p, param_elem_e::name>());
-			float *last = lastFxParamsMap.at(p);
-			if (tmp != *last){
-				*last = tmp;
-				granMembrSetFunc setFunc = scannerFxSetterMap.at(p);
-				(granularSynthGuts.get()->*setFunc)(tmp);	// could replace with std::invoke
-			}
-			fxParamSet<Start + 1, End>(apvts);
-		}
-	}
 	
 	void setAmpAttack(float newAttack);
 	void setAmpDecay(float newDecay);
 	void setAmpSustain(float newSustain);
 	void setAmpRelease(float newRelease);
 	
-	nvs::gran::genGranPoly1* getGranularSynthGuts(){
+	nvs::gran::PolyGrain* getGranularSynthGuts(){
 		return granularSynthGuts.get();
 	}
 	static size_t getNumGrains(){
-		return nvs::gran::genGranPoly1::getNumGrains();
+		return nvs::gran::PolyGrain::getNumGrains();
 	}
 	void setLogger(std::function<void(const juce::String&)> loggerFunction);
 private:
-	std::unique_ptr<nvs::gran::genGranPoly1> granularSynthGuts;
+	std::unique_ptr<nvs::gran::PolyGrain> granularSynthGuts;
 	nvs::gran::GranularVoiceSharedState _voice_shared_state;
-	nvs::gran::GranularSynthSharedState _synth_shared_state;
 	
 	int lastMidiNoteNumber {0};
 	std::vector<nvs::gran::GrainDescription> _grainDescriptions;
@@ -141,110 +61,6 @@ private:
 	juce::ADSR::Parameters adsrParameters {0.1, 0.3, 0.5, 0.05};
 	
 	std::function<void(const juce::String&)> logger = nullptr;
-	
-	float lastTranspose 	{getParamDefault(params_e::transpose)};
-	float lastPosition 		{getParamDefault(params_e::position)};
-	float lastSpeed 		{getParamDefault(params_e::speed)};
-	float lastDuration 		{getParamDefault(params_e::duration)};
-	float lastSkew 			{getParamDefault(params_e::skew)};
-	float lastPlateau 		{getParamDefault(params_e::plateau)};
-	float lastPan 			{getParamDefault(params_e::pan)};
-
-	float lastTransposeRand {getParamDefault(params_e::transp_randomness)};
-	float lastPositionRand 	{getParamDefault(params_e::pos_randomness)};
-	float lastSpeedRand 	{getParamDefault(params_e::speed_randomness)};
-	float lastDurationRand 	{getParamDefault(params_e::dur_randomness)};
-	float lastSkewRand 		{getParamDefault(params_e::skew_randomness)};
-	float lastPlateauRand	{getParamDefault(params_e::plat_randomness)};
-	float lastPanRand 		{getParamDefault(params_e::pan_randomness)};
-
-	float lastAmpAttack 	{getParamDefault(params_e::amp_attack)};
-	float lastAmpDecay 		{getParamDefault(params_e::amp_decay)};
-	float lastAmpSustain 	{getParamDefault(params_e::amp_sustain)};
-	float lastAmpRelease 	{getParamDefault(params_e::amp_release)};
-	
-	float lastPositionScanAmount	{getParamDefault(params_e::pos_scan_amount)};
-	float lastPositionScanRate		{getParamDefault(params_e::pos_scan_rate)};
-	
-	float lastFxGrainDrive	{getParamDefault(params_e::fx_grain_drive)};
-	float lastFxMakeupGain	{getParamDefault(params_e::fx_makeup_gain)};
-
-#if (STATIC_MAP | FROZEN_MAP)
-	using granMembrSetFunc = void(nvs::gran::genGranPoly1::*) (float);
-
-	static constexpr inline MAP<params_e, granMembrSetFunc, NUM_MAIN_PARAMS>
-	paramSetterMap {
-		std::make_pair<params_e, granMembrSetFunc>(params_e::transpose, 		&nvs::gran::genGranPoly1::setTranspose),
-		std::make_pair<params_e, granMembrSetFunc>(params_e::position, 			&nvs::gran::genGranPoly1::setPosition),
-		std::make_pair<params_e, granMembrSetFunc>(params_e::speed, 			&nvs::gran::genGranPoly1::setSpeed),
-		std::make_pair<params_e, granMembrSetFunc>(params_e::duration, 			&nvs::gran::genGranPoly1::setDuration),
-		std::make_pair<params_e, granMembrSetFunc>(params_e::skew, 				&nvs::gran::genGranPoly1::setSkew),
-		std::make_pair<params_e, granMembrSetFunc>(params_e::plateau,			&nvs::gran::genGranPoly1::setPlateau),
-		std::make_pair<params_e, granMembrSetFunc>(params_e::pan, 				&nvs::gran::genGranPoly1::setPan),
-		std::make_pair<params_e, granMembrSetFunc>(params_e::transp_randomness, &nvs::gran::genGranPoly1::setTransposeRandomness),
-		std::make_pair<params_e, granMembrSetFunc>(params_e::pos_randomness, 	&nvs::gran::genGranPoly1::setPositionRandomness),
-		std::make_pair<params_e, granMembrSetFunc>(params_e::speed_randomness, 	&nvs::gran::genGranPoly1::setSpeedRandomness),
-		std::make_pair<params_e, granMembrSetFunc>(params_e::dur_randomness, 	&nvs::gran::genGranPoly1::setDurationRandomness),
-		std::make_pair<params_e, granMembrSetFunc>(params_e::skew_randomness, 	&nvs::gran::genGranPoly1::setSkewRandomness),
-		std::make_pair<params_e, granMembrSetFunc>(params_e::plat_randomness,	&nvs::gran::genGranPoly1::setPlateauRandomness),
-		std::make_pair<params_e, granMembrSetFunc>(params_e::pan_randomness, 	&nvs::gran::genGranPoly1::setPanRandomness),
-	};
-	using juceVoiceSetFunc = void(GranularVoice::*) (float);
-	static constexpr inline MAP<params_e, juceVoiceSetFunc, NUM_ENV_PARAMS> envParamSetterMap {
-		std::make_pair<params_e, juceVoiceSetFunc>(params_e::amp_attack, 	&GranularVoice::setAmpAttack),
-		std::make_pair<params_e, juceVoiceSetFunc>(params_e::amp_decay, 	&GranularVoice::setAmpDecay),
-		std::make_pair<params_e, juceVoiceSetFunc>(params_e::amp_sustain,	&GranularVoice::setAmpSustain),
-		std::make_pair<params_e, juceVoiceSetFunc>(params_e::amp_release,	&GranularVoice::setAmpRelease),
-	};
-	
-	static constexpr inline MAP<params_e, granMembrSetFunc, NUM_SCANNER_PARAMS>
-	scannerParamSetterMap {
-		std::make_pair<params_e, granMembrSetFunc>(params_e::pos_scan_amount, 	&nvs::gran::genGranPoly1::setScannerAmount),
-		std::make_pair<params_e, granMembrSetFunc>(params_e::pos_scan_rate, 	&nvs::gran::genGranPoly1::setScannerRate),
-	};
-	static constexpr inline MAP<params_e, granMembrSetFunc, NUM_FX_PARAMS>
-	scannerFxSetterMap {
-		std::make_pair<params_e, granMembrSetFunc>(params_e::fx_grain_drive, 	&nvs::gran::genGranPoly1::setFxGrainDrive),
-		std::make_pair<params_e, granMembrSetFunc>(params_e::fx_makeup_gain, 	&nvs::gran::genGranPoly1::setFxMakeupGain)
-	};
-	/*
-	 this map is unnecessary because these pointed-to floats are never called by name. could just use an std::array<float, static_cast<size_t>(params_e::count)> lastParams
-	 */
-	MAP<params_e, float *, NUM_MAIN_PARAMS>
-	lastGranularMainParamsMap {
-		std::make_pair<params_e, float *>(params_e::transpose, 	&lastTranspose),
-		std::make_pair<params_e, float *>(params_e::position, 	&lastPosition),
-		std::make_pair<params_e, float *>(params_e::speed, 		&lastSpeed),
-		std::make_pair<params_e, float *>(params_e::duration, 	&lastDuration),
-		std::make_pair<params_e, float *>(params_e::skew, 		&lastSkew),
-		std::make_pair<params_e, float *>(params_e::plateau,	&lastPlateau),
-		std::make_pair<params_e, float *>(params_e::pan, 		&lastPan),
-		std::make_pair<params_e, float *>(params_e::transp_randomness, 	&lastTransposeRand),
-		std::make_pair<params_e, float *>(params_e::pos_randomness, 	&lastPositionRand),
-		std::make_pair<params_e, float *>(params_e::speed_randomness, 	&lastSpeedRand),
-		std::make_pair<params_e, float *>(params_e::dur_randomness, 	&lastDurationRand),
-		std::make_pair<params_e, float *>(params_e::skew_randomness, 	&lastSkewRand),
-		std::make_pair<params_e, float *>(params_e::plat_randomness, 	&lastPlateauRand),
-		std::make_pair<params_e, float *>(params_e::pan_randomness, 	&lastPanRand)
-	};
-	MAP<params_e, float *, NUM_ENV_PARAMS>
-	lastEnvelopeParamsMap{
-		std::make_pair<params_e, float *>(params_e::amp_attack,		&lastAmpAttack),
-		std::make_pair<params_e, float *>(params_e::amp_decay,		&lastAmpDecay),
-		std::make_pair<params_e, float *>(params_e::amp_sustain,	&lastAmpSustain),
-		std::make_pair<params_e, float *>(params_e::amp_release,	&lastAmpRelease)
-	};
-	MAP<params_e, float *, NUM_SCANNER_PARAMS>
-	lastScannerParamsMap {
-		std::make_pair<params_e, float *>(params_e::pos_scan_amount,	&lastPositionScanAmount),
-		std::make_pair<params_e, float *>(params_e::pos_scan_rate,		&lastPositionScanRate)
-	};
-	MAP<params_e, float *, NUM_FX_PARAMS>
-	lastFxParamsMap {
-		std::make_pair<params_e, float *>(params_e::fx_grain_drive,		&lastFxGrainDrive),
-		std::make_pair<params_e, float *>(params_e::fx_makeup_gain,		&lastFxMakeupGain)
-	};
-#endif
 	
 	struct dbg_counter {
 		using int_t = unsigned long;

@@ -8,18 +8,18 @@
 #include "Synthesis/JuceGranularSynthesizer.h"
 #include "dsp_util.h"
 #include "misc_util.h"
-#include "params.h"
+#include "Params/params.h"
 
 //==============================================================================
 
-class Slicer_granularAudioProcessor  : 	public juce::AudioProcessor
+class SlicerGranularAudioProcessor  : 	public juce::AudioProcessor
                             #if JucePlugin_Enable_ARA
                              , public juce::AudioProcessorARAExtension
                             #endif
 {
 public:
 	//==============================================================================
-	Slicer_granularAudioProcessor(std::unique_ptr<GranularSynthesizer> granularSynth);
+	SlicerGranularAudioProcessor();
 	
 	//==============================================================================
 	void prepareToPlay (double sampleRate, int samplesPerBlock) override;
@@ -109,16 +109,14 @@ private:
 	void loadAudioFileAsync(juce::File const file, bool notifyEditor);
 	
 	nvs::util::MeasuredData measuredGrainDescriptions;
-	
-	juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
     //==============================================================================
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Slicer_granularAudioProcessor)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SlicerGranularAudioProcessor)
 };
 
 class AudioFileLoaderThread : public juce::Thread
 {
 public:
-	AudioFileLoaderThread(Slicer_granularAudioProcessor& processor, juce::File fileToLoad, bool notify)
+	AudioFileLoaderThread(SlicerGranularAudioProcessor& processor, juce::File fileToLoad, bool notify)
 		: juce::Thread("AudioFileLoader"),
 		  audioProcessor(processor),
 		  file(fileToLoad),
@@ -130,7 +128,9 @@ public:
 	}
 
 private:
-	Slicer_granularAudioProcessor& audioProcessor;
+	SlicerGranularAudioProcessor& audioProcessor;
 	juce::File file;
 	bool notifyEditor;
 };
+
+juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();

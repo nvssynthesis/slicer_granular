@@ -17,15 +17,15 @@
 class SliderColumn	:	public juce::Component
 {
 public:
-	SliderColumn(juce::AudioProcessorValueTreeState &apvts, params_e nonRandomParam)
+	SliderColumn(juce::AudioProcessorValueTreeState &apvts, juce::StringRef mainParamID)
 	:
-	_slider(apvts, nonRandomParam, juce::Slider::LinearVertical),
-	_knob(apvts, mainToRandom(nonRandomParam), juce::Slider::RotaryHorizontalVerticalDrag)
+	_slider(apvts, nvs::param::getParameterByID(mainParamID), juce::Slider::LinearVertical),
+	_knob(apvts, nvs::param::getParameterByID(mainParamID + "_rand"), juce::Slider::RotaryHorizontalVerticalDrag)
 	{
 		addAndMakeVisible(&_slider._slider);
 		_slider._slider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, int(float(_slider._slider.getHeight())*0.12));
 
-		_label.setText(getParamName(nonRandomParam), juce::dontSendNotification);
+		_label.setText(nvs::param::getParameterByID(mainParamID).displayName, juce::dontSendNotification);
 		
 		_label.setJustificationType(juce::Justification::centred);
 		addAndMakeVisible(&_label);
@@ -48,7 +48,6 @@ public:
 
 		auto const boundsHeight = bounds.getHeight();
 		auto const boundsWidth = bounds.getWidth();
-		std::cout << "width: " << boundsWidth << " height: " << boundsHeight << '\n';
 
 		const float sliderProportion = boundsHeight > 80 ? 0.75f : 0.0f;
 		const float labelProportion  = ((boundsWidth > 51) and (boundsHeight > 166)) ? 0.08f : 0.0f;

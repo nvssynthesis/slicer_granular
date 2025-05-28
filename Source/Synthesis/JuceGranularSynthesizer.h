@@ -15,7 +15,7 @@
 class GranularSynthesizer	:	public juce::Synthesiser
 {
 public:
-	GranularSynthesizer();
+	GranularSynthesizer(juce::AudioProcessorValueTreeState &apvts);
 	
 	void setAudioBlock(juce::AudioBuffer<float> &waveBuffer, double newFileSampleRate, size_t fileNameHash);
 	size_t getFilenameHash() const {
@@ -31,67 +31,6 @@ public:
 	};
 	void setPositionAlignmentSetting(PositionAlignmentSetting setting) {
 		_synth_shared_state._settings._center_position_at_env_peak = static_cast<bool>(setting);
-	}
-	
-	template <auto Start, auto End>
-	constexpr void granularMainParamSet(juce::AudioProcessorValueTreeState &apvts){
-		if constexpr (Start < End){
-			juce::SynthesiserVoice* voice = getVoice(Start);
-			if (GranularVoice* granularVoice = dynamic_cast<GranularVoice*>(voice)){
-				granularVoice->granularMainParamSet<0, static_cast<int>(params_e::count_main_granular_params)>(apvts);
-			}
-			else {
-				jassert (false);
-			}
-			granularMainParamSet<Start + 1, End>(apvts);
-		}
-	}
-	
-	template <auto Start, auto End>
-	constexpr void envelopeParamSet(juce::AudioProcessorValueTreeState &apvts){
-		if constexpr (Start < End){
-			juce::SynthesiserVoice* voice = getVoice(Start);
-			if (GranularVoice* granularVoice = dynamic_cast<GranularVoice*>(voice)){
-				granularVoice->envelopeParamSet<static_cast<int>(params_e::count_main_granular_params)+1,
-												static_cast<int>(params_e::count_envelope_params)>
-												(apvts);
-			}
-			else {
-				jassert (false);
-			}
-			envelopeParamSet<Start + 1, End>(apvts);
-		}
-	}
-	
-	template <auto Start, auto End>
-	constexpr void scannerParamSet(juce::AudioProcessorValueTreeState &apvts){
-		if constexpr (Start < End){
-			juce::SynthesiserVoice* voice = getVoice(Start);
-			if (GranularVoice* granularVoice = dynamic_cast<GranularVoice*>(voice)){
-				granularVoice->scannerParamSet<static_cast<int>(params_e::count_envelope_params)+1,
-												static_cast<int>(params_e::count_pos_scan_params)>
-												(apvts);
-			}
-			else {
-				jassert (false);
-			}
-			scannerParamSet<Start + 1, End>(apvts);
-		}
-	}
-	template <auto Start, auto End>
-	constexpr void fxParamSet(juce::AudioProcessorValueTreeState &apvts){
-		if constexpr (Start < End){
-			juce::SynthesiserVoice* voice = getVoice(Start);
-			if (GranularVoice* granularVoice = dynamic_cast<GranularVoice*>(voice)){
-				granularVoice->fxParamSet<static_cast<int>(params_e::fx_grain_drive),
-												static_cast<int>(params_e::count_fx_params)>
-												(apvts);
-			}
-			else {
-				jassert (false);
-			}
-			fxParamSet<Start + 1, End>(apvts);
-		}
 	}
 	
 	void setLogger(std::function<void(const juce::String&)> loggerFunction);

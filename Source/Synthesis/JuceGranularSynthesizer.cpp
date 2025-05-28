@@ -14,7 +14,8 @@
 #endif
 #include "./JuceGranularSynthSound.h"
 
-GranularSynthesizer::GranularSynthesizer()
+GranularSynthesizer::GranularSynthesizer(juce::AudioProcessorValueTreeState &apvts)
+:	_synth_shared_state(apvts)
 {
 	setCurrentPlaybackSampleRate(44100.0);	// setting to some default rate, because we need a sensible sample rate (not 0) to construct the voices, to avoid divide by zero
 	initializeVoices();
@@ -45,7 +46,7 @@ void GranularSynthesizer::initializeVoices() {
 	unsigned long seed = 1234567890UL;
 	totalNumGrains_ = 0;
 	for (int i = 0; i < num_voices; ++i) {
-		auto voice = new GranularVoice(std::make_unique<nvs::gran::genGranPoly1>(&_synth_shared_state, i, seed));
+		auto voice = new GranularVoice(std::make_unique<nvs::gran::PolyGrain>(&_synth_shared_state, i, seed));
 		addVoice(voice);
 		totalNumGrains_ += voice->getNumGrains();
 		++seed;

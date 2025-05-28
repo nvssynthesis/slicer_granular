@@ -22,7 +22,7 @@ struct GranularEditorCommon	:	public juce::ChangeListener
 ,								public juce::FilenameComponentListener
 , 								private juce::Timer	// time was only introduced to defer fileComp notating on startup
 {
-	GranularEditorCommon(Slicer_granularAudioProcessor& p);
+	GranularEditorCommon(SlicerGranularAudioProcessor& p);
 	~GranularEditorCommon();	// remove listeners
 	// ChangeListener
 	void changeListenerCallback (juce::ChangeBroadcaster* source) override;
@@ -46,7 +46,7 @@ protected:
 	// to get from processor to draw onto gui
 	std::vector<nvs::gran::GrainDescription> grainDescriptions;
 	
-	Slicer_granularAudioProcessor& audioProcessor;
+	SlicerGranularAudioProcessor& audioProcessor;
 	nvs::util::SampleManagementGuts *sampleManagementGuts {nullptr};
 };
 
@@ -67,7 +67,7 @@ class Slicer_granularAudioProcessorEditor  : 	public juce::AudioProcessorEditor
 ,												public GranularEditorCommon
 {
 public:
-    Slicer_granularAudioProcessorEditor (Slicer_granularAudioProcessor&);
+    Slicer_granularAudioProcessorEditor (SlicerGranularAudioProcessor&);
     //==============================================================================
     void paint (juce::Graphics&) override;
     void resized() override;
@@ -83,7 +83,7 @@ private:
 	};
 	size_t colourOffsetIndex {0};
 	
-    Slicer_granularAudioProcessor& audioProcessor;
+    SlicerGranularAudioProcessor& audioProcessor;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Slicer_granularAudioProcessorEditor)
 };
 

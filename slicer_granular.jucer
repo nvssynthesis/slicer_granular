@@ -5,7 +5,7 @@
               pluginCharacteristicsValue="pluginIsSynth,pluginWantsMidiIn"
               pluginManufacturer="nvssynthesis" cppLanguageStandard="20" headerPath="/Users/nicholassolem/development/boost_1_80_0&#10;/Users/nicholassolem/development/eigen-3.4.0&#10;/Users/nicholassolem/development/nvs_maps&#10;/Users/nicholassolem/development/nvs_libraries&#10;/Users/nicholassolem/development/thirdparty/Signalsmith&#10;/Users/nicholassolem/development/thirdparty/frozen/include&#10;/Users/nicholassolem/development/thirdparty/Sprout&#10;/Users/nicholassolem/development/thirdparty/fmt/include&#10;/Users/nicholassolem/development/thirdparty/Xoshiro-cpp"
               companyName="nvssynthesis" companyWebsite="https://nvssynthesis.github.io/"
-              version="0.1.7" pluginAUIsSandboxSafe="1" pluginManufacturerCode="Nvss"
+              version="0.1.8" pluginAUIsSandboxSafe="1" pluginManufacturerCode="Nvss"
               pluginCode="Slgr" pluginFormats="buildAU,buildStandalone,buildVST3"
               pluginAUMainType="'aumu'">
   <MAINGROUP id="QmNeTI" name="slicer-granular">
@@ -31,7 +31,11 @@
         <FILE id="BN5JES" name="DataStructures.h" compile="0" resource="0"
               file="Source/DataStructures.h"/>
       </GROUP>
-      <FILE id="wKk0Fn" name="params.h" compile="0" resource="0" file="Source/params.h"/>
+      <GROUP id="{126AF7A9-91AB-8ACB-5E93-B28D33988481}" name="Params">
+        <FILE id="pLnhaL" name="params.h" compile="0" resource="0" file="Source/Params/params.h"/>
+        <FILE id="dALzsM" name="GranularParameterMapping.h" compile="0" resource="0"
+              file="Source/Params/GranularParameterMapping.h"/>
+      </GROUP>
       <GROUP id="{BC0357AF-85B3-3B4A-11BC-B4C71511F210}" name="Synthesis">
         <FILE id="jndSe6" name="GrainDescription.h" compile="0" resource="0"
               file="Source/Synthesis/GrainDescription.h"/>
@@ -54,16 +58,14 @@
         <FILE id="geROs9" name="VoicesXGrains.h" compile="0" resource="0" file="Source/Synthesis/VoicesXGrains.h"/>
       </GROUP>
       <GROUP id="{8B05BF9B-9113-5CDB-91DE-1C951D8F5910}" name="Gui">
-        <FILE id="v5KyAV" name="FxPage.cpp" compile="1" resource="0" file="Source/Gui/FxPage.cpp"/>
-        <FILE id="YuHZpB" name="FxPage.h" compile="0" resource="0" file="Source/Gui/FxPage.h"/>
-        <FILE id="VbWIVG" name="ScannerParameterPage.cpp" compile="1" resource="0"
-              file="Source/Gui/ScannerParameterPage.cpp"/>
-        <FILE id="DuCw17" name="ScannerParameterPage.h" compile="0" resource="0"
-              file="Source/Gui/ScannerParameterPage.h"/>
-        <FILE id="MH0zIT" name="EnvelopeParameterPage.cpp" compile="1" resource="0"
-              file="Source/Gui/EnvelopeParameterPage.cpp"/>
-        <FILE id="hzGEX2" name="EnvelopeParameterPage.h" compile="0" resource="0"
-              file="Source/Gui/EnvelopeParameterPage.h"/>
+        <FILE id="F5y1Ol" name="BasicParameterPage.cpp" compile="1" resource="0"
+              file="Source/Gui/BasicParameterPage.cpp"/>
+        <FILE id="iFOINC" name="BasicParameterPage.h" compile="0" resource="0"
+              file="Source/Gui/BasicParameterPage.h"/>
+        <FILE id="cOcleK" name="RandomizedParameterPage.cpp" compile="1" resource="0"
+              file="Source/Gui/RandomizedParameterPage.cpp"/>
+        <FILE id="hYPjsl" name="RandomizedParameterPage.h" compile="0" resource="0"
+              file="Source/Gui/RandomizedParameterPage.h"/>
         <FILE id="u3Rs7d" name="TabbedPages.cpp" compile="1" resource="0" file="Source/Gui/TabbedPages.cpp"/>
         <FILE id="dhH3GX" name="TabbedPages.h" compile="0" resource="0" file="Source/Gui/TabbedPages.h"/>
         <FILE id="KBau54" name="FileSelectorComponent.h" compile="0" resource="0"
@@ -75,12 +77,6 @@
               file="Source/Gui/WaveformComponent.h"/>
         <FILE id="kHjXJe" name="WaveformComponent.cpp" compile="1" resource="0"
               file="Source/Gui/WaveformComponent.cpp"/>
-        <FILE id="rpJma0" name="GranularMainParametersPage.cpp" compile="1"
-              resource="0" file="Source/Gui/GranularMainParametersPage.cpp"/>
-        <FILE id="CZi0kN" name="GranularMainParametersPage.h" compile="0" resource="0"
-              file="Source/Gui/GranularMainParametersPage.h"/>
-        <FILE id="kLnWlN" name="MainParamsComponent.h" compile="0" resource="0"
-              file="Source/Gui/MainParamsComponent.h"/>
         <FILE id="xHskLN" name="GrainBusyDisplay.cpp" compile="1" resource="0"
               file="Source/Gui/GrainBusyDisplay.cpp"/>
         <FILE id="eSZxN6" name="GrainBusyDisplay.h" compile="0" resource="0"

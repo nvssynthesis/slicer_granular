@@ -32,7 +32,7 @@ typedef int noteNumber_t;
 typedef int velocity_t;
 typedef std::map<noteNumber_t, velocity_t> NoteHolder;
 
-class genGrain1;
+class Grain;
 
 inline double millisecondsToSamples(double ms, double sampleRate) {
 	return (ms / 1000.0) * sampleRate;
@@ -61,6 +61,7 @@ using LatchedExponentialRandom_f = decltype(createLatchedExponentialRandom(std::
 using LatchedExponentialRandom_d = decltype(createLatchedExponentialRandom(std::declval<ExponentialRandomNumberGenerator&>(), std::declval<MuSigmaPair_d>()));
 //========================================================================================================================================
 struct GranularSynthSharedState {
+	GranularSynthSharedState(juce::AudioProcessorValueTreeState &apvts)	:	_apvts(apvts){}
 	double _playback_sample_rate {0.0};
 	
 	struct Buffer {
@@ -78,6 +79,8 @@ struct GranularSynthSharedState {
 		float _duration_dependence_on_read_bounds { 0.95f };// at 0, the 'duration' parameter is a fraction of the whole file; at 1, it is a fraction of the current event within the file.
 	};
 	Settings _settings;
+	
+	juce::AudioProcessorValueTreeState& _apvts;
 };
 
 struct GranularVoiceSharedState {
@@ -119,10 +122,10 @@ struct GrainwisePostProcessing
 	float makeup_gain {1.0f};
 };
 
-class genGranPoly1 {
+class PolyGrain {
 public:
-	genGranPoly1(GranularSynthSharedState *const synth_shared_state, int voice_id, unsigned long seed = 1234567890UL);
-	virtual ~genGranPoly1() = default;
+	PolyGrain(GranularSynthSharedState *const synth_shared_state, int voice_id, unsigned long seed = 1234567890UL);
+	virtual ~PolyGrain() = default;
 	//====================================================================================
 	void setSampleRate(double sampleRate);
 	//====================================================================================
@@ -251,7 +254,7 @@ protected:
 	//================================================================================
 	GranularSynthSharedState *const _synth_shared_state;
 	GranularVoiceSharedState _voice_shared_state;
-	std::vector<genGrain1> _grains;
+	std::vector<Grain> _grains;
 private:
 	float _normalizer {1.f};
 
@@ -266,9 +269,9 @@ private:
     NoteHolder _note_holder {};
 };
 
-class genGrain1 {
+class Grain {
 public:
-	explicit genGrain1(GranularSynthSharedState *const synth_shared_state,
+	explicit Grain(GranularSynthSharedState *const synth_shared_state,
 					   GranularVoiceSharedState *const voice_shared_state,
 					   int newId = -1);
 	

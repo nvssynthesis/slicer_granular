@@ -9,7 +9,7 @@
 #include "SlicerGranularPluginProcessor.h"
 #include "SlicerGranularPluginEditor.h"
 
-GranularEditorCommon::GranularEditorCommon (Slicer_granularAudioProcessor& p)
+GranularEditorCommon::GranularEditorCommon (SlicerGranularAudioProcessor& p)
 :	waveformAndPositionComponent(512, p.getAudioFormatManager(), p.getAPVTS())
 ,	fileComp(p.getSampleFilePath(), "*.wav;*.aif;*.aiff", "", "Select file to open", false)
 ,	tabbedPages(p.getAPVTS())
@@ -111,7 +111,7 @@ void GranularEditorCommon::filenameComponentChanged (juce::FilenameComponent* fi
 	}
 }
 //==============================================================================
-Slicer_granularAudioProcessorEditor::Slicer_granularAudioProcessorEditor (Slicer_granularAudioProcessor& p)
+Slicer_granularAudioProcessorEditor::Slicer_granularAudioProcessorEditor (SlicerGranularAudioProcessor& p)
     : AudioProcessorEditor (&p)
 ,	GranularEditorCommon(p)
 ,	audioProcessor (p)

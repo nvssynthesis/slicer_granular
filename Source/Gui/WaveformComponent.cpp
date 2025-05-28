@@ -230,9 +230,8 @@ void WaveformComponent::paintContentsIfFileLoaded (juce::Graphics& g)
 WaveformAndPositionComponent::WaveformAndPositionComponent(int sourceSamplesPerThumbnailSample, juce::AudioFormatManager &formatManagerToUse,
 								 juce::AudioProcessorValueTreeState &apvts)
 :	wc(sourceSamplesPerThumbnailSample, formatManagerToUse)
-,	positionSlider(apvts, params_e::position, juce::Slider::SliderStyle::LinearHorizontal, juce::Slider::NoTextBox)
+,	positionSlider(apvts, nvs::param::getParameterByID("position"), juce::Slider::SliderStyle::LinearHorizontal, juce::Slider::NoTextBox)
 {
-	positionSlider._slider.addListener(this);
 	addAndMakeVisible(wc);
 	addAndMakeVisible(&positionSlider._slider);
 }
@@ -280,15 +279,3 @@ void WaveformAndPositionComponent::resized()
 }
 
 void WaveformAndPositionComponent::paint (juce::Graphics& g) {}
-
-double WaveformAndPositionComponent::getPositionSliderValue() const {
-	return positionSlider._slider.getValue();
-}
-
-void WaveformAndPositionComponent::sliderValueChanged (juce::Slider *slider) {
-	if (slider == &positionSlider._slider){
-		// this is used to update the timbre space component (for TSN version)
-#pragma message ("don't want to send change message to affect timbre space")
-//		sendChangeMessage();
-	}
-}

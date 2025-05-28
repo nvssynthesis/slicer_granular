@@ -51,7 +51,7 @@ namespace {
  * returns all of them in arbitrary (but weighted) order.
  */
 std::vector<ReadBounds> pickWeightedReadBounds (
-	std::vector<genGranPoly1::WeightedReadBounds> choices,
+	std::vector<PolyGrain::WeightedReadBounds> choices,
 	int                              numToPick)
 {
 	const int N = (int) choices.size();
@@ -101,7 +101,7 @@ std::vector<ReadBounds> pickWeightedReadBounds (
 	return picked;
 }
 }
-genGranPoly1::genGranPoly1(GranularSynthSharedState *const synth_shared_state, int voice_id, unsigned long seed)
+PolyGrain::PolyGrain(GranularSynthSharedState *const synth_shared_state, int voice_id, unsigned long seed)
 :
 _synth_shared_state { synth_shared_state },
 _voice_shared_state {
@@ -120,13 +120,13 @@ _speed_ler(_voice_shared_state._expo_rng,  {10.f, 0.f})
 	}
 	std::iota(_grain_indices.begin(), _grain_indices.end(), 0);
 }
-void genGranPoly1::setSampleRate(double sample_rate){
+void PolyGrain::setSampleRate(double sample_rate){
 	assert(_synth_shared_state);
 	_phasor_internal_trig.setSampleRate(sample_rate);
 	_voice_shared_state._scanner.setSampleRate(sample_rate);
 	_synth_shared_state->_playback_sample_rate = sample_rate;
 }
-void genGranPoly1::setReadBounds(ReadBounds newReadBounds) {
+void PolyGrain::setReadBounds(ReadBounds newReadBounds) {
 	assert ((newReadBounds.begin >= 0.0) && (newReadBounds.begin <= 1.0));
 	assert ((newReadBounds.end >= 0.0) && (newReadBounds.end <= 1.0));
 	
@@ -136,7 +136,7 @@ void genGranPoly1::setReadBounds(ReadBounds newReadBounds) {
 		g.setReadBounds(newReadBounds);
 	}
 }
-void genGranPoly1::setMultiReadBounds(std::vector<WeightedReadBounds> newWeightedReadBounds) {
+void PolyGrain::setMultiReadBounds(std::vector<WeightedReadBounds> newWeightedReadBounds) {
 	
 	auto pickedWeightedReadBounds = pickWeightedReadBounds(newWeightedReadBounds, (int)_grains.size());
 	for (size_t i = 0; i < _grains.size(); ++i){
@@ -150,12 +150,12 @@ void genGranPoly1::setMultiReadBounds(std::vector<WeightedReadBounds> newWeighte
 	}
 }
 
-void genGranPoly1::setLogger(std::function<void(const juce::String&)> loggerFunction) {
+void PolyGrain::setLogger(std::function<void(const juce::String&)> loggerFunction) {
 	assert(_synth_shared_state);
 	_synth_shared_state->_logger_func = loggerFunction;
 }
 
-void genGranPoly1::doNoteOn(noteNumber_t note, velocity_t velocity){
+void PolyGrain::doNoteOn(noteNumber_t note, velocity_t velocity){
 	// reassign to noteHolder
 	auto p = std::make_pair(note, velocity);
 
@@ -170,7 +170,7 @@ void genGranPoly1::doNoteOn(noteNumber_t note, velocity_t velocity){
 	}
 #endif
 }
-void genGranPoly1::doNoteOff(noteNumber_t note){
+void PolyGrain::doNoteOff(noteNumber_t note){
 	// remove from noteHolder
 //	auto p = std::make_pair(note, 0);
 	_note_holder[note] = 0;
@@ -178,7 +178,7 @@ void genGranPoly1::doNoteOff(noteNumber_t note){
 	_note_holder.erase(note);
 	updateNotes();
 }
-void genGranPoly1::doUpdateNotes(){
+void PolyGrain::doUpdateNotes(){
 	size_t num_notes = _note_holder.size();
 	float grainsPerNoteFloor = N_GRAINS / static_cast<float>(num_notes);
 
@@ -198,14 +198,14 @@ void genGranPoly1::doUpdateNotes(){
 		}
 	}
 }
-void genGranPoly1::doClearNotes(){
+void PolyGrain::doClearNotes(){
 	_note_holder.clear();
 }
-void genGranPoly1::doShuffleIndices(){
+void PolyGrain::doShuffleIndices(){
 	std::shuffle(_grain_indices.begin(), _grain_indices.end(),
 				 _voice_shared_state._gaussian_rng.getGenerator());
 }
-std::vector<float> genGranPoly1::getBusyStatuses() const {
+std::vector<float> PolyGrain::getBusyStatuses() const {
 	std::vector<float> busyStatuses;
 	busyStatuses.reserve(N_GRAINS);
 	for (auto const &g : _grains){
@@ -213,90 +213,90 @@ std::vector<float> genGranPoly1::getBusyStatuses() const {
 	}
 	return busyStatuses;
 }
-void genGranPoly1::setGrainsIdle() {
+void PolyGrain::setGrainsIdle() {
 	for (auto &g : _grains){
 		g.setBusyStatus(false);
 	}
 }
 
-void genGranPoly1::doSetTranspose(float transposition_semitones){
+void PolyGrain::doSetTranspose(float transposition_semitones){
 	for (auto &g : _grains)
 		g.setTranspose(transposition_semitones);
 }
-void genGranPoly1::doSetSpeed(float new_speed){
+void PolyGrain::doSetSpeed(float new_speed){
 	assert (new_speed > 0.01f);
 	assert (new_speed < 11025.f);
 	_speed_ler.setMu(new_speed);
 }
-void genGranPoly1::doSetPosition(double position_normalized){
+void PolyGrain::doSetPosition(double position_normalized){
 	//	position_normalized = nvs::memoryless::clamp<double>(position_normalized, 0.0, 1.0);
 	for (auto &g : _grains)
 		g.setPosition(position_normalized);
 }
-void genGranPoly1::doSetDuration(double dur_norm){
+void PolyGrain::doSetDuration(double dur_norm){
 	for (auto &g : _grains)
 		g.setDuration(dur_norm);
 }
-void genGranPoly1::doSetSkew(float skew){
+void PolyGrain::doSetSkew(float skew){
 	skew = nvs::memoryless::clamp<float>(skew, 0.001, 0.999);
 	for (auto &g : _grains)
 		g.setSkew(skew);
 }
-void genGranPoly1::doSetPlateau(float plateau){
+void PolyGrain::doSetPlateau(float plateau){
 	for (auto &g : _grains)
 		g.setPlateau(plateau);
 }
-void genGranPoly1::doSetPan(float pan){
+void PolyGrain::doSetPan(float pan){
 	for (auto &g : _grains)
 		g.setPan(pan);
 }
 
-void genGranPoly1::doSetTransposeRandomness(float randomness){
+void PolyGrain::doSetTransposeRandomness(float randomness){
 	randomness *= 24.f;
 	for (auto &g : _grains)
 		g.setTransposeRand(randomness);
 }
-void genGranPoly1::doSetPositionRandomness(double randomness){
+void PolyGrain::doSetPositionRandomness(double randomness){
 	for (auto &g : _grains)
 		g.setPositionRand(randomness);
 }
-void genGranPoly1::doSetDurationRandomness(double randomness){
+void PolyGrain::doSetDurationRandomness(double randomness){
 	for (auto &g : _grains)
 		g.setDurationRand(randomness);
 }
-void genGranPoly1::doSetSpeedRandomness(float randomness){
+void PolyGrain::doSetSpeedRandomness(float randomness){
 	_speed_ler.setSigma(randomness);
 }
-void genGranPoly1::doSetSkewRandomness(float randomness){
+void PolyGrain::doSetSkewRandomness(float randomness){
 	for (auto &g : _grains)
 		g.setSkewRand(randomness);
 }
-void genGranPoly1::doSetPlateauRandomness(float randomness){
+void PolyGrain::doSetPlateauRandomness(float randomness){
 	for (auto &g : _grains)
 		g.setPlateauRand(randomness);
 }
-void genGranPoly1::doSetPanRandomness(float randomness){
+void PolyGrain::doSetPanRandomness(float randomness){
 	for (auto &g : _grains)
 		g.setPanRand(randomness);
 }
-void genGranPoly1::doSetScannerAmount(float scannerAmount){
+void PolyGrain::doSetScannerAmount(float scannerAmount){
 	_voice_shared_state._scanner_amount = scannerAmount;
 }
-void genGranPoly1::doSetScannerRate(float scannerRate){
+void PolyGrain::doSetScannerRate(float scannerRate){
 	_voice_shared_state._scanner._freq = scannerRate;
 }
-void genGranPoly1::doSetFxGrainDrive(float drive){
+void PolyGrain::doSetFxGrainDrive(float drive){
 	for (auto &g : _grains){
 		g.setFxGrainDrive(drive);
 	}
 }
-void genGranPoly1::doSetFxMakeupGain(float gain){
+void PolyGrain::doSetFxMakeupGain(float gain){
 	for (auto &g : _grains){
 		g.setFxMakeupGain(gain);
 	}
 }
 
-std::array<float, 2> genGranPoly1::doProcess(float trigger_in){
+std::array<float, 2> PolyGrain::doProcess(float trigger_in){
 	std::array<float, 2> output {0.f, 0.f};
 	
 	// update phasor's frequency only if _triggerHisto.val is true
@@ -309,7 +309,7 @@ std::array<float, 2> genGranPoly1::doProcess(float trigger_in){
 	
 	_voice_shared_state._scanner.phasor();	// increment scanner phase per sample
 
-	std::array<genGrain1::outs, N_GRAINS> _outs;
+	std::array<Grain::outs, N_GRAINS> _outs;
 
 	size_t idx = _grain_indices[0];
 	_outs[idx] = _grains[idx](trig);
@@ -336,7 +336,7 @@ std::array<float, 2> genGranPoly1::doProcess(float trigger_in){
 	return output;
 }
 
-std::vector<GrainDescription> genGranPoly1::getGrainDescriptions() const {
+std::vector<GrainDescription> PolyGrain::getGrainDescriptions() const {
 	std::vector<GrainDescription> gds(N_GRAINS);
 	for (size_t i = 0; i < N_GRAINS; ++i){
 		gds[i] = _grains[i].getGrainDescription();
@@ -346,7 +346,7 @@ std::vector<GrainDescription> genGranPoly1::getGrainDescriptions() const {
 }
 
 //=====================================================================================
-genGrain1::genGrain1(GranularSynthSharedState *const synth_shared_state,
+Grain::Grain(GranularSynthSharedState *const synth_shared_state,
 					 GranularVoiceSharedState *const voice_shared_state,
 					 int newId)
 :	_synth_shared_state(synth_shared_state)
@@ -359,73 +359,73 @@ genGrain1::genGrain1(GranularSynthSharedState *const synth_shared_state,
 ,	_plateau_lgr(_voice_shared_state->_gaussian_rng, {1.f, 0.f})
 ,	_pan_lgr(_voice_shared_state->_gaussian_rng, {0.5f, 0.23f})
 {}
-void genGrain1::setRatioBasedOnNote(float ratioForNote){
+void Grain::setRatioBasedOnNote(float ratioForNote){
 	_ratio_based_on_note = ratioForNote;
 }
-void genGrain1::setAmplitudeBasedOnNote(float velocity){
+void Grain::setAmplitudeBasedOnNote(float velocity){
 	assert(velocity <= 2.f);
 	assert(velocity >= 0.f);
 	_amplitude_based_on_note = velocity;
 }
-void genGrain1::setId(int newId){
+void Grain::setId(int newId){
 	_grain_id = newId;
 }
-void genGrain1::setTranspose(float ratio){
+void Grain::setTranspose(float ratio){
 	_transpose_lgr.setMu(ratio);
 }
-void genGrain1::setDuration(double dur_norm){
+void Grain::setDuration(double dur_norm){
 	assert (dur_norm <= 1.0);
 	assert (dur_norm >= 0.0);
 	_duration_ler.setMu(dur_norm);
 }
-void genGrain1::setPosition(double position){
+void Grain::setPosition(double position){
 	_position_lgr.setMu(position);
 }
-void genGrain1::setSkew(float skew){
+void Grain::setSkew(float skew){
 	_skew_lgr.setMu(skew);
 }
-void genGrain1::setPlateau(float plateau){
+void Grain::setPlateau(float plateau){
 	_plateau_lgr.setMu(plateau);
 }
-void genGrain1::setPan(float pan){
+void Grain::setPan(float pan){
 	assert ((pan >= 0.f) and (pan <= 1.f));
 	// reverse effective control to correspond better with gui representation
 	_pan_lgr.setMu(1.f - pan);
 }
-void genGrain1::setTransposeRand(float transposeRand){
+void Grain::setTransposeRand(float transposeRand){
 	_transpose_lgr.setSigma(transposeRand);
 }
-void genGrain1::setDurationRand(double durationRand){
+void Grain::setDurationRand(double durationRand){
 	_duration_ler.setSigma(durationRand);
 }
-void genGrain1::setPositionRand(double positionRand){
+void Grain::setPositionRand(double positionRand){
 	_position_lgr.setSigma(positionRand);
 }
-void genGrain1::setSkewRand(float skewRand){
+void Grain::setSkewRand(float skewRand){
 	_skew_lgr.setSigma(skewRand);
 }
-void genGrain1::setPlateauRand(float plateauRand){
+void Grain::setPlateauRand(float plateauRand){
 	_plateau_lgr.setSigma(plateauRand);
 }
-void genGrain1::setPanRand(float panRand){
+void Grain::setPanRand(float panRand){
 	_pan_lgr.setSigma(panRand);
 }
 
-void genGrain1::setFxGrainDrive(float drive){
+void Grain::setFxGrainDrive(float drive){
 	_grain_drive = drive;
 }
-void genGrain1::setFxMakeupGain(float gain){
+void Grain::setFxMakeupGain(float gain){
 	_grain_makeup_gain = gain;
 }
 
-float genGrain1::getBusyStatus() const {
+float Grain::getBusyStatus() const {
 	return _busy_histo.val;
 }
-void genGrain1::setBusyStatus(bool newBusyStatus) {
+void Grain::setBusyStatus(bool newBusyStatus) {
 	_busy_histo.val = static_cast<float>(newBusyStatus);
 }
 
-GrainDescription genGrain1::getGrainDescription() const {
+GrainDescription Grain::getGrainDescription() const {
 	assert(_synth_shared_state);
 	auto const N = _synth_shared_state->_buffer._wave_block.getNumSamples();
 
@@ -521,25 +521,25 @@ float calculateSample(juce::dsp::AudioBlock<float> const wave_block, double cons
 float calculatePan(float pan_latch_val){
 	return memoryless::clamp(pan_latch_val, 0.f, 1.f) * std::numbers::pi * 0.5f;
 }
-void writeAudioToOuts(float const sample, float const pan_latch_val, GrainwisePostProcessing &postProcessing, genGrain1::outs &outs){
+void writeAudioToOuts(float const sample, float const pan_latch_val, GrainwisePostProcessing &postProcessing, Grain::outs &outs){
 	std::array<float, 2> const lr = postProcessing(gen::pol2car(sample, pan_latch_val));
 	outs.audio_L = lr[0];
 	outs.audio_R = lr[1];
 }
-void processBusyness(float const window, nvs::gen::history<float> &busyHistory, genGrain1::outs &outs){
+void processBusyness(float const window, nvs::gen::history<float> &busyHistory, Grain::outs &outs){
 	float const  busy_tmp = (window > 0.f);
 	outs.busy = busy_tmp;
 	busyHistory(busy_tmp);
 }
 }	// end anonymous namespace
 
-void genGrain1::setReadBounds(ReadBounds newReadBounds){
+void Grain::setReadBounds(ReadBounds newReadBounds){
 	_upcoming_normalized_read_bounds = newReadBounds;
 }
-void genGrain1::resetAccum() {
+void Grain::resetAccum() {
 	_accum.reset();
 }
-void genGrain1::setAccum(float newVal) {
+void Grain::setAccum(float newVal) {
 	_accum.set(newVal);
 }
 float GrainwisePostProcessing::operator()(float x){
@@ -552,7 +552,7 @@ float GrainwisePostProcessing::operator()(float x){
 	retval *= makeup_gain;
 	return retval;
 }
-genGrain1::outs genGrain1::operator()(float const trig_in){
+Grain::outs Grain::operator()(float const trig_in){
 	assert(_synth_shared_state);
 	juce::dsp::AudioBlock<float> const wave_block = _synth_shared_state->_buffer._wave_block;
 	auto const playback_sr = _synth_shared_state->_playback_sample_rate;

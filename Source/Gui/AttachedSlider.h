@@ -10,22 +10,24 @@
 
 #pragma once
 #include <JuceHeader.h>
-#include "../params.h"
+#include "../Params/params.h"
 
 struct AttachedSlider {
+	using ParameterDef = nvs::param::ParameterDef;
 	using Slider = juce::Slider;
 	using SliderAttachment = juce::AudioProcessorValueTreeState::SliderAttachment;
 	using Label = juce::Label;
+	using String = juce::String;
 	
-	AttachedSlider(juce::AudioProcessorValueTreeState &apvts, params_e param, Slider::SliderStyle sliderStyle,
+	AttachedSlider(juce::AudioProcessorValueTreeState &apvts, ParameterDef param, Slider::SliderStyle sliderStyle,
 				   juce::Slider::TextEntryBoxPosition entryPos = juce::Slider::TextBoxBelow)
 	:
 	_slider(),
-	_attachment(apvts, ::getParamName(param), _slider),
-	_param_name(::getParamName(param))
+	_attachment(apvts, param.ID, _slider),
+	_param_name(param.displayName)
 	{
 		_slider.setSliderStyle(sliderStyle);
-		_slider.setNormalisableRange(getNormalizableRange<double>(param));
+		_slider.setNormalisableRange(param.createNormalisableRange<double>());
 		_slider.setTextBoxStyle(entryPos, false, 50, 25);
 
 		_slider.setColour(Slider::ColourIds::thumbColourId, juce::Colours::palevioletred);
@@ -41,9 +43,9 @@ struct AttachedSlider {
 	SliderAttachment _attachment;
 	Label _label;
 	
-	std::string getParamName() const { return _param_name; }
+	String getParamName() const { return _param_name; }
 private:
-	std::string _param_name;
+	String _param_name;
 	
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AttachedSlider);
 };

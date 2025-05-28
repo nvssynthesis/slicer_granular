@@ -98,7 +98,6 @@ private:
  The positionQuantizedReadOnlySlider should follow that quantized value
  */
 class WaveformAndPositionComponent	:	public juce::Component
-,										public juce::Slider::Listener
 {
 public:
 	WaveformAndPositionComponent(int sourceSamplesPerThumbnailSample,
@@ -111,9 +110,6 @@ public:
 	
 	void hideSlider();	// effectively makes it function as just the waveformComponent. I don't want to simply use that though because then the slicer_granular version has to change a bunch of code based on #ifdef TSN.
 	
-	//========================================================================================
-	void sliderValueChanged (juce::Slider *slider) override;	// apt for removal?
-	double getPositionSliderValue() const;						// apt for removal?
 	//========================================================================================
 
 	WaveformComponent wc; // externally accessible 
