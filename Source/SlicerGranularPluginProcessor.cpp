@@ -3,7 +3,6 @@
 #if defined(DEBUG_BUILD) | defined(DEBUG) | defined(_DEBUG)
 #include "fmt/core.h"
 #endif
-#include "Params/GranularParameterMapping.h"
 
 //==============================================================================
 
@@ -31,19 +30,13 @@ SlicerGranularAudioProcessor::SlicerGranularAudioProcessor()
 	apvts(*this, nullptr, "PARAMETERS", createParameterLayout())
 ,	nonAutomatableState ("NonAutomatable")
 {
-	_granularSynth = std::make_unique<GranularSynthesizer>(apvts);
-	_granularSynth->setLogger([this](const juce::String& message)
-	{
-		if (loggingGuts.fileLogger.getCurrentLogger()){
-			loggingGuts.fileLogger.logMessage(message);
-		}
-	});
 	nonAutomatableState.appendChild (juce::ValueTree ("Settings"), nullptr);
 
 	juce::ValueTree presetVT = nonAutomatableState.getOrCreateChildWithName("PresetInfo", nullptr);
 	presetVT.setProperty("sampleFilePath", "", nullptr);
 	presetVT.setProperty("author", "", nullptr);
 }
+
 
 //==============================================================================
 const juce::String SlicerGranularAudioProcessor::getName() const
@@ -358,17 +351,40 @@ juce::AudioProcessorEditor* SlicerGranularAudioProcessor::createEditor()
 }
 
 //==============================================================================
-std::unique_ptr<juce::AudioParameterFloat> createJuceParameter(const nvs::param::ParameterDef& param) {
-	return std::make_unique<juce::AudioParameterFloat>(
-		juce::ParameterID{param.ID, 1},
-		param.displayName,
-		param.getFloatRange(),  // Uses template method for float version
-		param.defaultVal,
-		juce::AudioParameterFloatAttributes()
-			.withStringFromValueFunction([param](float value, int) {
-				return juce::String(value, param.numDecimalPlaces) + param.unitSuffix;
-			})
-	);
+std::unique_ptr<juce::RangedAudioParameter> createJuceParameter(const nvs::param::ParameterDef& param) {
+	if (param.getParameterType() == nvs::param::ParameterType::Float){
+		
+		nvs::param::ParameterDef::FloatParamElements floatParamElements = std::get<nvs::param::ParameterDef::FloatParamElements>(param.elementsVar);
+		
+		auto defaultStringFromValue = [floatParamElements, suffix = param.unitSuffix](float value, int) -> juce::String
+		{
+			return juce::String(value, floatParamElements.numDecimalPlaces) + suffix;
+		};
+		auto stringFromValueFn = floatParamElements.stringFromValue == nullptr ? defaultStringFromValue : floatParamElements.stringFromValue;
+		
+		auto defaultValueFromStringFn = [](juce::String const &s) -> float
+		{
+			return s.getFloatValue();
+		};
+		auto valueFromStringFn = floatParamElements.valueFromString == nullptr ? defaultValueFromStringFn : floatParamElements.valueFromString;
+		
+		
+		return std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{param.ID, 1},
+														   param.displayName,
+														   param.getFloatRange(),  // Uses template method for float version
+														   floatParamElements.defaultVal,
+														   juce::AudioParameterFloatAttributes()
+														   .withStringFromValueFunction(stringFromValueFn)
+														   .withValueFromStringFunction(valueFromStringFn)
+														   );
+	}
+	jassert(param.getParameterType() == nvs::param::ParameterType::Choice);
+	nvs::param::ParameterDef::ChoiceParamElements choiceParamElements = std::get<nvs::param::ParameterDef::ChoiceParamElements>(param.elementsVar);
+	return std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{param.ID, 1},
+														param.displayName,
+														choiceParamElements.choices,
+														choiceParamElements.defaultChoiceIndex,
+														juce::AudioParameterChoiceAttributes());
 }
 
 juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout() {
@@ -376,22 +392,52 @@ juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout() {
 	
 	juce::AudioProcessorValueTreeState::ParameterLayout layout;
 	
-	// Group parameters automatically
+	// organize parameters by main group
 	std::map<juce::String, std::vector<ParameterDef>> groupedParams;
 	for (const auto& param : ALL_PARAMETERS) {
 		groupedParams[param.groupName].push_back(param);
 	}
-	
-	// Create groups dynamically
+	// Create groups dynamically, handling nested sub-groups
 	for (const auto& [groupName, params] : groupedParams) {
-		auto group = std::make_unique<juce::AudioProcessorParameterGroup>(
+		auto mainGroup = std::make_unique<juce::AudioProcessorParameterGroup>(
 			groupName, groupName + "Params", "|");
+		
+		// check if any parameters in this group have sub-groups
+		bool hasSubGroups = std::any_of(params.begin(), params.end(),
+			[](const ParameterDef& p) { return p.hasSubGroup(); });
+		
+		if (hasSubGroups) {
+			// organize by sub-groups
+			std::map<juce::String, std::vector<ParameterDef>> subGroupedParams;
 			
-		for (const auto& param : params) {
-			group->addChild(createJuceParameter(param));
+			for (const auto& param : params) {
+				if (param.hasSubGroup()) {
+					subGroupedParams[param.subGroupName].push_back(param);
+				} else {
+					// Parameters without sub-group go directly into main group
+					mainGroup->addChild(createJuceParameter(param));
+				}
+			}
+			
+			// create sub-groups
+			for (const auto& [subGroupName, subParams] : subGroupedParams) {
+				auto subGroup = std::make_unique<juce::AudioProcessorParameterGroup>(
+					subGroupName, subGroupName + "SubParams", "|");
+					
+				for (const auto& param : subParams) {
+					subGroup->addChild(createJuceParameter(param));
+				}
+				
+				mainGroup->addChild(std::move(subGroup));
+			}
+		} else {
+			// no sub-groups, add parameters directly
+			for (const auto& param : params) {
+				mainGroup->addChild(createJuceParameter(param));
+			}
 		}
 		
-		layout.add(std::move(group));
+		layout.add(std::move(mainGroup));
 	}
 	
 	return layout;
@@ -501,6 +547,6 @@ juce::AudioProcessorValueTreeState::ParameterLayout SlicerGranularAudioProcessor
 // this preprocessor definition should be defined in tsn_granular to prevent multiple definitions
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
-    return new SlicerGranularAudioProcessor();
+    return SlicerGranularAudioProcessor::create<SlicerGranularAudioProcessor>();
 }
 #endif

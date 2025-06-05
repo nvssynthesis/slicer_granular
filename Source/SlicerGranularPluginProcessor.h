@@ -5,7 +5,7 @@
 
 #include <JuceHeader.h>
 #include "Synthesis/GranularSynthesis.h"
-#include "Synthesis/JuceGranularSynthesizer.h"
+#include "Synthesis/GranularSynthesizer.h"
 #include "dsp_util.h"
 #include "misc_util.h"
 #include "Params/params.h"
@@ -19,7 +19,12 @@ class SlicerGranularAudioProcessor  : 	public juce::AudioProcessor
 {
 public:
 	//==============================================================================
-	SlicerGranularAudioProcessor();
+	template<typename GranularAudioProcessor_t>
+	static GranularAudioProcessor_t *create() {
+		auto obj = new GranularAudioProcessor_t();
+		obj->initialize();
+		return obj;
+	}
 	
 	//==============================================================================
 	void prepareToPlay (double sampleRate, int samplesPerBlock) override;
@@ -84,6 +89,21 @@ public:
 
 	nvs::gran::GranularSynthSharedState const &viewSynthSharedState();
 protected:
+	SlicerGranularAudioProcessor();
+	void initialize() {
+		initSynth();
+		_granularSynth->setLogger([this](const juce::String& message)
+		{
+			if (loggingGuts.fileLogger.getCurrentLogger()){
+				loggingGuts.fileLogger.logMessage(message);
+			}
+		});
+	}
+	virtual void initSynth(){
+		// this one-line function gets overriden by TSNGranularAudioProcessor to create a derived type of synthesizer
+		_granularSynth = std::make_unique<GranularSynthesizer>(apvts);
+	}
+	
 	nvs::util::SampleManagementGuts sampleManagementGuts;
 	nvs::util::LoggingGuts loggingGuts;
 	

@@ -15,7 +15,7 @@ BasicParameterPage::BasicParameterPage(juce::AudioProcessorValueTreeState &apvts
 									   juce::Slider::SliderStyle style)
 {
 	for (auto& id : paramIDs) {
-		sliders.add (new AttachedSlider (apvts, nvs::param::getParameterByID(id), style));
+		sliders.add (new AttachedSlider (apvts, nvs::param::ParameterRegistry::getParameterByID(id), style));
 	}
 	for (auto &s : sliders) {
 		addAndMakeVisible( s->_slider );

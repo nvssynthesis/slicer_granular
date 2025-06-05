@@ -1,14 +1,14 @@
 /*
   ==============================================================================
 
-    JuceGranularSynthVoice.cpp
+    GranularVoice.cpp
     Created: 7 May 2024 11:04:44am
     Author:  Nicholas Solem
 
   ==============================================================================
 */
 
-#include "JuceGranularSynthVoice.h"
+#include "GranularVoice.h"
 
 GranularVoice::GranularVoice(nvs::gran::GranularSynthSharedState  *const synth_shared_state, unsigned long seed, int voice_id)
 :	_synth_shared_state(synth_shared_state)
@@ -17,11 +17,14 @@ GranularVoice::GranularVoice(nvs::gran::GranularSynthSharedState  *const synth_s
 		._expo_rng {seed + 123456789UL},
 		._voice_id = voice_id
 	}
-{
+{}
+
+template<>
+void GranularVoice::initSynthGuts<nvs::gran::PolyGrain>() {
 	granularSynthGuts = std::make_unique<nvs::gran::PolyGrain>(_synth_shared_state, &_voice_shared_state);
 	granularSynthGuts->setReadBounds({0.0, 1.0});
-
 }
+
 void GranularVoice::setLogger(std::function<void(const juce::String&)> loggerFunction)
 {
 	logger = loggerFunction;

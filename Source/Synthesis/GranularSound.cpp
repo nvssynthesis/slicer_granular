@@ -8,7 +8,7 @@
   ==============================================================================
 */
 
-#include "JuceGranularSynthSound.h"
+#include "GranularSound.h"
 
 bool GranularSound::appliesToNote (int midiNoteNumber) {
 	(void)midiNoteNumber;

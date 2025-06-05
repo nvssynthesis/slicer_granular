@@ -1,7 +1,7 @@
 /*
   ==============================================================================
 
-    JuceGranularSynthVoice.h
+	GranularVoice.h
     Created: 7 May 2024 11:04:44am
     Author:  Nicholas Solem
 
@@ -13,13 +13,20 @@
 #include <JuceHeader.h>
 #include "./GranularSynthesis.h"
 #include "../Params/params.h"
-#include "../Params/GranularParameterMapping.h"
 
+template<typename T>
+concept GranularSynthGuts = std::derived_from<T, nvs::gran::PolyGrain>;
 
 class GranularVoice	:	public juce::SynthesiserVoice
 {
 public:
-	GranularVoice(nvs::gran::GranularSynthSharedState *const synth_shared_state, unsigned long seed, int voice_id);
+	template<GranularSynthGuts GranularSynthGuts_t>
+	static GranularVoice *create(nvs::gran::GranularSynthSharedState *const synth_shared_state, unsigned long seed, int voice_id) {
+		auto* voice = new GranularVoice(synth_shared_state, seed, voice_id);
+		voice->initSynthGuts<GranularSynthGuts_t>();
+		return voice;
+	}
+	
 	void setCurrentPlaybackSampleRate(double sampleRate) override;
 
 	void prepareToPlay(double sampleRate, int samplesPerBlock);	// why not override??
@@ -48,6 +55,11 @@ public:
 	}
 	void setLogger(std::function<void(const juce::String&)> loggerFunction);
 private:
+	GranularVoice(nvs::gran::GranularSynthSharedState *const synth_shared_state, unsigned long seed, int voice_id);
+
+	template <GranularSynthGuts GranularSynthGuts_t>
+	void initSynthGuts();
+	 
 	nvs::gran::GranularSynthSharedState *_synth_shared_state {nullptr};
 	nvs::gran::GranularVoiceSharedState _voice_shared_state;
 	std::unique_ptr<nvs::gran::PolyGrain> granularSynthGuts;

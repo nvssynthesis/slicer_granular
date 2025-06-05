@@ -19,13 +19,13 @@ class SliderColumn	:	public juce::Component
 public:
 	SliderColumn(juce::AudioProcessorValueTreeState &apvts, juce::StringRef mainParamID)
 	:
-	_slider(apvts, nvs::param::getParameterByID(mainParamID), juce::Slider::LinearVertical),
-	_knob(apvts, nvs::param::getParameterByID(mainParamID + "_rand"), juce::Slider::RotaryHorizontalVerticalDrag)
+	_slider(apvts, nvs::param::ParameterRegistry::getParameterByID(mainParamID), juce::Slider::LinearVertical),
+	_knob(apvts, nvs::param::ParameterRegistry::getParameterByID(mainParamID + "_rand"), juce::Slider::RotaryHorizontalVerticalDrag)
 	{
 		addAndMakeVisible(&_slider._slider);
 		_slider._slider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, int(float(_slider._slider.getHeight())*0.12));
 
-		_label.setText(nvs::param::getParameterByID(mainParamID).displayName, juce::dontSendNotification);
+		_label.setText(nvs::param::ParameterRegistry::getParameterByID(mainParamID).displayName, juce::dontSendNotification);
 		
 		_label.setJustificationType(juce::Justification::centred);
 		addAndMakeVisible(&_label);

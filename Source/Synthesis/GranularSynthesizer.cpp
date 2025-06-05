@@ -8,11 +8,11 @@
   ==============================================================================
 */
 
-#include "JuceGranularSynthesizer.h"
+#include "GranularSynthesizer.h"
 #if defined(DEBUG_BUILD) | defined(DEBUG) | defined(_DEBUG)
 #include <fmt/core.h>
 #endif
-#include "./JuceGranularSynthSound.h"
+#include "./GranularSound.h"
 
 GranularSynthesizer::GranularSynthesizer(juce::AudioProcessorValueTreeState &apvts)
 :	_synth_shared_state(apvts)
@@ -23,6 +23,19 @@ GranularSynthesizer::GranularSynthesizer(juce::AudioProcessorValueTreeState &apv
 	addSound(new GranularSound);
 	setNoteStealingEnabled(true);
 	setPositionAlignmentSetting(PositionAlignmentSetting::alignAtWindowPeak);
+}
+void GranularSynthesizer::initializeVoices() {
+	clearVoices();
+	unsigned long seed = 1234567890UL;
+	totalNumGrains_ = 0;
+	for (int i = 0; i < num_voices; ++i) {
+		auto voice = GranularVoice::create<nvs::gran::PolyGrain>(&_synth_shared_state, seed, i);
+		addVoice(voice);
+		totalNumGrains_ += voice->getNumGrains();
+		++seed;
+	}
+	// previously, addSound occured here
+	setCurrentPlaybackSampleRate(getSampleRate());	// if voices' sample rates need updating, this shall do it
 }
 std::vector<nvs::gran::GrainDescription> GranularSynthesizer::getGrainDescriptions() const {
 	std::vector<nvs::gran::GrainDescription> grainDescriptions;
@@ -40,19 +53,6 @@ std::vector<nvs::gran::GrainDescription> GranularSynthesizer::getGrainDescriptio
 		}
 	}
 	return grainDescriptions;
-}
-void GranularSynthesizer::initializeVoices() {
-	clearVoices();
-	unsigned long seed = 1234567890UL;
-	totalNumGrains_ = 0;
-	for (int i = 0; i < num_voices; ++i) {
-		auto voice = new GranularVoice(&_synth_shared_state, seed, i);
-		addVoice(voice);
-		totalNumGrains_ += voice->getNumGrains();
-		++seed;
-	}
-	// previously, addSound occured here
-	setCurrentPlaybackSampleRate(getSampleRate());	// if voices' sample rates need updating, this shall do it
 }
 void GranularSynthesizer::setAudioBlock(juce::AudioBuffer<float> &waveBuffer, double newFileSampleRate, size_t fileNameHash){
 	assert(hasLogger());

@@ -12,7 +12,7 @@
 #include <ranges>
 
 #ifdef TSN
-#include "../../../Source/Synthesis/JuceTsnGranularSynthesizer.h"
+#include "../../../Source/Synthesis/TSNGranularSynthesizer.h"
 #endif
 
 WaveformComponent::WaveformComponent(int sourceSamplesPerThumbnailSample, juce::AudioFormatManager &formatManagerToUse)
@@ -168,7 +168,7 @@ void WaveformComponent::changeListenerCallback (juce::ChangeBroadcaster* source)
 		thumbnailChanged();
 	}
 #ifdef TSN
-	else if (auto *tsn_synth = dynamic_cast<JuceTsnGranularSynthesizer*>(source)){
+	else if (auto *tsn_synth = dynamic_cast<TSNGranularSynthesizer*>(source)){
 		nvs::util::TimbreSpaceHolder::WeightedPoints currentIndices = tsn_synth->getCurrentIndices();
 		std::vector<std::pair<double, double>> ranges;
 		ranges.reserve(currentIndices.size());
@@ -230,7 +230,7 @@ void WaveformComponent::paintContentsIfFileLoaded (juce::Graphics& g)
 WaveformAndPositionComponent::WaveformAndPositionComponent(int sourceSamplesPerThumbnailSample, juce::AudioFormatManager &formatManagerToUse,
 								 juce::AudioProcessorValueTreeState &apvts)
 :	wc(sourceSamplesPerThumbnailSample, formatManagerToUse)
-,	positionSlider(apvts, nvs::param::getParameterByID("position"), juce::Slider::SliderStyle::LinearHorizontal, juce::Slider::NoTextBox)
+,	positionSlider(apvts, nvs::param::ParameterRegistry::getParameterByID("position"), juce::Slider::SliderStyle::LinearHorizontal, juce::Slider::NoTextBox)
 {
 	addAndMakeVisible(wc);
 	addAndMakeVisible(&positionSlider._slider);

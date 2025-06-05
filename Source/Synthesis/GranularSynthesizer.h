@@ -9,8 +9,8 @@
 */
 
 #pragma once
-#include "./JuceGranularSynthVoice.h"
 #include <JuceHeader.h>
+#include "./GranularVoice.h"
 
 class GranularSynthesizer	:	public juce::Synthesiser
 {
