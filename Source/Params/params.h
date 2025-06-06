@@ -310,7 +310,7 @@ inline const std::vector<ParameterDef> ALL_PARAMETERS = {
 	ParameterDef::skewed("duration_rand", "Duration Randomness", 		"MainRandom"),
 	ParameterDef::skewed("skew_rand", "Skew Randomness",	 			"MainRandom"),
 	ParameterDef::skewed("plateau_rand", "Plateau Randomness", 			"MainRandom"),
-	ParameterDef::skewed("pan_rand", "Pan Randomness",		 			"MainRandom"),
+	ParameterDef::skewed("pan_rand", "Pan Randomness",		 			"MainRandom", 0.0f, 1.0f, 0.5f),
 
 	ParameterDef::skewed("amp_env_attack", 	"Attack", 	"Amplitude Envelope", envTimingMin, 	envTimingMax, 	0.05f, 	"Seconds"),
 	ParameterDef::skewed("amp_env_decay", 	"Decay", 	"Amplitude Envelope", envTimingMin, 	envTimingMax, 	1.0f, 	"Seconds"),
@@ -331,15 +331,10 @@ inline const std::vector<ParameterDef> ALL_PARAMETERS = {
 
 	ParameterDef::linear("nav_selection_sharpness", "Selection Sharpness", "Navigator", 0.f, 20.f, 10.f, "", 0.f, "selection"),
 	
-	/*
-	 juce::StringRef unitSuffix = "",
-	 float skew=0.3f, bool useSymmetricSkew=false,
-	juce::StringRef subGroupName = "");
-	 */
 	ParameterDef::percent("nav_lfo_amount", "Amount", 	"Navigator", 0.f, 1.f, 0.f,	"nav_lfo"),
 	ParameterDef::percent("nav_lfo_shape", "Shape", 	"Navigator", 0.f, 1.f, 0.f,	"nav_lfo"),
-	ParameterDef::skewed("nav_lfo_rate", "Rate", 		"Navigator", 0.1f, 10.f, 0.f, "Hz", 0.3f, false, "nav_lfo"),
-	ParameterDef::skewed("nav_lfo_response", "Response","Navigator", 0.01f, 4.f, 0.f, "", 0.5f, false, "nav_lfo"),
+	ParameterDef::skewed("nav_lfo_rate", "Rate", 		"Navigator", 0.1f, 10.f, 0.3f, "Hz", 0.3f, false, "nav_lfo"),
+	ParameterDef::skewed("nav_lfo_response", "Response","Navigator", 0.01f, 4.f, 1.f, "", 0.5f, false, "nav_lfo"),
 	ParameterDef::skewed("nav_lfo_overshoot", "Overshoot", "Navigator", 0.55f, 24.f, 0.f, "", 0.3f, false, "nav_lfo"),
 
 	ParameterDef::skewed("nav_rwalk_step_size", "Nav Random Walk Step Size", "Navigator", 0.f, 0.1f, 0.f, "", 0.01f, false, "nav_rwalk"),

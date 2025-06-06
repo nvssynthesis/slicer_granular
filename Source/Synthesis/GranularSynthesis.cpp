@@ -294,7 +294,6 @@ void Grain::setParams(){
 	_pan_lgr.setSigma(*apvts.getRawParameterValue("pan_rand"));
 	
 	_grain_drive = *apvts.getRawParameterValue("fx_grain_drive");
-	std::cout << "drive: " << _grain_drive << '\n';
 	_grain_makeup_gain = *apvts.getRawParameterValue("fx_makeup_gain");
 }
 
