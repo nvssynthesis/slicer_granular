@@ -329,7 +329,7 @@ inline const std::vector<ParameterDef> ALL_PARAMETERS = {
 	ParameterDef::linear("nav_tendency_v", 			"Navigator Tendency V", "Navigator", -1.f, 1.f, 0.f, "", 0.f, "tendency"),
 	ParameterDef::linear("nav_tendency_w", 			"Navigator Tendency W", "Navigator", -1.f, 1.f, 0.f, "", 0.f, "tendency"),
 
-	ParameterDef::linear("nav_selection_sharpness", "Selection Sharpness", "Navigator", 0.f, 20.f, 10.f, "", 0.f, "selection"),
+	ParameterDef::linear("nav_selection_sharpness", "Selection Sharpness", "Navigator", -200.f, 2200.f, 10.f, "", 0.f, "selection"),
 	
 	ParameterDef::percent("nav_lfo_amount", "Amount", 	"Navigator", 0.f, 1.f, 0.f,	"nav_lfo"),
 	ParameterDef::percent("nav_lfo_shape", "Shape", 	"Navigator", 0.f, 1.f, 0.f,	"nav_lfo"),

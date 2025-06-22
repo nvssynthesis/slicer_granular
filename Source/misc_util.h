@@ -32,10 +32,13 @@ struct Timbre5DPoint {
 
 class TimbreSpaceHolder {
 public:
-	struct WeightedIdx
+	struct WeightedIdx 
 	{
 		int idx{0};
 		double weight{0.0}; // normalized probability (sums to 1 over all returned)
+		
+		WeightedIdx(int i, double w) : idx(i), weight(w) {}
+		WeightedIdx() = default;
 	};
 	
 	using WeightedPoints = std::vector<WeightedIdx>;

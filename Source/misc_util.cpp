@@ -119,14 +119,14 @@ std::vector<TimbreSpaceHolder::WeightedIdx> findProbabilisticPoints(
 	float                              higher3Dweight = 0.01f)
 {
 	// 1) handle empty DB
-	if (database.isEmpty())
+	if (database.isEmpty()) {
 		return {};
-
+	}
 	// 2) compute squared distances
-	std::vector<std::pair<double,int>> distIdx;
+	using WeightedIdx = TimbreSpaceHolder::WeightedIdx;
+	std::vector<WeightedIdx> distIdx;
 	distIdx.reserve (database.size());
-	for (int i = 0; i < database.size(); ++i)
-	{
+	for (int i = 0; i < database.size(); ++i) {
 		auto const& p = database.getReference(i);
 		double dx = p.get2D().getX() - target.get2D().getX();
 		double dy = p.get2D().getY() - target.get2D().getY();
@@ -138,7 +138,7 @@ std::vector<TimbreSpaceHolder::WeightedIdx> findProbabilisticPoints(
 
 		double d2 = dx*dx + dy*dy
 				  + higher3Dweight * (du*du + dv*dv + dz*dz);
-		distIdx.emplace_back (d2, i);
+		distIdx.emplace_back (i, d2);
 	}
 
 	// 3) keep only the K nearest
@@ -147,43 +147,45 @@ std::vector<TimbreSpaceHolder::WeightedIdx> findProbabilisticPoints(
 		distIdx.begin(),
 		distIdx.begin() + K,
 		distIdx.end(),
-		[](auto& a, auto& b){ return a.first < b.first; });
+		[](auto& a, auto& b){ return a.weight < b.weight; });
 	distIdx.resize (K);
 
 	// 4) build “softmax” weights = exp(−sharpness * (d / dmax))
 	double dmax = 0;
-	for (auto& di : distIdx)
-		dmax = std::max (dmax, di.first);
-
+	for (auto& di : distIdx) {
+		dmax = std::max (dmax, di.weight);
+	}
 	// if all distances zero, give uniform weights
 	std::vector<double> weights;
 	weights.reserve (K);
-	if (dmax <= 0)
-	{
+	if (dmax <= 0) {
 		weights.assign (K, 1.0 / K);
 	}
 	else
 	{
-		for (auto& di : distIdx)
-			weights.push_back (std::exp ( - sharpness * (di.first / dmax) ));
-
+		std::cout << "weights: \n\t";
+		for (auto& di : distIdx) {
+			weights.push_back (std::exp ( - sharpness * (di.weight / dmax) ));
+		}
 		// normalize
-		double sum = std::accumulate (weights.begin(), weights.end(), 0.0);
-		for (auto& w : weights)
+		double sum = std::accumulate(weights.begin(), weights.end(), 0.0);
+		for (auto& w : weights) {
 			w /= sum;
+			std::cout << w << ", ";
+		}
+		std::cout << '\n';
 	}
 
-	using WeightedIdx = TimbreSpaceHolder::WeightedIdx;
 	// 5) build result vector of all weighted indices
 	std::vector<WeightedIdx> allW;
 	allW.reserve (K);
-	for (int i = 0; i < K; ++i)
-		allW.push_back ({ distIdx[i].second, weights[i] });
-
+	for (int i = 0; i < K; ++i) {
+		allW.push_back ({ distIdx[i].idx, weights[i] });
+	}
 	// 6a) if caller just wants the full distribution, return it:
-	if (numToPick <= 0 || numToPick >= K)
+	if (numToPick <= 0 || numToPick >= K) {
 		return allW;
-
+	}
 	// 6b) otherwise sample numToPick *without replacement*
 	//     by repeatedly drawing from the discrete distribution
 	//     then zeroing out that weight and re-normalizing.
@@ -193,12 +195,11 @@ std::vector<TimbreSpaceHolder::WeightedIdx> findProbabilisticPoints(
 	// extract weights into their own vector
 	std::vector<double> weightArr;
 	weightArr.reserve(allW.size());
-	for (auto& wi : allW)
+	for (auto& wi : allW) {
 		weightArr.push_back(wi.weight);
-	
+	}
 	std::mt19937 rng { std::random_device{}() };
-	for (int pick = 0; pick < numToPick; ++pick)
-	{
+	for (int pick = 0; pick < numToPick; ++pick) {
 		// construct the discrete_distribution over the weights
 		std::discrete_distribution<int> dist(weightArr.begin(), weightArr.end());
 
@@ -230,7 +231,8 @@ int findProbabilisticPoint(
 		return 0;
 	}
 	// compute squared distances
-	std::vector<std::pair<double,int>> distIdx;
+	using WeightedIdx = TimbreSpaceHolder::WeightedIdx;
+	std::vector<WeightedIdx> distIdx;
 	distIdx.reserve(database.size());
 	for (int i = 0; i < (int)database.size(); ++i)
 	{
@@ -241,7 +243,7 @@ int findProbabilisticPoint(
 		double dv = p.get3D()[1] - target.get3D()[1];
 		double dz = p.get3D()[2] - target.get3D()[2];
 		double d2 = dx*dx + dy*dy + higher3Dweight*(du*du + dv*dv + dz*dz);
-		distIdx.emplace_back(d2, i);
+		distIdx.emplace_back(i, d2);
 	}
 
 	// get K smallest distances (partial sort)
@@ -249,7 +251,7 @@ int findProbabilisticPoint(
 		std::nth_element(distIdx.begin(),
 						 distIdx.begin() + K,
 						 distIdx.end(),
-						 [](auto &a, auto &b){ return a.first < b.first; });
+						 [](auto &a, auto &b){ return a.weight < b.weight; });
 	}
 	// shrink to  K nearest
 	distIdx.resize(std::min(K, (int)distIdx.size()));
@@ -257,17 +259,17 @@ int findProbabilisticPoint(
 	// build weights via softmax-like mapping
 	double dmax = 0.0;
 	for (auto& di : distIdx) {
-		dmax = std::max(dmax, di.first);
+		dmax = std::max(dmax, di.weight);
 	}
 	if (dmax <= 0.0) {
-		return distIdx.front().second;  // if all identical, pick the zeroeth
+		return distIdx.front().idx;  // if all identical, pick the zeroeth
 	}
 	
 	std::vector<double> weights;
 	weights.reserve(distIdx.size());
 	for (auto& di : distIdx)
 	{
-		double scaled = di.first / dmax; // in [0,1]
+		double scaled = di.weight / dmax; // in [0,1]
 		weights.push_back(std::exp(- sharpness * scaled));
 	}
 	// normalize
@@ -279,7 +281,7 @@ int findProbabilisticPoint(
 	std::discrete_distribution<int> dist(weights.begin(), weights.end());
 	int choice = dist(rng);
 
-	return distIdx[choice].second;
+	return distIdx[choice].idx;
 }
 }	// end anonymous namespace
 
@@ -287,7 +289,7 @@ void TimbreSpaceHolder::setProbabilisticPointFromTarget(const Timbre5DPoint& tar
 	if (timbres5D.size() == 0){
 		return;
 	}
-	setCurrentPointIndices(findProbabilisticPoints(target, timbres5D, K_neighbors, sharpness, higher3Dweight));
+	setCurrentPointIndices(findProbabilisticPoints(target, timbres5D, K_neighbors * 12, K_neighbors, sharpness, higher3Dweight));
 }
 
 /*
