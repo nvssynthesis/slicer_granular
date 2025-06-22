@@ -42,11 +42,6 @@ public:
 	
 	std::vector<nvs::gran::GrainDescription> getGrainDescriptions() const;
 	
-	void setAmpAttack(float newAttack);
-	void setAmpDecay(float newDecay);
-	void setAmpSustain(float newSustain);
-	void setAmpRelease(float newRelease);
-	
 	nvs::gran::PolyGrain* getGranularSynthGuts(){
 		return granularSynthGuts.get();
 	}
@@ -67,7 +62,6 @@ private:
 	int lastMidiNoteNumber {0};
 	std::vector<nvs::gran::GrainDescription> _grainDescriptions;
 	juce::ADSR adsr;
-	juce::ADSR::Parameters adsrParameters {0.1, 0.3, 0.5, 0.05};
 	
 	std::function<void(const juce::String&)> logger = nullptr;
 	

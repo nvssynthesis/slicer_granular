@@ -54,7 +54,15 @@ void GranularVoice::startNote (int midiNoteNumber, float velocity, juce::Synthes
 		granularSynthGuts->noteOn(midiNoteNumber, velIntegral);
 	}
 	
-	adsr.setParameters(adsrParameters);
+	{
+		auto &apvts = _synth_shared_state->_apvts;
+		adsr.setParameters(juce::ADSR::Parameters (
+			(float)*apvts.getRawParameterValue("amp_env_attack"),
+			(float)*apvts.getRawParameterValue("amp_env_decay"),
+			(float)*apvts.getRawParameterValue("amp_env_sustain"),
+			(float)*apvts.getRawParameterValue("amp_env_release")
+		));
+	}
 	
 	lastMidiNoteNumber = midiNoteNumber;
 	adsr.noteOn();
@@ -125,18 +133,6 @@ void GranularVoice::pitchWheelMoved (int newPitchWheelValue) {
 }
 void GranularVoice::controllerMoved (int controllerNumber, int newControllerValue) {
 	// apply (CC aspects of) modulation matrix?
-}
-void GranularVoice::setAmpAttack(float newAttack){
-	adsrParameters.attack = newAttack;
-}
-void GranularVoice::setAmpDecay(float newDecay){
-	adsrParameters.decay = newDecay;
-}
-void GranularVoice::setAmpSustain(float newSustain){
-	adsrParameters.sustain = newSustain;
-}
-void GranularVoice::setAmpRelease(float newRelease){
-	adsrParameters.release = newRelease;
 }
 bool GranularVoice::canPlaySound (juce::SynthesiserSound *)
 {

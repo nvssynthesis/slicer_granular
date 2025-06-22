@@ -312,10 +312,10 @@ inline const std::vector<ParameterDef> ALL_PARAMETERS = {
 	ParameterDef::skewed("plateau_rand", "Plateau Randomness", 			"MainRandom"),
 	ParameterDef::skewed("pan_rand", "Pan Randomness",		 			"MainRandom", 0.0f, 1.0f, 0.5f),
 
-	ParameterDef::skewed("amp_env_attack", 	"Attack", 	"Amplitude Envelope", envTimingMin, 	envTimingMax, 	0.05f, 	"Seconds"),
-	ParameterDef::skewed("amp_env_decay", 	"Decay", 	"Amplitude Envelope", envTimingMin, 	envTimingMax, 	1.0f, 	"Seconds"),
+	ParameterDef::skewed("amp_env_attack", 	"Attack", 	"Amplitude Envelope", envTimingMin, 	envTimingMax, 	0.05f, 	" Seconds"),
+	ParameterDef::skewed("amp_env_decay", 	"Decay", 	"Amplitude Envelope", envTimingMin, 	envTimingMax, 	1.0f, 	" Seconds"),
 	ParameterDef::percent("amp_env_sustain", "Sustain", "Amplitude Envelope", 	0.f, 				1.f, 		0.85f),
-	ParameterDef::skewed("amp_env_release", "Release", 	"Amplitude Envelope", envTimingMin, 	envTimingMax, 	1.0f,	"Seconds"),
+	ParameterDef::skewed("amp_env_release", "Release", 	"Amplitude Envelope", envTimingMin, 	envTimingMax, 	1.0f,	" Seconds"),
 
 	ParameterDef::skewed("scanner_rate",	"Rate",		"Scanner", 				-20.f,				20.f,		0.f,	"Hz", 0.3f, true),
 	ParameterDef::percent("scanner_amount",	"Amount",	"Scanner"),
