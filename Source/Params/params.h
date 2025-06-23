@@ -329,15 +329,16 @@ inline const std::vector<ParameterDef> ALL_PARAMETERS = {
 	ParameterDef::linear("nav_tendency_v", 			"Navigator Tendency V", "Navigator", -1.f, 1.f, 0.f, "", 0.f, "tendency"),
 	ParameterDef::linear("nav_tendency_w", 			"Navigator Tendency W", "Navigator", -1.f, 1.f, 0.f, "", 0.f, "tendency"),
 
-	ParameterDef::linear("nav_selection_sharpness", "Selection Sharpness", "Navigator", -200.f, 2200.f, 10.f, "", 0.f, "selection"),
-	
+	ParameterDef::skewed("nav_selection_sharpness", "Sharpness", "Navigator", 1.f, 1000.f, 100.f, "", 0.5f, false, "selection"),
+	ParameterDef::skewed("nav_selection_neighborhood", "Neighborhood", "Navigator", 4.f, 25.f, 16.f, "", 0.9f, false, "selection"),
+
 	ParameterDef::percent("nav_lfo_amount", "Amount", 	"Navigator", 0.f, 1.f, 0.f,	"nav_lfo"),
 	ParameterDef::percent("nav_lfo_shape", "Shape", 	"Navigator", 0.f, 1.f, 0.f,	"nav_lfo"),
 	ParameterDef::skewed("nav_lfo_rate", "Rate", 		"Navigator", 0.1f, 10.f, 0.3f, "Hz", 0.3f, false, "nav_lfo"),
 	ParameterDef::skewed("nav_lfo_response", "Response","Navigator", 0.01f, 4.f, 1.f, "", 0.5f, false, "nav_lfo"),
 	ParameterDef::skewed("nav_lfo_overshoot", "Overshoot", "Navigator", 0.55f, 24.f, 0.f, "", 0.3f, false, "nav_lfo"),
 
-	ParameterDef::skewed("nav_rwalk_step_size", "Nav Random Walk Step Size", "Navigator", 0.f, 0.1f, 0.f, "", 0.01f, false, "nav_rwalk"),
+	ParameterDef::skewed("nav_rwalk_step_size", "Nav Random Walk Step Size", "Navigator", 0.f, 0.2f, 0.f, "", 0.5f, false, "nav_rwalk"),
 #endif
 	
 	ParameterDef::decibel("fx_grain_drive", "Grain Drive", "Fx", -10.f, 40.f, 0.f),

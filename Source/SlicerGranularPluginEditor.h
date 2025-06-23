@@ -71,9 +71,7 @@ public:
     //==============================================================================
     void paint (juce::Graphics&) override;
     void resized() override;
-private:
-	juce::ComponentBoundsConstrainer constrainer;
-	
+private:	
 	std::array<juce::Colour, 5> gradientColors {
 		juce::Colours::darkred,
 		juce::Colours::darkred,

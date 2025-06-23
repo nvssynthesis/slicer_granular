@@ -5,7 +5,7 @@
               pluginCharacteristicsValue="pluginIsSynth,pluginWantsMidiIn"
               pluginManufacturer="nvssynthesis" cppLanguageStandard="20" headerPath="/Users/nicholassolem/development/boost_1_80_0&#10;/Users/nicholassolem/development/eigen-3.4.0&#10;/Users/nicholassolem/development/nvs_maps&#10;/Users/nicholassolem/development/nvs_libraries&#10;/Users/nicholassolem/development/thirdparty/Signalsmith&#10;/Users/nicholassolem/development/thirdparty/frozen/include&#10;/Users/nicholassolem/development/thirdparty/Sprout&#10;/Users/nicholassolem/development/thirdparty/fmt/include&#10;/Users/nicholassolem/development/thirdparty/Xoshiro-cpp"
               companyName="nvssynthesis" companyWebsite="https://nvssynthesis.github.io/"
-              version="0.1.8" pluginAUIsSandboxSafe="1" pluginManufacturerCode="Nvss"
+              version="0.1.9" pluginAUIsSandboxSafe="1" pluginManufacturerCode="Nvss"
               pluginCode="Slgr" pluginFormats="buildAU,buildStandalone,buildVST3"
               pluginAUMainType="'aumu'">
   <MAINGROUP id="QmNeTI" name="slicer-granular">
@@ -40,21 +40,21 @@
               file="Source/Synthesis/GranularSynthesis.cpp"/>
         <FILE id="uydM2T" name="GranularSynthesis.h" compile="0" resource="0"
               file="Source/Synthesis/GranularSynthesis.h"/>
-        <FILE id="sH0ruw" name="JuceGranularSynthesizer.cpp" compile="1" resource="0"
-              file="Source/Synthesis/JuceGranularSynthesizer.cpp"/>
-        <FILE id="jOFpD3" name="JuceGranularSynthesizer.h" compile="0" resource="0"
-              file="Source/Synthesis/JuceGranularSynthesizer.h"/>
-        <FILE id="Tkq2J6" name="JuceGranularSynthSound.cpp" compile="1" resource="0"
-              file="Source/Synthesis/JuceGranularSynthSound.cpp"/>
-        <FILE id="gure9G" name="JuceGranularSynthSound.h" compile="0" resource="0"
-              file="Source/Synthesis/JuceGranularSynthSound.h"/>
-        <FILE id="fHng5w" name="JuceGranularSynthVoice.cpp" compile="1" resource="0"
-              file="Source/Synthesis/JuceGranularSynthVoice.cpp"/>
-        <FILE id="DHDiBm" name="JuceGranularSynthVoice.h" compile="0" resource="0"
-              file="Source/Synthesis/JuceGranularSynthVoice.h"/>
+        <FILE id="bM6Jy2" name="GranularSynthesizer.cpp" compile="1" resource="0"
+              file="Source/Synthesis/GranularSynthesizer.cpp"/>
+        <FILE id="S43EXg" name="GranularSynthesizer.h" compile="0" resource="0"
+              file="Source/Synthesis/GranularSynthesizer.h"/>
+        <FILE id="bxqVNv" name="GranularSound.cpp" compile="1" resource="0"
+              file="Source/Synthesis/GranularSound.cpp"/>
+        <FILE id="dB9wcs" name="GranularSound.h" compile="0" resource="0" file="Source/Synthesis/GranularSound.h"/>
+        <FILE id="JznBks" name="GranularVoice.cpp" compile="1" resource="0"
+              file="Source/Synthesis/GranularVoice.cpp"/>
+        <FILE id="Rylu28" name="GranularVoice.h" compile="0" resource="0" file="Source/Synthesis/GranularVoice.h"/>
         <FILE id="geROs9" name="VoicesXGrains.h" compile="0" resource="0" file="Source/Synthesis/VoicesXGrains.h"/>
       </GROUP>
       <GROUP id="{8B05BF9B-9113-5CDB-91DE-1C951D8F5910}" name="Gui">
+        <FILE id="PTrsQ6" name="SliderColumn.cpp" compile="1" resource="0"
+              file="Source/Gui/SliderColumn.cpp"/>
         <FILE id="geE4c2" name="SliderColumn.h" compile="0" resource="0" file="Source/Gui/SliderColumn.h"/>
         <FILE id="jNw0CK" name="AttachedSlider.h" compile="0" resource="0"
               file="Source/Gui/AttachedSlider.h"/>

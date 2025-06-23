@@ -123,7 +123,7 @@ Slicer_granularAudioProcessorEditor::Slicer_granularAudioProcessorEditor (Slicer
 
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
-	constrainer.setMinimumSize(600, 480);
+	getConstrainer()->setMinimumSize(300, 420);
 
     setSize (800, 500);
 	setResizable(true, true);
@@ -151,7 +151,6 @@ void Slicer_granularAudioProcessorEditor::paint (juce::Graphics& g)
 
 void Slicer_granularAudioProcessorEditor::resized()
 {
-	constrainer.checkComponentBounds(this);
 	juce::Rectangle<int> localBounds = getLocalBounds();
 	int const smallPad = 10;
 	localBounds.reduce(smallPad, smallPad);

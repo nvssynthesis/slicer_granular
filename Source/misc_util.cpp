@@ -156,35 +156,18 @@ std::vector<TimbreSpaceHolder::WeightedIdx> findProbabilisticPoints(
 		dmax = std::max (dmax, di.weight);
 	}
 	// if all distances zero, give uniform weights
-	std::vector<double> weights;
-	weights.reserve (K);
-	if (dmax <= 0) {
-		weights.assign (K, 1.0 / K);
-	}
-	else
-	{
-		std::cout << "weights: \n\t";
-		for (auto& di : distIdx) {
-			weights.push_back (std::exp ( - sharpness * (di.weight / dmax) ));
-		}
-		// normalize
-		double sum = std::accumulate(weights.begin(), weights.end(), 0.0);
-		for (auto& w : weights) {
-			w /= sum;
-			std::cout << w << ", ";
-		}
-		std::cout << '\n';
-	}
-
-	// 5) build result vector of all weighted indices
-	std::vector<WeightedIdx> allW;
-	allW.reserve (K);
+	// Instead of building a separate weights vector, just update in place
 	for (int i = 0; i < K; ++i) {
-		allW.push_back ({ distIdx[i].idx, weights[i] });
+		distIdx[i].weight = std::exp(-sharpness * (distIdx[i].weight / dmax));
 	}
+	// normalize directly in distIdx
+	double sum = 0.0;
+	for (auto& di : distIdx) sum += di.weight;
+	for (auto& di : distIdx) di.weight /= sum;
+
 	// 6a) if caller just wants the full distribution, return it:
 	if (numToPick <= 0 || numToPick >= K) {
-		return allW;
+		return distIdx;
 	}
 	// 6b) otherwise sample numToPick *without replacement*
 	//     by repeatedly drawing from the discrete distribution
@@ -194,8 +177,8 @@ std::vector<TimbreSpaceHolder::WeightedIdx> findProbabilisticPoints(
 
 	// extract weights into their own vector
 	std::vector<double> weightArr;
-	weightArr.reserve(allW.size());
-	for (auto& wi : allW) {
+	weightArr.reserve(distIdx.size());
+	for (auto& wi : distIdx) {
 		weightArr.push_back(wi.weight);
 	}
 	std::mt19937 rng { std::random_device{}() };
@@ -204,7 +187,7 @@ std::vector<TimbreSpaceHolder::WeightedIdx> findProbabilisticPoints(
 		std::discrete_distribution<int> dist(weightArr.begin(), weightArr.end());
 
 		int choice = dist(rng);
-		picked.push_back(allW[choice]);
+		picked.push_back(distIdx[choice]);
 
 		// zero out that weight so it's never picked again
 		weightArr[choice] = 0.0;
