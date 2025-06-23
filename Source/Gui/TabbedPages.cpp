@@ -35,11 +35,12 @@ TabbedPagesComponent::TabbedPagesComponent (juce::AudioProcessorValueTreeState &
 									"amp_env_decay",
 									"amp_env_sustain",
 									"amp_env_release"
-									}), true);
+									}//, juce::Slider::SliderStyle::LinearVertical
+								   ), true);
 	addTab ("Scanner", juce::Colours::transparentWhite, new BasicParameterPage(apvts,
-																			   {"scanner_rate", "scanner_amount"}
+																			   {"scanner_rate", "scanner_amount"}, juce::Slider::SliderStyle::LinearVertical
 																			   ), true);
 	addTab ("Fx", juce::Colours::transparentWhite, new BasicParameterPage(apvts,
-																		  {"fx_grain_drive", "fx_makeup_gain"}
+																		  {"fx_grain_drive", "fx_makeup_gain"}, juce::Slider::SliderStyle::LinearVertical
 																		  ), true);
 }

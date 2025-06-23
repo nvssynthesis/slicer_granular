@@ -18,7 +18,7 @@ BasicParameterPage::BasicParameterPage(juce::AudioProcessorValueTreeState &apvts
 		sliders.add (new AttachedSlider (apvts, nvs::param::ParameterRegistry::getParameterByID(id), style));
 	}
 	for (auto &s : sliders) {
-		addAndMakeVisible( s->_slider );
+		addAndMakeVisible(s);
 	}
 }
 
@@ -29,7 +29,7 @@ void BasicParameterPage::resized() {
 	int const y = bounds.getY();
 	int const h = bounds.getHeight();
 	for (auto &s : sliders){
-		s->_slider.setBounds(x, y, sliderWidth, h);
+		s->setBounds(x, y, sliderWidth, h);
 		x += sliderWidth;
 	}
 }

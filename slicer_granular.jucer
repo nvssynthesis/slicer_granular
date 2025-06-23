@@ -53,6 +53,8 @@
         <FILE id="geROs9" name="VoicesXGrains.h" compile="0" resource="0" file="Source/Synthesis/VoicesXGrains.h"/>
       </GROUP>
       <GROUP id="{8B05BF9B-9113-5CDB-91DE-1C951D8F5910}" name="Gui">
+        <FILE id="DVw2Ua" name="AttachedSlider.cpp" compile="1" resource="0"
+              file="Source/Gui/AttachedSlider.cpp"/>
         <FILE id="PTrsQ6" name="SliderColumn.cpp" compile="1" resource="0"
               file="Source/Gui/SliderColumn.cpp"/>
         <FILE id="geE4c2" name="SliderColumn.h" compile="0" resource="0" file="Source/Gui/SliderColumn.h"/>
