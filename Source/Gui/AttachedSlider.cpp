@@ -52,7 +52,7 @@ void AttachedSlider::resized()
 	auto const boundsHeight = bounds.getHeight();
 	auto const boundsWidth = bounds.getWidth();
 
-	const float sliderProportion = boundsHeight > 80 ? 0.93f : 0.0f;
+	const float sliderProportion = 0.93f;//boundsHeight > 80 ? 0.93f : 0.0f;
 	const float labelProportion  = ((boundsWidth > 51) and (boundsHeight > 166)) ? 0.07f : 0.0f;
 	const int   padding          = 10;
 
