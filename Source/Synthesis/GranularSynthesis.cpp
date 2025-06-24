@@ -51,12 +51,12 @@ namespace {
  * returns all of them in arbitrary (but weighted) order.
  */
 using WeightedReadBounds = PolyGrain::WeightedReadBounds;
-std::vector<WeightedReadBounds> pickWeightedReadBounds (std::vector<WeightedReadBounds> choices, int numToPick)
+std::vector<WeightedReadBounds> pickWeightedReadBoundsProbabilistically (std::vector<WeightedReadBounds> choices, int numToPick)
 {
 	const int N = (int) choices.size();
-	if (N == 0 || numToPick <= 0)
+	if (N == 0 || numToPick <= 0){
 		return {};
-
+	}
 	// 1) Extract weights into their own array:
 	std::vector<double> weightArr;
 	weightArr.reserve(N);
@@ -101,6 +101,29 @@ std::vector<WeightedReadBounds> pickWeightedReadBounds (std::vector<WeightedRead
 
 	return picked;
 }
+/**
+ This version simply evenly distributes the choices amongst the available grains.
+ */
+std::vector<WeightedReadBounds> pickWeightedReadBoundsEvenly (std::vector<WeightedReadBounds> choices, int numToPick)
+{
+	
+	const int N = (int) choices.size();
+
+	jassert(N <= numToPick);
+
+	if (N == 0 || numToPick <= 0){
+		return {};
+	}
+
+	std::vector<WeightedReadBounds> picked;
+	picked.reserve(numToPick);
+
+	for (int i = 0; i < numToPick; ++i){
+		picked.push_back(choices[i % N]);
+	}
+
+	return picked;
+}
 }
 PolyGrain::PolyGrain(GranularSynthSharedState *const synth_shared_state,
 					 GranularVoiceSharedState *const voice_shared_state)
@@ -136,7 +159,7 @@ void PolyGrain::setReadBounds(ReadBounds newReadBounds) {
 }
 void PolyGrain::setMultiReadBounds(std::vector<WeightedReadBounds> newWeightedReadBounds) {
 	
-	auto pickedWeightedReadBounds = pickWeightedReadBounds(newWeightedReadBounds, (int)_grains.size());
+	auto pickedWeightedReadBounds = pickWeightedReadBoundsEvenly(newWeightedReadBounds, (int)_grains.size());
 	double w_sum = 0.0;
 	for (auto wrb : pickedWeightedReadBounds){
 		jassert(wrb.weight >= 0.0);

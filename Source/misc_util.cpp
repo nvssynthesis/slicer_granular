@@ -131,7 +131,7 @@ std::vector<WeightedIdx> toWeightedIndices(std::vector<DistanceIdx> const &dv, d
  * @param  sharpness       0=flat, >0 biases toward closer points
  * @param  higher3Dweight  extra weighting on the 3D portion of your distance metric
  */
-std::vector<WeightedIdx> findProbabilisticPoints(
+std::vector<WeightedIdx> findWeightedPoints(
 	const Timbre5DPoint&               target,
 	const juce::Array<Timbre5DPoint>&  database,
 	int                                K,
@@ -218,7 +218,7 @@ void TimbreSpaceHolder::setProbabilisticPointFromTarget(const Timbre5DPoint& tar
 	if (timbres5D.size() == 0){
 		return;
 	}
-	setCurrentPointIndices(findProbabilisticPoints(target, timbres5D, K_neighbors, 4, sharpness, higher3Dweight));
+	setCurrentPointIndices(findWeightedPoints(target, timbres5D, K_neighbors, 3, sharpness, higher3Dweight));
 }
 
 /*

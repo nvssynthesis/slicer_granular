@@ -341,7 +341,7 @@ inline const std::vector<ParameterDef> ALL_PARAMETERS = {
 	ParameterDef::skewed("nav_rwalk_step_size", "Nav Random Walk Step Size", "Navigator", 0.f, 0.2f, 0.f, "", 0.5f, false, "nav_rwalk"),
 #endif
 	
-	ParameterDef::decibel("fx_grain_drive", "Grain Drive", "Fx", -10.f, 40.f, 0.f, "drive"),
+	ParameterDef::decibel("fx_grain_drive", "Grain Drive", "Fx", -10.f, 60.f, 0.f, "drive"),
 	ParameterDef::decibel("fx_makeup_gain", "Makeup Gain", "Fx", -40.f, 20.f, 0.f, "drive")
 };
 
