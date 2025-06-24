@@ -50,9 +50,8 @@ namespace {
  * with probability ∝ its `weight`.  If `numToPick` >= choices.size(),
  * returns all of them in arbitrary (but weighted) order.
  */
-std::vector<ReadBounds> pickWeightedReadBounds (
-	std::vector<PolyGrain::WeightedReadBounds> choices,
-	int                              numToPick)
+using WeightedReadBounds = PolyGrain::WeightedReadBounds;
+std::vector<WeightedReadBounds> pickWeightedReadBounds (std::vector<WeightedReadBounds> choices, int numToPick)
 {
 	const int N = (int) choices.size();
 	if (N == 0 || numToPick <= 0)
@@ -65,7 +64,7 @@ std::vector<ReadBounds> pickWeightedReadBounds (
 		weightArr.push_back(wrb.weight);
 
 	std::mt19937 rng{ std::random_device{}() };
-	std::vector<ReadBounds> picked;
+	std::vector<WeightedReadBounds> picked;
 	picked.reserve(numToPick);
 
 	if (numToPick <= N)
@@ -75,15 +74,17 @@ std::vector<ReadBounds> pickWeightedReadBounds (
 		{
 			std::discrete_distribution<int> dist(weightArr.begin(), weightArr.end());
 			int choice = dist(rng);
-			picked.push_back( choices[choice].bounds );
+			picked.emplace_back( choices[choice] );
 
 			// zero out that weight, then renormalize
 			weightArr[choice] = 0.0;
 			double sum = std::accumulate(weightArr.begin(), weightArr.end(), 0.0);
-			if (sum <= 0.0)
+			if (sum <= 0.0) {
 				break;
-			for (auto& w : weightArr)
+			}
+			for (auto& w : weightArr) {
 				w /= sum;
+			}
 		}
 	}
 	else {
@@ -93,7 +94,7 @@ std::vector<ReadBounds> pickWeightedReadBounds (
 		for (int pick = 0; pick < numToPick; ++pick)
 		{
 			int choice = dist(rng);
-			picked.push_back( choices[choice].bounds );
+			picked.push_back( choices[choice] );
 			// note: weights are unchanged, so repeats are allowed
 		}
 	}
@@ -136,14 +137,27 @@ void PolyGrain::setReadBounds(ReadBounds newReadBounds) {
 void PolyGrain::setMultiReadBounds(std::vector<WeightedReadBounds> newWeightedReadBounds) {
 	
 	auto pickedWeightedReadBounds = pickWeightedReadBounds(newWeightedReadBounds, (int)_grains.size());
+	double w_sum = 0.0;
+	for (auto wrb : pickedWeightedReadBounds){
+		jassert(wrb.weight >= 0.0);
+		w_sum += wrb.weight;
+	}
+	if (w_sum == 0.0) {
+		w_sum = 1.0;
+	}
+	
+	std::sort(pickedWeightedReadBounds.begin(), pickedWeightedReadBounds.end(), [](auto a, auto b) { return a.weight < b.weight; });
 	for (size_t i = 0; i < _grains.size(); ++i){
 		// for now, we will just have all grains use same read bounds.
 		// however, we may want to have some prorortions of grains using different readbounds in the future.
-		auto const bounds = pickedWeightedReadBounds[i];
-		assert ((bounds.begin >= 0.0) && (bounds.begin <= 1.0));
-		assert ((bounds.end >= 0.0) && (bounds.end <= 1.0));
+		auto b = pickedWeightedReadBounds[i];
+		assert ((b.bounds.begin >= 0.0) && (b.bounds.begin <= 1.0));
+		assert ((b.bounds.end >= 0.0) && (b.bounds.end <= 1.0));
 		
-		_grains[i].setReadBounds(bounds);
+		_grains[i].setReadBounds(b.bounds);
+		auto w = b.weight;
+		w *= w;
+		_grains[i].setWeight(w);
 	}
 }
 
@@ -559,7 +573,11 @@ Grain::outs Grain::operator()(float const trig_in){
 	
 
 	float const sample = [&](){
-		float const vel_amplitude = _amplitude_for_note_latch(_amplitude_based_on_note, should_open_latches);
+		float const vel_amplitude = _amplitude_for_note_latch(_amplitude_based_on_note, should_open_latches)
+#ifdef TSN
+								* _grain_weight_latch(_grain_weight, should_open_latches);
+#endif
+		;
 		return calculateSample(wave_block, _sample_index, _window, vel_amplitude);
 	}();
 	_pan = calculatePan(_pan_lgr(should_open_latches));

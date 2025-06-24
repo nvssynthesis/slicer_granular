@@ -169,7 +169,7 @@ void WaveformComponent::changeListenerCallback (juce::ChangeBroadcaster* source)
 	}
 #ifdef TSN
 	else if (auto *tsn_synth = dynamic_cast<TSNGranularSynthesizer*>(source)){
-		nvs::util::TimbreSpaceHolder::WeightedPoints currentIndices = tsn_synth->getCurrentIndices();
+		std::vector<TSNGranularSynthesizer::WeightedIdx> currentIndices = tsn_synth->getCurrentIndices();
 		std::vector<std::pair<double, double>> ranges;
 		ranges.reserve(currentIndices.size());
 		

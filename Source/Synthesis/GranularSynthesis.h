@@ -158,6 +158,7 @@ public:
 	struct WeightedReadBounds {
 		ReadBounds bounds;
 		double weight;
+		WeightedReadBounds(ReadBounds b, double w)	:	bounds(b), weight(w) {}
 	};
 	void setMultiReadBounds(std::vector<WeightedReadBounds> newReadBounds) ;
 	std::vector<GrainDescription> getGrainDescriptions() const;
@@ -215,6 +216,9 @@ public:
 	};
 	
 	void setReadBounds(ReadBounds newReadBounds);
+	void setWeight(double w) {
+		_grain_weight = w;
+	}
 	outs operator()(float const trig_in);
 	
 	GrainDescription getGrainDescription() const;
@@ -243,6 +247,7 @@ private:
     nvs::gen::latch<float> _ratio_for_note_latch {1.f};
     nvs::gen::latch<float> _amplitude_for_note_latch {0.f};
 	nvs::gen::latch<float> _scanner_for_position_latch {0.f};
+	nvs::gen::latch<float> _grain_weight_latch {1.f}; // the weight based on distance to target point
     
 	LatchedGaussianRandom_f 	_transpose_lgr;
 	LatchedGaussianRandom_d 	_position_lgr; // latches position from gate on, goes toward dest windowing
@@ -263,6 +268,7 @@ private:
     float _waveform_read_rate {0.0};
     float _window {0.f};
 	float _pan {0.f};
+	float _grain_weight {1.f};
     
     float _ratio_based_on_note {1.f}; // =1.f. later this may change according to a settable concert pitch
     float _amplitude_based_on_note {0.f};

@@ -30,26 +30,32 @@ struct Timbre5DPoint {
 	std::array<juce::uint8, 3> toUnsigned() const;
 };
 
+struct WeightedIdx
+{
+	int idx	{0};
+	double weight{0.0}; // normalized probability (sums to 1 over all returned)
+	
+	WeightedIdx(int i, double w) : idx(i), weight(w) {}
+	WeightedIdx() = default;
+};
+struct DistanceIdx	// effectively same class as weightedIdx but reminds you that we speak of distance, not weight
+{
+	int idx	{0};
+	double distance{0.0}; // normalized probability (sums to 1 over all returned)
+	
+	DistanceIdx(int i, double d) : idx(i), distance(d) {}
+	DistanceIdx() = default;
+};
+
 class TimbreSpaceHolder {
 public:
-	struct WeightedIdx 
-	{
-		int idx{0};
-		double weight{0.0}; // normalized probability (sums to 1 over all returned)
-		
-		WeightedIdx(int i, double w) : idx(i), weight(w) {}
-		WeightedIdx() = default;
-	};
-	
-	using WeightedPoints = std::vector<WeightedIdx>;
-	
 	void add5DPoint(timbre2DPoint p2D, std::array<float, 3> p3D);
 	void clear();
 	
 	juce::Array<nvs::util::Timbre5DPoint> &getTimbreSpace() {
 		return timbres5D;
 	}
-	WeightedPoints getCurrentPointIndices() const {
+	std::vector<WeightedIdx> getCurrentPointIndices() const {
 		return currentPointIndices;
 	}
 	void setProbabilisticPointFromTarget(const Timbre5DPoint& target, int K_neighbors, double sharpness, float higher3Dweight=0.f);
@@ -58,16 +64,9 @@ private:
 	juce::Array<nvs::util::Timbre5DPoint> timbres5D;
 	
 	// safe private setter
-	void setCurrentPointIndices(WeightedPoints &&newWeightedIndices) {
-		jassert (newWeightedIndices.size() > 0);
-		
-		for (auto const &widx : newWeightedIndices){
-			jassert (0 <= widx.idx);
-			jassert ((widx.idx < timbres5D.size()) or ((timbres5D.size()==0) and (widx.idx == 0)));
-		}
-		currentPointIndices = newWeightedIndices;
-	}
-	WeightedPoints currentPointIndices {{},{},{},{}};
+	void setCurrentPointIndices(std::vector<WeightedIdx> &&newWeightedIndices);
+	
+	std::vector<WeightedIdx> currentPointIndices {{},{},{},{}};
 };
 
 constexpr bool inRange0_1(float x){
