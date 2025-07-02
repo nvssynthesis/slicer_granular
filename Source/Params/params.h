@@ -329,6 +329,8 @@ inline const std::vector<ParameterDef> ALL_PARAMETERS = {
 	ParameterDef::linear("nav_tendency_v", 			"Navigator Tendency V", "Navigator", -1.f, 1.f, 0.f, "", 0.f, "tendency"),
 	ParameterDef::linear("nav_tendency_w", 			"Navigator Tendency W", "Navigator", -1.f, 1.f, 0.f, "", 0.f, "tendency"),
 
+	ParameterDef::linear("histogram_equalization", "Histogram Equalization", "Timbre Space"),
+	
 	ParameterDef::skewed("nav_selection_sharpness", "Sharpness", "Navigator", 1.f, 1000.f, 100.f, "", 0.5f, false, "selection"),
 	ParameterDef::skewed("nav_selection_neighborhood", "Neighborhood", "Navigator", 4.f, 25.f, 16.f, "", 0.9f, false, "selection"),
 
