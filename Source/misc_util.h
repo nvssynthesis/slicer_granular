@@ -11,6 +11,8 @@
 #pragma once
 #include <JuceHeader.h>
 #include "Synthesis/GrainDescription.h"
+#include <fmt/format.h>
+#include <string>
 
 namespace nvs::util {
 
@@ -75,5 +77,91 @@ public:
   }
   bool operator!=(const Iterator& i) { return val != i.val; }
 };
+
+
+
+struct TimedPrinter : public juce::Timer
+{
+	TimedPrinter(int intervalMs = 100)
+		: criticalSection_(std::make_unique<juce::CriticalSection>())
+	{
+		startTimer(intervalMs);
+	}
+	
+	~TimedPrinter() {
+		stopTimer();
+	}
+	
+	// Fast print function - just stores the formatted string
+	template<typename... Args>
+	void print(fmt::format_string<Args...> format_str, Args&&... args) {
+		std::string formatted = fmt::format(format_str, std::forward<Args>(args)...);
+		
+		juce::ScopedLock lock(*criticalSection_);
+		pending_message_ = std::move(formatted);
+	}
+	
+	// Raw string version
+	void printRaw(const std::string& message) {
+		juce::ScopedLock lock(*criticalSection_);
+		pending_message_ = message;
+	}
+	
+	void timerCallback() override {
+		std::string message_to_print;
+		
+		{
+			juce::ScopedLock lock(*criticalSection_);
+			if (!pending_message_.empty()) {
+				message_to_print = std::move(pending_message_);
+				pending_message_.clear();
+			}
+		}
+		
+		if (!message_to_print.empty()) {
+			std::cout << message_to_print << std::endl;
+		}
+	}
+	
+	// Change print interval
+	void setInterval(int intervalMs) {
+		stopTimer();
+		startTimer(intervalMs);
+	}
+	
+	// Force immediate print (bypass timer)
+	void flush() {
+		std::string message_to_print;
+		
+		{
+			juce::ScopedLock lock(*criticalSection_);
+			if (!pending_message_.empty()) {
+				message_to_print = std::move(pending_message_);
+				pending_message_.clear();
+			}
+		}
+		
+		if (!message_to_print.empty()) {
+			std::cout << message_to_print << std::endl;
+		}
+	}
+	
+private:
+	std::unique_ptr<juce::CriticalSection> criticalSection_;
+	std::string pending_message_;
+};
+
+// Usage example:
+/*
+TimedPrinter printer(50); // Print every 50ms
+
+// In your audio processing loop:
+for (int sample = 0; sample < numSamples; ++sample) {
+	float value = processAudio(sample);
+	
+	// This is now thread-safe
+	printer.print("Sample {}: value = {:.3f}", sample, value);
+}
+*/
 
 }	// nvs::util

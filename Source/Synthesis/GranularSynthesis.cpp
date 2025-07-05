@@ -264,6 +264,11 @@ void PolyGrain::setParams() {
 		g.setParams();
 	}
 }
+
+std::array<float, 2> PolyGrain::operator()(float triggerIn){
+	return doProcess(triggerIn);
+}
+
 std::array<float, 2> PolyGrain::doProcess(float trigger_in){
 	std::array<float, 2> output {0.f, 0.f};
 	
@@ -279,12 +284,16 @@ std::array<float, 2> PolyGrain::doProcess(float trigger_in){
 
 	std::array<Grain::outs, N_GRAINS> _outs;
 
+#pragma message("trying shuffle, may cause bugs (so far seems fine but keeping warning here until i can be completely sure)")
+	shuffleIndices();
+	
 	size_t idx = _grain_indices[0];
 	_outs[idx] = _grains[idx](trig);
 	float audio_out_L = _outs[idx].audio_L;
 	float audio_out_R = _outs[idx].audio_R;
 	float voices_active = _outs[idx].busy;
 	
+
 	for (size_t i = 1; i < N_GRAINS; ++i){
 		idx = _grain_indices.data()[i];
 		size_t prevIdx = _grain_indices.data()[i - 1];
@@ -346,7 +355,11 @@ Grain::Grain(GranularSynthSharedState *const synth_shared_state,
 ,	_skew_lgr(_voice_shared_state->_gaussian_rng, {0.5f, 0.f})
 ,	_plateau_lgr(_voice_shared_state->_gaussian_rng, {1.f, 0.f})
 ,	_pan_lgr(_voice_shared_state->_gaussian_rng, {0.5f, 0.23f})
-{}
+{
+//#ifdef DBG
+//	_timed_printer = std::make_unique<nvs::util::TimedPrinter>(100);
+//#endif
+}
 void Grain::setRatioBasedOnNote(float ratioForNote){
 	_ratio_based_on_note = ratioForNote;
 }
@@ -555,7 +568,9 @@ Grain::outs Grain::operator()(float const trig_in){
 	float const latch_skew_result = memoryless::clamp(_skew_lgr(should_open_latches), 0.001f, 0.999f);
 	
 	float const duration_pitch_compensation_factor = getDurationPitchCompensationFactor(settings._duration_pitch_compensation, _waveform_read_rate);
-
+//#ifdef DBG
+//	_timed_printer->print("duration_pitch_compensation_factor: {}", duration_pitch_compensation_factor);
+//#endif
 	double norm_pos = [this, should_open_latches](){
 		double np = _position_lgr(should_open_latches);
 		auto const scanner_pos = _scanner_for_position_latch(_voice_shared_state->_scanner.phasor_offset(0.f) * _voice_shared_state->_scanner_amount, should_open_latches);

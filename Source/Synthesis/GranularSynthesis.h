@@ -12,13 +12,14 @@
 #include <map>
 #include <algorithm>
 #include <numeric>
+#include <JuceHeader.h>
 
-#include "../LatchedRandom.h"
-#include "../../nvs_libraries/nvs_libraries/include/nvs_gen.h"
-#include "../../nvs_libraries/nvs_libraries/include/nvs_LFO.h"
 #include "GrainDescription.h"
 #include "VoicesXGrains.h"
-#include <JuceHeader.h>
+#include "../LatchedRandom.h"
+#include "../misc_util.h"
+#include "../../nvs_libraries/nvs_libraries/include/nvs_gen.h"
+#include "../../nvs_libraries/nvs_libraries/include/nvs_LFO.h"
 
 /*** TODO:
  -optimize
@@ -151,9 +152,7 @@ public:
 	void setGrainsIdle();
 	std::vector<float> getBusyStatuses() const;
 	//=======================================================================
-	inline std::array<float, 2> operator()(float triggerIn){
-		return doProcess(triggerIn);
-	}
+	std::array<float, 2> operator()(float triggerIn);
 	void setReadBounds(ReadBounds newReadBounds) ;
 	struct WeightedReadBounds {
 		ReadBounds bounds;
@@ -235,6 +234,10 @@ private:
 		assert(_synth_shared_state != nullptr);
 		_synth_shared_state->_logger_func(s);
 	}
+
+//#ifdef DBG
+//	std::unique_ptr<nvs::util::TimedPrinter> _timed_printer;
+//#endif
 	
 	int _grain_id;
 	

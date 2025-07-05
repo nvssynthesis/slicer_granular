@@ -44,4 +44,6 @@ SampleManagementGuts::~SampleManagementGuts()
 	formatManager.clearFormats();
 }
 
+
+
 }	// namespace nvs::util
