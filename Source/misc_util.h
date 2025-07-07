@@ -78,7 +78,20 @@ public:
   bool operator!=(const Iterator& i) { return val != i.val; }
 };
 
+inline bool isEmpty(juce::ValueTree const &vt){
+	return (vt.getNumChildren() == 0 && vt.getNumProperties() == 0);
+}
+inline void clear(juce::ValueTree &vt){
+	// Remove all children
+	while (vt.getNumChildren() > 0) {
+		vt.removeChild(0, nullptr);
+	}
 
+	// Remove all properties
+	for (int i = vt.getNumProperties() - 1; i >= 0; --i) {
+		vt.removeProperty(vt.getPropertyName(i), nullptr);
+	}
+}
 
 struct TimedPrinter : public juce::Timer
 {
