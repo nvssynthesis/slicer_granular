@@ -93,6 +93,59 @@ inline void clear(juce::ValueTree &vt){
 	}
 }
 
+
+inline juce::var valueTreeToVar(const juce::ValueTree& tree) {
+	juce::DynamicObject::Ptr obj = new juce::DynamicObject();
+	
+	// Add type identifier
+	obj->setProperty("type", tree.getType().toString());
+	
+	// Add all properties
+	for (int i = 0; i < tree.getNumProperties(); ++i) {
+		auto name = tree.getPropertyName(i);
+		auto value = tree.getProperty(name);
+		obj->setProperty(name, value);
+	}
+	
+	// Add children
+	if (tree.getNumChildren() > 0) {
+		juce::Array<juce::var> children;
+		for (auto child : tree) {
+			children.add(valueTreeToVar(child));
+		}
+		obj->setProperty("children", children);
+	}
+	
+	return juce::var(obj.get());
+}
+
+inline bool saveValueTreeToBinary(const juce::ValueTree& tree, const juce::File& file) {
+	file.getParentDirectory().createDirectory();
+	
+	juce::FileOutputStream stream(file);
+	if (stream.openedOk()) {
+		tree.writeToStream(stream);
+		return stream.getStatus().wasOk();
+	}
+	return false;
+}
+inline juce::ValueTree loadValueTreeFromBinary(const juce::File& file) {
+	juce::FileInputStream stream(file);
+	if (stream.openedOk()) {
+		return juce::ValueTree::readFromStream(stream);
+	}
+	return juce::ValueTree();
+}
+inline bool saveValueTreeToJSON(const juce::ValueTree& tree, const juce::File& file) {
+	file.getParentDirectory().createDirectory();
+	
+	juce::var jsonData = valueTreeToVar(tree);
+	juce::String jsonString = juce::JSON::toString(jsonData);
+	
+	return file.replaceWithText(jsonString);
+}
+
+
 struct TimedPrinter : public juce::Timer
 {
 	TimedPrinter(int intervalMs = 100)
