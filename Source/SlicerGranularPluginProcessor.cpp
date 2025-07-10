@@ -193,17 +193,18 @@ nvs::gran::GranularSynthSharedState const &SlicerGranularAudioProcessor::viewSyn
 }
 
 void SlicerGranularAudioProcessor::readInAudioFileToBuffer(juce::File const f){
-	writeToLog("                                          ...reading file" + f.getFullPathName());
+	juce::String const fullPath = f.getFullPathName();
+	writeToLog("                                          ...reading file" + fullPath);
 	
 	juce::AudioFormatReader *reader = sampleManagementGuts.formatManager.createReaderFor(f);
 	if (!reader){
-		writeToLog("could not read file: " + f.getFullPathName());
+		writeToLog("could not read file: " + fullPath);
 		return;
 	}
 	
 	auto sr = reader->sampleRate;
 	
-	nonAutomatableState.getChildWithName("PresetInfo").setProperty("sampleFilePath", f.getFullPathName(), nullptr);
+	nonAutomatableState.getChildWithName("PresetInfo").setProperty("sampleFilePath", fullPath, nullptr);
 	nonAutomatableState.getChildWithName("PresetInfo").setProperty("sampleRate", sr, nullptr);
 	
 	std::array<juce::Range<float> , 1> normalizationRange;
@@ -231,8 +232,7 @@ void SlicerGranularAudioProcessor::readInAudioFileToBuffer(juce::File const f){
 	delete reader;
 	writeToLog("                                          ...file read successful");
 	
-	_granularSynth->setAudioBlock(sampleManagementGuts.sampleBuffer, sr, f.getFullPathName().hash());	// maybe this could just go inside readInAudioFileToBuffer()
-	nonAutomatableState.getChildWithName("PresetInfo").setProperty("sampleFilePath", f.getFullPathName(), nullptr);
+	_granularSynth->setAudioBlock(sampleManagementGuts.sampleBuffer, sr, fullPath.hash());	// maybe this could just go inside readInAudioFileToBuffer()
 }
 void SlicerGranularAudioProcessor::loadAudioFileAsync(juce::File const file, bool notifyEditor)
 {
