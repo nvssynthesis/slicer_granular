@@ -33,8 +33,12 @@ SlicerGranularAudioProcessor::SlicerGranularAudioProcessor()
 	nonAutomatableState.appendChild (juce::ValueTree ("Settings"), nullptr);
 
 	juce::ValueTree presetVT = nonAutomatableState.getOrCreateChildWithName("PresetInfo", nullptr);
-	presetVT.setProperty("sampleFilePath", "", nullptr);
-	presetVT.setProperty("author", "", nullptr);
+	if (!presetVT.hasProperty("sampleFilePath")){
+		presetVT.setProperty("sampleFilePath", "", nullptr);
+	}
+	if (!presetVT.hasProperty("author")){
+		presetVT.setProperty("author", "", nullptr);
+	}
 }
 
 
@@ -169,14 +173,9 @@ void SlicerGranularAudioProcessor::setStateInformation (const void* data, int si
 		apvts.replaceState (params);
 	}
 
-	if (auto nonAuto = root.getChildWithName ("NonAutomatable"); nonAuto.isValid())
+	if (nonAutomatableState = root.getChildWithName ("NonAutomatable"); nonAutomatableState.isValid())
 	{
-		auto settings = nonAuto.getChildWithName ("Settings");
-
-		if (auto params = root.getChildWithName (apvts.state.getType()); params.isValid()){
-			apvts.replaceState (params);
-		}
-		
+		auto settings = nonAutomatableState.getChildWithName ("Settings");
 
 		if (auto presetInfo = nonAutomatableState.getChildWithName ("PresetInfo"); presetInfo.isValid())
 		{
@@ -253,8 +252,8 @@ void SlicerGranularAudioProcessor::loadAudioFile(juce::File const f, bool notify
 		
 		// I do not recall why I used async for this, but there was a bug associated. I could not reproduce the bug easily either way, but I suspect it had to do with async.
 		// The bug was something along the lines of doing another analysis after one has already been performed, maybe via loading a new file. I don't recall the symptom of the bug.
-//		juce::MessageManager::callAsync([this]() { sampleManagementGuts.sendChangeMessage(); });
-		sampleManagementGuts.sendChangeMessage();
+		juce::MessageManager::callAsync([this]() { sampleManagementGuts.sendChangeMessage(); });
+//		sampleManagementGuts.sendChangeMessage();
 	}
 	writeToLog("slicer: loadAudioFile exiting");
 }
