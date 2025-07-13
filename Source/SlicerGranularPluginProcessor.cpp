@@ -175,10 +175,9 @@ void SlicerGranularAudioProcessor::setStateInformation (const void* data, int si
 
 	if (nonAutomatableState = root.getChildWithName ("NonAutomatable"); nonAutomatableState.isValid())
 	{
-		auto settings = nonAutomatableState.getChildWithName ("Settings");
+		auto const settings = nonAutomatableState.getChildWithName ("Settings");
 
-		if (auto presetInfo = nonAutomatableState.getChildWithName ("PresetInfo"); presetInfo.isValid())
-		{
+		if (auto const presetInfo = nonAutomatableState.getChildWithName ("PresetInfo"); presetInfo.isValid()) {
 			auto path = presetInfo.getProperty ("sampleFilePath").toString();
 			if (path.isNotEmpty()) {
 				loadAudioFile ({ path }, true);
@@ -196,48 +195,21 @@ void SlicerGranularAudioProcessor::readInAudioFileToBuffer(juce::File const f){
 	juce::String const fullPath = f.getFullPathName();
 	writeToLog("                                          ...reading file" + fullPath);
 	
-	juce::AudioFormatReader *reader = sampleManagementGuts.formatManager.createReaderFor(f);
-	if (!reader){
-		writeToLog("could not read file: " + fullPath);
-		return;
-	}
-	
-	auto sr = reader->sampleRate;
+	sampleManagementGuts.loadAudioFile(f);
+	auto sr = sampleManagementGuts.getSampleRate();
 	
 	nonAutomatableState.getChildWithName("PresetInfo").setProperty("sampleFilePath", fullPath, nullptr);
 	nonAutomatableState.getChildWithName("PresetInfo").setProperty("sampleRate", sr, nullptr);
 	
-	std::array<juce::Range<float> , 1> normalizationRange;
-	reader->readMaxLevels(0, reader->lengthInSamples, &normalizationRange[0], 1);
-	auto min = normalizationRange[0].getStart();
-	auto max = normalizationRange[0].getEnd();
-	
-	auto normVal = std::max(std::abs(min), std::abs(max));
-	if (normVal > 0.f){
-		normVal = 1.f / normVal;
-	} else {
-		writeToLog("either the sample is digital silence, or something's gone wrong");
-		normVal = 1.f;
-	}
-	int lengthInSamps = static_cast<int>(reader->lengthInSamples);
-	sampleManagementGuts.sampleBuffer.setSize(reader->numChannels, lengthInSamps);
-	
-	reader->read(sampleManagementGuts.sampleBuffer.getArrayOfWritePointers(),	// float *const *destChannels
-				 reader->numChannels,		// int numDestChannels
-				 0,							// int64 startSampleInSource
-				 lengthInSamps);			// int numSamplesToRead
-	
-	sampleManagementGuts.sampleBuffer.applyGain (normVal);
-	
-	delete reader;
 	writeToLog("                                          ...file read successful");
 	
-	_granularSynth->setAudioBlock(sampleManagementGuts.sampleBuffer, sr, fullPath.hash());	// maybe this could just go inside readInAudioFileToBuffer()
+	_granularSynth->setAudioBlock(sampleManagementGuts.getSampleBuffer(), sr, fullPath.hash());	// maybe this could just go inside readInAudioFileToBuffer()
 }
-void SlicerGranularAudioProcessor::loadAudioFileAsync(juce::File const file, bool notifyEditor)
+
+[[deprecated]] void SlicerGranularAudioProcessor::loadAudioFileAsync(juce::File const file, bool notifyEditor)
 {
 	auto* loader = new AudioFileLoaderThread(*this, file, notifyEditor);
-	loader->startThread(); // Starts the thread
+	loader->startThread();
 }
 
 void SlicerGranularAudioProcessor::loadAudioFile(juce::File const f, bool notifyEditor){
@@ -267,7 +239,7 @@ juce::ValueTree &SlicerGranularAudioProcessor::getNonAutomatableState() {
 	return nonAutomatableState;
 }
 juce::AudioFormatManager &SlicerGranularAudioProcessor::getAudioFormatManager(){
-	return sampleManagementGuts.formatManager;
+	return sampleManagementGuts.getFormatManager();
 }
 
 void SlicerGranularAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
@@ -283,18 +255,10 @@ void SlicerGranularAudioProcessor::processBlock (juce::AudioBuffer<float>& buffe
 		return;
 	}
 	
-	float* const*  wp = sampleManagementGuts.sampleBuffer.getArrayOfWritePointers();
-	auto const numSampChans = sampleManagementGuts.sampleBuffer.getNumChannels();
-	for (int i = 0; i < numSampChans; ++i){
-		if (!wp[i]){
-			writeToLog("processBlock:        sampleBuffer null; exiting early.");
-			return;
-		}
-	}
-	if (sampleManagementGuts.sampleBuffer.getNumSamples() == 0){
+	if (sampleManagementGuts.getLength() == 0){
 		return;
 	}
-	if (numSampChans == 0){
+	if (sampleManagementGuts.getNumChannels() == 0){
 		return;
 	}
 	

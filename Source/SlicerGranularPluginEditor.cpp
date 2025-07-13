@@ -43,11 +43,11 @@ void GranularEditorCommon::drawThumbnail(){
 	if (sampleManagementGuts == nullptr){
 		return;
 	}
-	jassert (sampleManagementGuts->sampleBuffer.getNumSamples() > 0);
-	jassert (sampleManagementGuts->sampleBuffer.getNumChannels() > 0);
+	jassert (0 < sampleManagementGuts->getLength());
+	jassert (0 < sampleManagementGuts->getNumChannels());
 	jassert (synthBuffer._file_sample_rate > 0);
 
-	waveformAndPositionComponent.wc.setThumbnailSource(&sampleManagementGuts->sampleBuffer,	// do not worry about dangling reference; the thumbnail will internally copy the data as needed to draw waveform
+	waveformAndPositionComponent.wc.setThumbnailSource(&sampleManagementGuts->getSampleBuffer(),	// do not worry about dangling reference; the thumbnail will internally copy the data as needed to draw waveform
 													   synthBuffer._file_sample_rate, synthBuffer._filename_hash);
 }
 //============================================= ChangeListener - related =======================================================

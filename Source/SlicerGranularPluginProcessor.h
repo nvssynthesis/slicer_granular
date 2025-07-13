@@ -84,7 +84,7 @@ public:
 		measuredGrainDescriptions.removeChangeListener(newListener);
 	}
 	int getCurrentWaveSize() {
-		return sampleManagementGuts.sampleBuffer.getNumSamples();
+		return sampleManagementGuts.getLength();
 	}
 
 	nvs::gran::GranularSynthSharedState const &viewSynthSharedState();

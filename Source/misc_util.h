@@ -45,9 +45,29 @@ struct SampleManagementGuts : public juce::ChangeBroadcaster
 {
 	SampleManagementGuts();
 	~SampleManagementGuts();
+	
+	// Public interface
+	bool loadAudioFile(const juce::File& file);
+	juce::AudioBuffer<float>& getSampleBuffer() { return sampleBuffer; }
+	
+	bool hasValidAudio() const { return sampleBuffer.getNumSamples() > 0; }
+
+	const juce::String& getHash() const { return hash; }
+
+	double getSampleRate() const { return sampleRate; }
+	int getLength() const { return sampleBuffer.getNumSamples(); }
+	int getNumChannels() const { return sampleBuffer.getNumChannels(); }
+	
+	juce::AudioFormatManager &getFormatManager() { return formatManager; }
+private:
 	juce::AudioFormatManager formatManager;
 	juce::AudioBuffer<float> sampleBuffer;
-	juce::int64 hash;
+	juce::String hash;
+	
+	double sampleRate {0.0};
+	
+	void computeHash();
+	void clear();
 };
 
 struct MeasuredData : public juce::ChangeBroadcaster
@@ -77,6 +97,25 @@ public:
   }
   bool operator!=(const Iterator& i) { return val != i.val; }
 };
+
+inline juce::String hashAudioData(const std::vector<float>& audioData) {
+	auto hash = juce::SHA256(audioData.data(), audioData.size() * sizeof(float));
+	return hash.toHexString();
+}
+
+inline juce::String hashValueTree(const juce::ValueTree& settings)
+{
+	auto xmlElement = settings.createXml();
+	if (!xmlElement) {
+		std::cerr << "hashValueTree: !xmlElement\n";
+		jassertfalse;
+		return juce::String();
+	}
+	juce::String xmlString = xmlElement->toString();
+	
+	auto hash = juce::SHA256(xmlString.toUTF8(), xmlString.getNumBytesAsUTF8());
+	return hash.toHexString();
+}
 
 inline bool isEmpty(juce::ValueTree const &vt){
 	return (vt.getNumChildren() == 0 && vt.getNumProperties() == 0);
