@@ -27,12 +27,12 @@ SlicerGranularAudioProcessor::SlicerGranularAudioProcessor()
                      #endif
                        ),
 #endif
-	apvts(*this, nullptr, "PARAMETERS", createParameterLayout())
-,	nonAutomatableState ("NonAutomatable")
+	apvts(*this, nullptr, "PLUGIN_STATE", createParameterLayout())
+,	presetManager(apvts)
 {
-	nonAutomatableState.appendChild (juce::ValueTree ("Settings"), nullptr);
+	apvts.state.appendChild (juce::ValueTree ("Settings"), nullptr);
 
-	juce::ValueTree presetVT = nonAutomatableState.getOrCreateChildWithName("PresetInfo", nullptr);
+	juce::ValueTree presetVT = apvts.state.getOrCreateChildWithName("PresetInfo", nullptr);
 	if (!presetVT.hasProperty("sampleFilePath")){
 		presetVT.setProperty("sampleFilePath", "", nullptr);
 	}
@@ -149,13 +149,7 @@ void SlicerGranularAudioProcessor::writeToLog(juce::String const &s) {
 
 void SlicerGranularAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
-	// Build a single root tree:
-	juce::ValueTree root { "PluginState" };
-	root.appendChild (apvts.copyState(),  nullptr);
-	root.appendChild (nonAutomatableState,  nullptr);
-
-	// XML → binary:
-	std::unique_ptr<juce::XmlElement> xml (root.createXml());
+	std::unique_ptr<juce::XmlElement> xml (apvts.state.createXml());
 	copyXmlToBinary (*xml, destData);
 }
 
@@ -163,7 +157,7 @@ void SlicerGranularAudioProcessor::setStateInformation (const void* data, int si
 {
 	std::unique_ptr<juce::XmlElement> xmlState (getXmlFromBinary (data, sizeInBytes));
 
-	if (xmlState == nullptr || ! xmlState->hasTagName ("PluginState")){
+	if (xmlState == nullptr || ! xmlState->hasTagName ("PLUGIN_STATE")){
 		return;
 	}
 	
@@ -173,37 +167,20 @@ void SlicerGranularAudioProcessor::setStateInformation (const void* data, int si
 		apvts.replaceState (params);
 	}
 
-	if (nonAutomatableState = root.getChildWithName ("NonAutomatable"); nonAutomatableState.isValid())
-	{
-		auto const settings = nonAutomatableState.getChildWithName ("Settings");
+	auto const settings = apvts.state.getChildWithName ("Settings");
 
-		if (auto const presetInfo = nonAutomatableState.getChildWithName ("PresetInfo"); presetInfo.isValid()) {
-			auto path = presetInfo.getProperty ("sampleFilePath").toString();
-			if (path.isNotEmpty()) {
-				loadAudioFile ({ path }, true);
-			}
+	if (auto const presetInfo = apvts.state.getChildWithName ("PresetInfo"); presetInfo.isValid()) {
+		auto path = presetInfo.getProperty ("sampleFilePath").toString();
+		if (path.isNotEmpty()) {
+			loadAudioFile ({ path }, true);
 		}
-		writeToLog("Successfully replaced APVTS and NonAutomatableState\n");
 	}
+	writeToLog("Successfully replaced APVTS\n");
+	
 }
 nvs::gran::GranularSynthSharedState const &SlicerGranularAudioProcessor::viewSynthSharedState(){
 	jassert (_granularSynth != nullptr);
 	return _granularSynth->viewSynthSharedState();
-}
-
-void SlicerGranularAudioProcessor::readInAudioFileToBuffer(juce::File const f){
-	juce::String const fullPath = f.getFullPathName();
-	writeToLog("                                          ...reading file" + fullPath);
-	
-	sampleManagementGuts.loadAudioFile(f);
-	auto sr = sampleManagementGuts.getSampleRate();
-	
-	nonAutomatableState.getChildWithName("PresetInfo").setProperty("sampleFilePath", fullPath, nullptr);
-	nonAutomatableState.getChildWithName("PresetInfo").setProperty("sampleRate", sr, nullptr);
-	
-	writeToLog("                                          ...file read successful");
-	
-	_granularSynth->setAudioBlock(sampleManagementGuts.getSampleBuffer(), sr, fullPath.hash());	// maybe this could just go inside readInAudioFileToBuffer()
 }
 
 [[deprecated]] void SlicerGranularAudioProcessor::loadAudioFileAsync(juce::File const file, bool notifyEditor)
@@ -222,21 +199,32 @@ void SlicerGranularAudioProcessor::loadAudioFile(juce::File const f, bool notify
 	if (notifyEditor){
 		loggingGuts.fileLogger.logMessage("Processor: sending change message from loadAudioFile");
 		
-		// I do not recall why I used async for this, but there was a bug associated. I could not reproduce the bug easily either way, but I suspect it had to do with async.
-		// The bug was something along the lines of doing another analysis after one has already been performed, maybe via loading a new file. I don't recall the symptom of the bug.
+		// Whether to use Async or not probably could use more testing. 
 		juce::MessageManager::callAsync([this]() { sampleManagementGuts.sendChangeMessage(); });
 //		sampleManagementGuts.sendChangeMessage();
 	}
 	writeToLog("slicer: loadAudioFile exiting");
 }
+
+void SlicerGranularAudioProcessor::readInAudioFileToBuffer(juce::File const f){
+	juce::String const fullPath = f.getFullPathName();
+	writeToLog("                                          ...reading file" + fullPath);
+	
+	sampleManagementGuts.loadAudioFile(f);
+	auto sr = sampleManagementGuts.getSampleRate();
+	
+	apvts.state.getChildWithName("PresetInfo").setProperty("sampleFilePath", fullPath, nullptr);
+	apvts.state.getChildWithName("PresetInfo").setProperty("sampleRate", sr, nullptr);
+	
+	writeToLog("                                          ...file read successful");
+	
+	_granularSynth->setAudioBlock(sampleManagementGuts.getSampleBuffer(), sr, fullPath.hash());	// maybe this could just go inside readInAudioFileToBuffer()
+}
 juce::String SlicerGranularAudioProcessor::getSampleFilePath() const {
-	return nonAutomatableState.getChildWithName("PresetInfo").getProperty("sampleFilePath");
+	return apvts.state.getChildWithName("PresetInfo").getProperty("sampleFilePath");
 }
 juce::AudioProcessorValueTreeState &SlicerGranularAudioProcessor::getAPVTS(){
 	return apvts;
-}
-juce::ValueTree &SlicerGranularAudioProcessor::getNonAutomatableState() {
-	return nonAutomatableState;
 }
 juce::AudioFormatManager &SlicerGranularAudioProcessor::getAudioFormatManager(){
 	return sampleManagementGuts.getFormatManager();

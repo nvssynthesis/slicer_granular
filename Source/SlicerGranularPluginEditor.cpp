@@ -10,33 +10,22 @@
 #include "SlicerGranularPluginEditor.h"
 
 GranularEditorCommon::GranularEditorCommon (SlicerGranularAudioProcessor& p)
-:	waveformAndPositionComponent(512, p.getAudioFormatManager(), p.getAPVTS())
-,	fileComp(p.getSampleFilePath(), "*.wav;*.aif;*.aiff", "", "Select file to open", false)
+:	waveformAndPositionComponent(p)
+,	presetPanel(p.getPresetManager())
 ,	tabbedPages(p.getAPVTS())
 ,	audioProcessor(p)
 {
 	audioProcessor.addSampleManagementGutsListener(this);
 	audioProcessor.addMeasuredGrainDescriptionsListener(this);
 	
-	fileComp.setCurrentFile(audioProcessor.getSampleFilePath(), false);
 	auto const fileToRead = audioProcessor.getSampleFilePath();
-	notateFileComp(fileToRead);
 	drawThumbnail();
-	startTimer(100);
-	
-	fileComp.addListener (this);
-	fileComp.getRecentFilesFromUserApplicationDataDirectory();
 }
 GranularEditorCommon::~GranularEditorCommon() {
 	audioProcessor.removeSampleManagementGutsListener(this);
 	audioProcessor.removeMeasuredGrainDescriptionsListener(this);
-	fileComp.pushRecentFilesToFile();
 }
 
-void GranularEditorCommon::notateFileComp(juce::String const &sampleFilePath){
-	audioProcessor.writeToLog("Notating fileComp with " + sampleFilePath);
-	fileComp.setCurrentFile(sampleFilePath, true, juce::dontSendNotification);
-}
 void GranularEditorCommon::drawThumbnail(){
 	auto const &synthBuffer = audioProcessor.viewSynthSharedState()._buffer;
 
@@ -68,7 +57,6 @@ void GranularEditorCommon::handleSampleManagementBroadcast(){
 	audioProcessor.writeToLog("common: handling sample management broadcast");
 	
 	auto const fileToRead = audioProcessor.getSampleFilePath();
-	notateFileComp(fileToRead);
 	drawThumbnail();
 }
 void GranularEditorCommon::changeListenerCallback (juce::ChangeBroadcaster* source){
@@ -83,40 +71,13 @@ void GranularEditorCommon::changeListenerCallback (juce::ChangeBroadcaster* sour
 		audioProcessor.writeToLog("no match for listener.\n");
 	}
 }
-//==========================================================  Timer  ============================================================
-void GranularEditorCommon::timerCallback() {
-	// this is a workaround for now to address the behavior of the file comp notating the DAW's path
-	audioProcessor.writeToLog("Timer callback notating file comp");
-	notateFileComp(audioProcessor.getSampleFilePath());
-	stopTimer();
-}
-//=================================================  FilenameComponentListener  =================================================
-void GranularEditorCommon::filenameComponentChanged (juce::FilenameComponent* fileComponentThatHasChanged)
-{
-	audioProcessor.writeToLog("editor: filenameComponentChanged.");
-
-	if (fileComponentThatHasChanged == &fileComp){
-		const juce::File file = fileComp.getCurrentFile();
-		juce::String const prevFile = audioProcessor.getSampleFilePath();
-		if (file.getFullPathName() == prevFile){
-			// no need to load
-			return;
-		}
-		
-		audioProcessor.writeToLog("     filenameComponentChanged: source is fileComp. triggering readFile with " + file.getFullPathName());
-		if (file.existsAsFile()) {
-			audioProcessor.writeToLog(file.getFullPathName() + " exists as file.");
-			audioProcessor.loadAudioFile(file, true);  // Ensure this is thread-safe
-		}
-	}
-}
 //==============================================================================
 Slicer_granularAudioProcessorEditor::Slicer_granularAudioProcessorEditor (SlicerGranularAudioProcessor& p)
     : AudioProcessorEditor (&p)
 ,	GranularEditorCommon(p)
 ,	audioProcessor (p)
 {
-	addAndMakeVisible (fileComp);
+	addAndMakeVisible (presetPanel);
 	addAndMakeVisible(tabbedPages);
 	addAndMakeVisible(waveformAndPositionComponent);
 	addAndMakeVisible(grainBusyDisplay);
@@ -156,7 +117,7 @@ void Slicer_granularAudioProcessorEditor::resized()
 	localBounds.reduce(smallPad, smallPad);
 	
 	int y(localBounds.getY());
-	y = placeFileCompAndGrainBusyDisplay(localBounds, smallPad, grainBusyDisplay, fileComp, y);
+	y = placeFileCompAndGrainBusyDisplay(localBounds, smallPad, grainBusyDisplay, presetPanel, y);
 	{
 		auto const mainParamsRemainingHeightRatio = 0.8 * localBounds.getHeight();
 

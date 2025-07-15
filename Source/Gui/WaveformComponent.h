@@ -23,13 +23,15 @@
 #include "fmt/core.h"
 #include "../Synthesis/GrainDescription.h"
 
+class SlicerGranularAudioProcessor;
 
 
 class WaveformComponent		:	public juce::Component
 ,								public juce::ChangeListener
+,								public juce::FileDragAndDropTarget
 {
 public:
-	WaveformComponent(int sourceSamplesPerThumbnailSample, juce::AudioFormatManager &formatManagerToUse);
+	WaveformComponent(SlicerGranularAudioProcessor &proc, int sourceSamplesPerThumbnailSample=512);
 	
 	enum class MarkerType {
 		Onset = 0,
@@ -40,12 +42,21 @@ public:
 	void addMarker(double onsetPosition);							// adds an OnsetMarker
 	void addMarker(nvs::gran::GrainDescription const &grainDescription);	// adds a PositionMarker
 	void removeMarkers(MarkerType markerType);
-
+	
 	void paint(juce::Graphics& g) override;
 	void resized() override {}
 	void changeListenerCallback (juce::ChangeBroadcaster* source) override;
 	
 	void setThumbnailSource (const juce::AudioBuffer<float> *newSource, double sampleRate, juce::int64 hashCode);
+	
+	//============================================================================================================
+	void mouseUp(juce::MouseEvent const &e) override;
+	//============================================================================================================
+	bool isInterestedInFileDrag (juce::StringArray const& files) override;
+	void filesDropped (juce::StringArray const& files, int x, int y) override;
+	void fileDragEnter (juce::StringArray const& files, int x, int y) override;
+	void fileDragExit (juce::StringArray const& files) override;
+	//============================================================================================================
 public:
 	struct OnsetMarker {
 		double position;
@@ -63,8 +74,10 @@ public:
 		}
 	};
 private:
+	SlicerGranularAudioProcessor &_proc;
 	juce::AudioThumbnailCache thumbnailCache;
 	juce::AudioThumbnail thumbnail;
+	bool isDragOver { false };
 	
 	std::vector<OnsetMarker> onsetMarkerList;
 	std::vector<PositionMarker> currentPositionMarkerList;
@@ -100,9 +113,7 @@ private:
 class WaveformAndPositionComponent	:	public juce::Component
 {
 public:
-	WaveformAndPositionComponent(int sourceSamplesPerThumbnailSample,
-								 juce::AudioFormatManager &formatManagerToUse,
-								 juce::AudioProcessorValueTreeState &apvts);
+	WaveformAndPositionComponent(SlicerGranularAudioProcessor &proc, int sourceSamplesPerThumbnailSample=512);
 	
 	void resized() override;
 	void paint (juce::Graphics& g) override;

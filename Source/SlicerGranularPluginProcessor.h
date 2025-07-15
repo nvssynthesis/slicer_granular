@@ -9,6 +9,7 @@
 #include "dsp_util.h"
 #include "misc_util.h"
 #include "Params/params.h"
+#include "Service/PresetManager.h"
 
 //==============================================================================
 
@@ -65,7 +66,6 @@ public:
 	juce::String getSampleFilePath() const;
 	juce::AudioFormatManager &getAudioFormatManager();
 	juce::AudioProcessorValueTreeState &getAPVTS();
-	juce::ValueTree &getNonAutomatableState();
 	
 	void writeGrainDescriptionData(const std::vector<nvs::gran::GrainDescription> &newData);
 	void readGrainDescriptionData(std::vector<nvs::gran::GrainDescription> &outData);
@@ -86,7 +86,8 @@ public:
 	int getCurrentWaveSize() {
 		return sampleManagementGuts.getLength();
 	}
-
+	nvs::service::PresetManager &getPresetManager() { return presetManager; }
+	
 	nvs::gran::GranularSynthSharedState const &viewSynthSharedState();
 protected:
 	SlicerGranularAudioProcessor();
@@ -106,7 +107,7 @@ protected:
 	
 	nvs::util::SampleManagementGuts sampleManagementGuts;
 	nvs::util::LoggingGuts loggingGuts;
-	
+
 	juce::int64 lastLogTimeMs = 0;
 	void logRateLimited(const juce::String& message, int cooldownMs)
 	{
@@ -119,12 +120,13 @@ protected:
 	}
 	
 	juce::AudioProcessorValueTreeState apvts;
-	juce::ValueTree nonAutomatableState;
-	
+	nvs::service::PresetManager presetManager;
+
 	std::unique_ptr<GranularSynthesizer> _granularSynth;
 	
 	juce::SpinLock audioBlockLock;
 	void readInAudioFileToBuffer(juce::File const f);
+	
 private:
 	void loadAudioFileAsync(juce::File const file, bool notifyEditor);
 	

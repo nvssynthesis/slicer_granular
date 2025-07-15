@@ -11,7 +11,7 @@
 #include <JuceHeader.h>
 #include "SlicerGranularPluginProcessor.h"
 #include "dsp_util.h"
-#include "Gui/FileSelectorComponent.h"
+#include "Gui/PresetPanel.h"
 #include "Gui/WaveformComponent.h"
 #include "Gui/TabbedPages.h"
 #include "Gui/GrainBusyDisplay.h"
@@ -19,20 +19,12 @@
 //==============================================================================
 
 struct GranularEditorCommon	:	public juce::ChangeListener
-,								public juce::FilenameComponentListener
-, 								private juce::Timer	// time was only introduced to defer fileComp notating on startup
 {
 	GranularEditorCommon(SlicerGranularAudioProcessor& p);
 	~GranularEditorCommon();	// remove listeners
-	// ChangeListener
 	void changeListenerCallback (juce::ChangeBroadcaster* source) override;
-	// FilenameComponentListener
-	void filenameComponentChanged (juce::FilenameComponent* fileComponentThatHasChanged) override;
-	// Timer
-	void timerCallback() override;
 protected:
 	void drawThumbnail();
-	void notateFileComp(juce::String const &sampleFilePath);
 	virtual void displayGrainDescriptions();
 	
 	void handleSampleManagementBroadcast();
@@ -40,7 +32,7 @@ protected:
 	//===============================================================================
 	WaveformAndPositionComponent waveformAndPositionComponent;
 	GrainBusyDisplay grainBusyDisplay;
-	FileSelectorComponent fileComp;
+	PresetPanel presetPanel;
 	TabbedPagesComponent tabbedPages;
 
 	// to get from processor to draw onto gui
@@ -86,7 +78,7 @@ private:
 };
 
 inline 
-int placeFileCompAndGrainBusyDisplay(juce::Rectangle<int> localBounds, int pad, GrainBusyDisplay &grainBusyDisplay, FileSelectorComponent &fileComp, int y) {
+int placeFileCompAndGrainBusyDisplay(juce::Rectangle<int> localBounds, int pad, GrainBusyDisplay &grainBusyDisplay, PresetPanel &presetPanel, int y) {
 	int const fileCompAndGrainDisplayHeight = 26;
 	{
 		int const pad = 2;
@@ -104,7 +96,7 @@ int placeFileCompAndGrainBusyDisplay(juce::Rectangle<int> localBounds, int pad, 
 	{
 		int const fileCompWidth = localBounds.getWidth() - grainBusyDisplay.getWidth();
 		int const x(localBounds.getX());
-		fileComp.setBounds(x, y, fileCompWidth, fileCompAndGrainDisplayHeight);
+		presetPanel.setBounds(x, y, fileCompWidth, fileCompAndGrainDisplayHeight);
 		y += fileCompAndGrainDisplayHeight;
 		y += pad;
 	}

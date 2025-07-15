@@ -10,13 +10,14 @@
 
 #include "WaveformComponent.h"
 #include <ranges>
-
+#include "../SlicerGranularPluginProcessor.h"
 #ifdef TSN
 #include "../../../Source/Synthesis/TSNGranularSynthesizer.h"
 #endif
 
-WaveformComponent::WaveformComponent(int sourceSamplesPerThumbnailSample, juce::AudioFormatManager &formatManagerToUse)
-:	thumbnailCache(5), thumbnail(sourceSamplesPerThumbnailSample, formatManagerToUse, thumbnailCache)
+WaveformComponent::WaveformComponent(SlicerGranularAudioProcessor &proc, int sourceSamplesPerThumbnailSample)
+:	_proc(proc)
+,	thumbnailCache(5), thumbnail(sourceSamplesPerThumbnailSample, proc.getAudioFormatManager(), thumbnailCache)
 {
 	thumbnail.addChangeListener(this);	// thumbnail is a ChangeBroadcaster
 }
@@ -198,7 +199,65 @@ void WaveformComponent::changeListenerCallback (juce::ChangeBroadcaster* source)
 	}
 #endif
 }
-	
+
+void WaveformComponent::mouseUp(juce::MouseEvent const &e) {
+	if (e.mods.isPopupMenu()) {
+		juce::PopupMenu menu;
+		
+		menu.addItem(1, "Load Audio File...");
+		
+		menu.showMenuAsync(juce::PopupMenu::Options{},
+										[this](int result)
+		  {
+			if (result == 1) {
+				auto chooser = std::make_shared<juce::FileChooser>("Select Audio File", juce::File{}, "*.wav;*.aiff;*.aif;*.mp3;*.flac;*.ogg");
+				chooser->launchAsync(juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
+									 [this, chooser](juce::FileChooser const &fc){
+					auto file = fc.getResult();
+					if (file.existsAsFile()){
+						_proc.loadAudioFile(file, true);
+					}
+				});
+			}
+			else {
+				std::cout << "WaveformComponent::mouseUp: operation canceled\n";
+			}
+		  });
+	}
+}
+
+
+bool WaveformComponent::isInterestedInFileDrag (const juce::StringArray& files)
+{
+	for (const auto& file : files)
+	{
+		if (file.endsWithIgnoreCase(".wav") || file.endsWithIgnoreCase(".aiff") ||
+			file.endsWithIgnoreCase(".aif")  || file.endsWithIgnoreCase(".mp3") ||
+			file.endsWithIgnoreCase(".flac") || file.endsWithIgnoreCase(".ogg"))
+			return true;
+	}
+	return false;
+}
+void WaveformComponent::fileDragEnter (const juce::StringArray&, int, int)
+{
+	isDragOver = true;
+	repaint();
+}
+
+void WaveformComponent::fileDragExit (const juce::StringArray&)
+{
+	isDragOver = false;
+	repaint();
+}
+
+void WaveformComponent::filesDropped (const juce::StringArray& files, int, int)
+{
+	isDragOver = false;
+	if (files.size() > 0) {
+		_proc.loadAudioFile(files[0], true);
+	}
+	repaint();
+}
 void WaveformComponent::setThumbnailSource (const juce::AudioBuffer<float> *newSource, double sampleRate, juce::int64 hashCode){
 	thumbnail.setSource(newSource, sampleRate, hashCode);
 }
@@ -227,10 +286,9 @@ void WaveformComponent::paintContentsIfFileLoaded (juce::Graphics& g)
  The positionQuantizedReadOnlySlider should follow that quantized value
  */
 
-WaveformAndPositionComponent::WaveformAndPositionComponent(int sourceSamplesPerThumbnailSample, juce::AudioFormatManager &formatManagerToUse,
-								 juce::AudioProcessorValueTreeState &apvts)
-:	wc(sourceSamplesPerThumbnailSample, formatManagerToUse)
-,	positionSlider(apvts, nvs::param::ParameterRegistry::getParameterByID("position"), juce::Slider::SliderStyle::LinearHorizontal, juce::Slider::NoTextBox)
+WaveformAndPositionComponent::WaveformAndPositionComponent(SlicerGranularAudioProcessor &proc, int sourceSamplesPerThumbnailSample)
+:	wc(proc, sourceSamplesPerThumbnailSample)
+,	positionSlider(proc.getAPVTS(), nvs::param::ParameterRegistry::getParameterByID("position"), juce::Slider::SliderStyle::LinearHorizontal, juce::Slider::NoTextBox)
 {
 	addAndMakeVisible(wc);
 	addAndMakeVisible(&positionSlider._slider);
@@ -263,7 +321,6 @@ void WaveformAndPositionComponent::resized()
 		wc.setBounds(wcRect);
 		return wcRect;	// return rectangle as that's all we need from this scope
 	}();
-	
 	
 	
 	if (sliderVisible)

@@ -5,7 +5,7 @@
               pluginCharacteristicsValue="pluginIsSynth,pluginWantsMidiIn"
               pluginManufacturer="nvssynthesis" cppLanguageStandard="20" headerPath="/Users/nicholassolem/development/boost_1_80_0&#10;/Users/nicholassolem/development/eigen-3.4.0&#10;/Users/nicholassolem/development/nvs_maps&#10;/Users/nicholassolem/development/nvs_libraries&#10;/Users/nicholassolem/development/thirdparty/Signalsmith&#10;/Users/nicholassolem/development/thirdparty/frozen/include&#10;/Users/nicholassolem/development/thirdparty/Sprout&#10;/Users/nicholassolem/development/thirdparty/fmt/include&#10;/Users/nicholassolem/development/thirdparty/Xoshiro-cpp"
               companyName="nvssynthesis" companyWebsite="https://nvssynthesis.github.io/"
-              version="0.1.9" pluginAUIsSandboxSafe="1" pluginManufacturerCode="Nvss"
+              version="0.2.0" pluginAUIsSandboxSafe="1" pluginManufacturerCode="Nvss"
               pluginCode="Slgr" pluginFormats="buildAU,buildStandalone,buildVST3"
               pluginAUMainType="'aumu'">
   <MAINGROUP id="QmNeTI" name="slicer-granular">
@@ -30,6 +30,11 @@
         <FILE id="BN5JES" name="DataStructures.h" compile="0" resource="0"
               file="Source/DataStructures.h"/>
       </GROUP>
+      <GROUP id="{11A9E570-BC04-00EF-A1AF-78F2BCC92D2D}" name="Service">
+        <FILE id="Kba0HJ" name="PresetManager.cpp" compile="1" resource="0"
+              file="Source/Service/PresetManager.cpp"/>
+        <FILE id="z33arB" name="PresetManager.h" compile="0" resource="0" file="Source/Service/PresetManager.h"/>
+      </GROUP>
       <GROUP id="{126AF7A9-91AB-8ACB-5E93-B28D33988481}" name="Params">
         <FILE id="pLnhaL" name="params.h" compile="0" resource="0" file="Source/Params/params.h"/>
       </GROUP>
@@ -53,10 +58,8 @@
         <FILE id="geROs9" name="VoicesXGrains.h" compile="0" resource="0" file="Source/Synthesis/VoicesXGrains.h"/>
       </GROUP>
       <GROUP id="{8B05BF9B-9113-5CDB-91DE-1C951D8F5910}" name="Gui">
-        <FILE id="c9mHi2" name="FileSelectionComponent.cpp" compile="1" resource="0"
-              file="Source/Gui/FileSelectionComponent.cpp"/>
-        <FILE id="bLXgxm" name="FileSelectionComponent.h" compile="0" resource="0"
-              file="Source/Gui/FileSelectionComponent.h"/>
+        <FILE id="cfMNLx" name="PresetPanel.cpp" compile="1" resource="0" file="Source/Gui/PresetPanel.cpp"/>
+        <FILE id="k55Hgw" name="PresetPanel.h" compile="0" resource="0" file="Source/Gui/PresetPanel.h"/>
         <FILE id="DVw2Ua" name="AttachedSlider.cpp" compile="1" resource="0"
               file="Source/Gui/AttachedSlider.cpp"/>
         <FILE id="PTrsQ6" name="SliderColumn.cpp" compile="1" resource="0"
