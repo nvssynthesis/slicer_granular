@@ -13,7 +13,8 @@
 
 namespace nvs::service {
 
-class PresetManager	:	juce::ValueTree::Listener
+class PresetManager	:	public juce::ValueTree::Listener
+,						public juce::ChangeBroadcaster 	// notify to load audio on preset change
 {
 public:
 	using String = juce::String;

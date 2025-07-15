@@ -88,8 +88,8 @@ void PresetManager::loadPreset(const String &name){
 	juce::XmlDocument xmlDoc { presetFile };
 	const auto vtToLoad = juce::ValueTree::fromXml(*xmlDoc.getDocumentElement());
 	_apvts.replaceState(vtToLoad);
-	
 	currentPreset.setValue(name);
+	sendChangeMessage();
 }
 
 int PresetManager::loadNextPreset(){

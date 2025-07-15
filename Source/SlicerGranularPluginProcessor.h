@@ -14,6 +14,8 @@
 //==============================================================================
 
 class SlicerGranularAudioProcessor  : 	public juce::AudioProcessor
+,										public juce::ChangeListener
+//,										public juce::ValueTree::Listener
                             #if JucePlugin_Enable_ARA
                              , public juce::AudioProcessorARAExtension
                             #endif
@@ -26,6 +28,7 @@ public:
 		obj->initialize();
 		return obj;
 	}
+	~SlicerGranularAudioProcessor();
 	
 	//==============================================================================
 	void prepareToPlay (double sampleRate, int samplesPerBlock) override;
@@ -59,6 +62,8 @@ public:
 	//==============================================================================
 	void getStateInformation (juce::MemoryBlock& destData) override;
 	void setStateInformation (const void* data, int sizeInBytes) override;
+	//==============================================================================
+	void changeListenerCallback (juce::ChangeBroadcaster *source) override;
 	//==============================================================================
 	void writeToLog(juce::String const &s);
 	virtual void loadAudioFile(juce::File const f, bool notifyEditor);
@@ -138,21 +143,22 @@ private:
 class AudioFileLoaderThread : public juce::Thread
 {
 public:
-	AudioFileLoaderThread(SlicerGranularAudioProcessor& processor, juce::File fileToLoad, bool notify)
-		: juce::Thread("AudioFileLoader"),
-		  audioProcessor(processor),
-		  file(fileToLoad),
-		  notifyEditor(notify) {}
+	AudioFileLoaderThread(SlicerGranularAudioProcessor& processor, juce::File fileToLoad, bool notifyEditor)
+	: juce::Thread("AudioFileLoader"),
+	  audioProcessor(processor),
+	  file(fileToLoad),
+	  notifyEd(notifyEditor)
+	{}
 
 	void run() override {
 		// Perform the file loading operation
-		audioProcessor.loadAudioFile(file, notifyEditor);
+		audioProcessor.loadAudioFile(file, notifyEd);
 	}
 
 private:
 	SlicerGranularAudioProcessor& audioProcessor;
 	juce::File file;
-	bool notifyEditor;
+	bool notifyEd;
 };
 
 juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();

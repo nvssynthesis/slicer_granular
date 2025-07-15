@@ -31,7 +31,9 @@ SlicerGranularAudioProcessor::SlicerGranularAudioProcessor()
 ,	presetManager(apvts)
 {
 	apvts.state.appendChild (juce::ValueTree ("Settings"), nullptr);
+	presetManager.addChangeListener(this);
 
+#if false
 	juce::ValueTree presetVT = apvts.state.getOrCreateChildWithName("PresetInfo", nullptr);
 	if (!presetVT.hasProperty("sampleFilePath")){
 		presetVT.setProperty("sampleFilePath", "", nullptr);
@@ -39,8 +41,9 @@ SlicerGranularAudioProcessor::SlicerGranularAudioProcessor()
 	if (!presetVT.hasProperty("author")){
 		presetVT.setProperty("author", "", nullptr);
 	}
+#endif
 }
-
+SlicerGranularAudioProcessor::~SlicerGranularAudioProcessor() = default;
 
 //==============================================================================
 const juce::String SlicerGranularAudioProcessor::getName() const
@@ -151,6 +154,8 @@ void SlicerGranularAudioProcessor::getStateInformation (juce::MemoryBlock& destD
 {
 	std::unique_ptr<juce::XmlElement> xml (apvts.state.createXml());
 	copyXmlToBinary (*xml, destData);
+	
+	std::cout << xml->toString();
 }
 
 void SlicerGranularAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
@@ -162,22 +167,35 @@ void SlicerGranularAudioProcessor::setStateInformation (const void* data, int si
 	}
 	
 	juce::ValueTree root = juce::ValueTree::fromXml (*xmlState);
+	
+	std::cout << root.toXmlString();
 
-	if (auto params = root.getChildWithName (apvts.state.getType()); params.isValid()){
-		apvts.replaceState (params);
-	}
+//	if (auto params = root.getChildWithName (apvts.state.getType()); params.isValid()){
+		apvts.replaceState (root);
+//	}
 
 	auto const settings = apvts.state.getChildWithName ("Settings");
 
-	if (auto const presetInfo = apvts.state.getChildWithName ("PresetInfo"); presetInfo.isValid()) {
-		auto path = presetInfo.getProperty ("sampleFilePath").toString();
+	if (auto const sampleFilePath = apvts.state.getProperty("sampleFilePath"); sampleFilePath.isString()){
+		auto path = sampleFilePath.toString();
 		if (path.isNotEmpty()) {
 			loadAudioFile ({ path }, true);
 		}
 	}
 	writeToLog("Successfully replaced APVTS\n");
-	
 }
+void SlicerGranularAudioProcessor::changeListenerCallback (juce::ChangeBroadcaster *source) {
+	auto const fvar = apvts.state.getProperty("sampleFilePath");
+	if (fvar.isString()){
+		auto const path = fvar.toString();
+		if (path.isNotEmpty()) {
+			loadAudioFile(path, true);
+		}
+	}
+}
+
+//==============================================================================
+
 nvs::gran::GranularSynthSharedState const &SlicerGranularAudioProcessor::viewSynthSharedState(){
 	jassert (_granularSynth != nullptr);
 	return _granularSynth->viewSynthSharedState();
@@ -213,15 +231,17 @@ void SlicerGranularAudioProcessor::readInAudioFileToBuffer(juce::File const f){
 	sampleManagementGuts.loadAudioFile(f);
 	auto sr = sampleManagementGuts.getSampleRate();
 	
-	apvts.state.getChildWithName("PresetInfo").setProperty("sampleFilePath", fullPath, nullptr);
-	apvts.state.getChildWithName("PresetInfo").setProperty("sampleRate", sr, nullptr);
-	
 	writeToLog("                                          ...file read successful");
 	
 	_granularSynth->setAudioBlock(sampleManagementGuts.getSampleBuffer(), sr, fullPath.hash());	// maybe this could just go inside readInAudioFileToBuffer()
+	
+	juce::MessageManager::callAsync([this, fullPath, sr]() {
+		apvts.state.setProperty("sampleFilePath", fullPath, nullptr);
+		apvts.state.setProperty("sampleRate", sr, nullptr);
+	});
 }
 juce::String SlicerGranularAudioProcessor::getSampleFilePath() const {
-	return apvts.state.getChildWithName("PresetInfo").getProperty("sampleFilePath");
+	return apvts.state.getProperty("sampleFilePath");
 }
 juce::AudioProcessorValueTreeState &SlicerGranularAudioProcessor::getAPVTS(){
 	return apvts;

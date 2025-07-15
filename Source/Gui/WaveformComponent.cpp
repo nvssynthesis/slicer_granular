@@ -130,8 +130,8 @@ void WaveformComponent::paint(juce::Graphics& g)
 	drawMarkers(g, MarkerType::Onset);
 	drawMarkers(g, MarkerType::CurrentPosition);
 	
-	
 	auto const b = getBounds();
+	
 	if (highlightedRange.has_value()){
 		for (auto const &r : *highlightedRange){
 			float const w = b.getWidth();
@@ -155,6 +155,22 @@ void WaveformComponent::paint(juce::Graphics& g)
 			}
 		}
 	}
+	if (isMouseOver(true)){
+		g.setColour(juce::Colours::whitesmoke.withMultipliedAlpha(0.15));
+		g.fillAll();
+		g.setColour(juce::Colours::whitesmoke.withMultipliedAlpha(0.76));
+		
+		g.setFont(juce::Font("Arial", 14.f, juce::Font::FontStyleFlags::plain));
+		auto const f = juce::File(_proc.getSampleFilePath());
+		auto const s = f.existsAsFile() ? f.getFileName() : "Right click or drag to load file";
+		auto const textBounds = b.withTrimmedBottom(6).withTrimmedLeft(4);
+		g.drawFittedText(s, textBounds, juce::Justification::bottomLeft, 1);
+	}
+	else {
+//		g.setColour(juce::Colours::whitesmoke.withMultipliedAlpha(0.35));
+	}
+
+
 }
 
 void WaveformComponent::highlight(std::vector<std::pair<double, double>> rangeToHighlight)
@@ -205,6 +221,7 @@ void WaveformComponent::mouseUp(juce::MouseEvent const &e) {
 		juce::PopupMenu menu;
 		
 		menu.addItem(1, "Load Audio File...");
+		menu.addItem(2, "Reveal current file directory");
 		
 		menu.showMenuAsync(juce::PopupMenu::Options{},
 										[this](int result)
@@ -218,6 +235,14 @@ void WaveformComponent::mouseUp(juce::MouseEvent const &e) {
 						_proc.loadAudioFile(file, true);
 					}
 				});
+			}
+			else if (result == 2) {
+				// https://forum.juce.com/t/how-to-implement-reveal-in-finder/4373/2
+				auto const path = _proc.getSampleFilePath();
+				auto const file = juce::File(path);
+				if (file.existsAsFile()){
+					file.getParentDirectory().startAsProcess();
+				}
 			}
 			else {
 				std::cout << "WaveformComponent::mouseUp: operation canceled\n";
