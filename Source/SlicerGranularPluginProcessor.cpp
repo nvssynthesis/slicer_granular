@@ -4,6 +4,7 @@
 #include "fmt/core.h"
 #endif
 
+#define DISABLE_STATE_SAVING
 //==============================================================================
 
 #ifndef TSN
@@ -45,67 +46,6 @@ SlicerGranularAudioProcessor::SlicerGranularAudioProcessor()
 }
 SlicerGranularAudioProcessor::~SlicerGranularAudioProcessor() = default;
 
-//==============================================================================
-const juce::String SlicerGranularAudioProcessor::getName() const
-{
-    return JucePlugin_Name;
-}
-
-bool SlicerGranularAudioProcessor::acceptsMidi() const
-{
-   #if JucePlugin_WantsMidiInput
-    return true;
-   #else
-    return false;
-   #endif
-}
-
-bool SlicerGranularAudioProcessor::producesMidi() const
-{
-   #if JucePlugin_ProducesMidiOutput
-    return true;
-   #else
-    return false;
-   #endif
-}
-
-bool SlicerGranularAudioProcessor::isMidiEffect() const
-{
-   #if JucePlugin_IsMidiEffect
-    return true;
-   #else
-    return false;
-   #endif
-}
-
-double SlicerGranularAudioProcessor::getTailLengthSeconds() const
-{
-    return 0.0;
-}
-
-int SlicerGranularAudioProcessor::getNumPrograms()
-{
-    return 1;   // NB: some hosts don't cope very well if you tell them there are 0 programs,
-                // so this should be at least 1, even if you're not really implementing programs.
-}
-
-int SlicerGranularAudioProcessor::getCurrentProgram()
-{
-    return 0;
-}
-
-void SlicerGranularAudioProcessor::setCurrentProgram (int index)
-{
-}
-
-const juce::String SlicerGranularAudioProcessor::getProgramName (int index)
-{
-    return {};
-}
-
-void SlicerGranularAudioProcessor::changeProgramName (int index, const juce::String& newName){}
-
-//==============================================================================
 void SlicerGranularAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
 	_granularSynth->setCurrentPlaybackSampleRate (sampleRate);
@@ -118,48 +58,22 @@ void SlicerGranularAudioProcessor::prepareToPlay (double sampleRate, int samples
 	}
 }
 
-void SlicerGranularAudioProcessor::releaseResources(){}
-
-#ifndef JucePlugin_PreferredChannelConfigurations
-bool SlicerGranularAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
-{
-  #if JucePlugin_IsMidiEffect
-    juce::ignoreUnused (layouts);
-    return true;
-  #else
-    // This is the place where you check if the layout is supported.
-    // In this template code we only support mono or stereo.
-    // Some plugin hosts, such as certain GarageBand versions, will only
-    // load plugins that support stereo bus layouts.
-    if (layouts.getMainOutputChannelSet() != juce::AudioChannelSet::mono()
-     && layouts.getMainOutputChannelSet() != juce::AudioChannelSet::stereo())
-        return false;
-
-    // This checks if the input layout matches the output layout
-   #if ! JucePlugin_IsSynth
-    if (layouts.getMainOutputChannelSet() != layouts.getMainInputChannelSet())
-        return false;
-   #endif
-
-    return true;
-  #endif
-}
-#endif
-
 void SlicerGranularAudioProcessor::writeToLog(juce::String const &s) {
 	loggingGuts.fileLogger.writeToLog (s);
 }
 
 void SlicerGranularAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
+#ifndef DISABLE_STATE_SAVING
 	std::unique_ptr<juce::XmlElement> xml (apvts.state.createXml());
 	copyXmlToBinary (*xml, destData);
-	
-	std::cout << xml->toString();
+#endif
+//	std::cout << xml->toString();
 }
 
 void SlicerGranularAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
+#ifndef DISABLE_STATE_SAVING
 	std::unique_ptr<juce::XmlElement> xmlState (getXmlFromBinary (data, sizeInBytes));
 
 	if (xmlState == nullptr || ! xmlState->hasTagName ("PLUGIN_STATE")){
@@ -183,6 +97,7 @@ void SlicerGranularAudioProcessor::setStateInformation (const void* data, int si
 		}
 	}
 	writeToLog("Successfully replaced APVTS\n");
+#endif
 }
 void SlicerGranularAudioProcessor::changeListenerCallback (juce::ChangeBroadcaster *source) {
 	auto const fvar = apvts.state.getProperty("sampleFilePath");
@@ -311,17 +226,6 @@ void SlicerGranularAudioProcessor::readGrainDescriptionData(std::vector<nvs::gra
 }
 
 //==============================================================================
-bool SlicerGranularAudioProcessor::hasEditor() const
-{
-    return true; // (change this to false if you choose to not supply an editor)
-}
-
-juce::AudioProcessorEditor* SlicerGranularAudioProcessor::createEditor()
-{
-    return new Slicer_granularAudioProcessorEditor (*this);
-}
-
-//==============================================================================
 std::unique_ptr<juce::RangedAudioParameter> createJuceParameter(const nvs::param::ParameterDef& param) {
 	if (param.getParameterType() == nvs::param::ParameterType::Float){
 		
@@ -414,6 +318,112 @@ juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout() {
 	return layout;
 }
 
+//=======================================================================================
+//=======================================================================================
+//=======================================================================================
+// all of the below are essentially unmodified from standard juce::AudioProcessor code
+//=======================================================================================
+//=======================================================================================
+//=======================================================================================
+const juce::String SlicerGranularAudioProcessor::getName() const
+{
+	return JucePlugin_Name;
+}
+
+bool SlicerGranularAudioProcessor::acceptsMidi() const
+{
+   #if JucePlugin_WantsMidiInput
+	return true;
+   #else
+	return false;
+   #endif
+}
+
+bool SlicerGranularAudioProcessor::producesMidi() const
+{
+   #if JucePlugin_ProducesMidiOutput
+	return true;
+   #else
+	return false;
+   #endif
+}
+
+bool SlicerGranularAudioProcessor::isMidiEffect() const
+{
+   #if JucePlugin_IsMidiEffect
+	return true;
+   #else
+	return false;
+   #endif
+}
+
+double SlicerGranularAudioProcessor::getTailLengthSeconds() const
+{
+	return 0.0;
+}
+
+int SlicerGranularAudioProcessor::getNumPrograms()
+{
+	return 1;   // NB: some hosts don't cope very well if you tell them there are 0 programs,
+				// so this should be at least 1, even if you're not really implementing programs.
+}
+
+int SlicerGranularAudioProcessor::getCurrentProgram()
+{
+	return 0;
+}
+
+void SlicerGranularAudioProcessor::setCurrentProgram (int index)
+{
+}
+
+const juce::String SlicerGranularAudioProcessor::getProgramName (int index)
+{
+	return {};
+}
+
+void SlicerGranularAudioProcessor::changeProgramName (int index, const juce::String& newName){}
+
+//==============================================================================
+
+void SlicerGranularAudioProcessor::releaseResources(){}
+
+#ifndef JucePlugin_PreferredChannelConfigurations
+bool SlicerGranularAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
+{
+  #if JucePlugin_IsMidiEffect
+	juce::ignoreUnused (layouts);
+	return true;
+  #else
+	// This is the place where you check if the layout is supported.
+	// In this template code we only support mono or stereo.
+	// Some plugin hosts, such as certain GarageBand versions, will only
+	// load plugins that support stereo bus layouts.
+	if (layouts.getMainOutputChannelSet() != juce::AudioChannelSet::mono()
+	 && layouts.getMainOutputChannelSet() != juce::AudioChannelSet::stereo())
+		return false;
+
+	// This checks if the input layout matches the output layout
+   #if ! JucePlugin_IsSynth
+	if (layouts.getMainOutputChannelSet() != layouts.getMainInputChannelSet())
+		return false;
+   #endif
+
+	return true;
+  #endif
+}
+#endif
+//==============================================================================
+bool SlicerGranularAudioProcessor::hasEditor() const
+{
+	return true; // (change this to false if you choose to not supply an editor)
+}
+
+juce::AudioProcessorEditor* SlicerGranularAudioProcessor::createEditor()
+{
+	return new Slicer_granularAudioProcessorEditor (*this);
+}
+//==============================================================================
 
 #ifndef TSN
 // this preprocessor definition should be defined in tsn_granular to prevent multiple definitions
