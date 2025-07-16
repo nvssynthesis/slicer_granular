@@ -33,16 +33,6 @@ SlicerGranularAudioProcessor::SlicerGranularAudioProcessor()
 {
 	apvts.state.appendChild (juce::ValueTree ("Settings"), nullptr);
 	presetManager.addChangeListener(this);
-
-#if false
-	juce::ValueTree presetVT = apvts.state.getOrCreateChildWithName("PresetInfo", nullptr);
-	if (!presetVT.hasProperty("sampleFilePath")){
-		presetVT.setProperty("sampleFilePath", "", nullptr);
-	}
-	if (!presetVT.hasProperty("author")){
-		presetVT.setProperty("author", "", nullptr);
-	}
-#endif
 }
 SlicerGranularAudioProcessor::~SlicerGranularAudioProcessor() = default;
 
@@ -150,10 +140,8 @@ void SlicerGranularAudioProcessor::readInAudioFileToBuffer(juce::File const f){
 	
 	_granularSynth->setAudioBlock(sampleManagementGuts.getSampleBuffer(), sr, fullPath.hash());	// maybe this could just go inside readInAudioFileToBuffer()
 	
-	juce::MessageManager::callAsync([this, fullPath, sr]() {
-		apvts.state.setProperty("sampleFilePath", fullPath, nullptr);
-		apvts.state.setProperty("sampleRate", sr, nullptr);
-	});
+	apvts.state.setProperty("sampleFilePath", fullPath, nullptr);
+	apvts.state.setProperty("sampleRate", sr, nullptr);
 }
 juce::String SlicerGranularAudioProcessor::getSampleFilePath() const {
 	return apvts.state.getProperty("sampleFilePath");

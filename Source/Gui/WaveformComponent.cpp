@@ -179,6 +179,11 @@ void WaveformComponent::highlight(std::vector<std::pair<double, double>> rangeTo
 	repaint();
 }
 
+void WaveformComponent::thumbnailChanged()
+{
+	repaint();
+}
+
 void WaveformComponent::changeListenerCallback (juce::ChangeBroadcaster* source)
 {
 	if (source == &thumbnail){
@@ -241,7 +246,7 @@ void WaveformComponent::mouseUp(juce::MouseEvent const &e) {
 				auto const path = _proc.getSampleFilePath();
 				auto const file = juce::File(path);
 				if (file.existsAsFile()){
-					file.getParentDirectory().startAsProcess();
+					file.revealToUser();
 				}
 			}
 			else {

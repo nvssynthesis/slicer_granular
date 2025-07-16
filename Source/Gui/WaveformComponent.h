@@ -90,10 +90,7 @@ private:
 	using MarkerVariant = std::variant<OnsetMarker, PositionMarker>;
 	void drawMarker(juce::Graphics& g, MarkerVariant marker);
 
-	void thumbnailChanged()
-	{
-		repaint();
-	}
+	void thumbnailChanged();
 	
 	void highlight(std::vector<std::pair<double, double>> rangeToHighlight);
 	std::optional<std::vector<std::pair<double, double>>> highlightedRange;
