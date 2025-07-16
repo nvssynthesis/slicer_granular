@@ -100,7 +100,6 @@ void SampleManagementGuts::computeHash()
 	audioData.insert(audioData.end(), channelData, channelData + sampleBuffer.getNumSamples());
 	
 	hash = hashAudioData(audioData);
-	std::cout << hash << '\n';
 }
 
 void SampleManagementGuts::clear()

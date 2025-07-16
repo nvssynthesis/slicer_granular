@@ -58,7 +58,6 @@ void SlicerGranularAudioProcessor::getStateInformation (juce::MemoryBlock& destD
 	std::unique_ptr<juce::XmlElement> xml (apvts.state.createXml());
 	copyXmlToBinary (*xml, destData);
 #endif
-//	std::cout << xml->toString();
 }
 
 void SlicerGranularAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
@@ -71,12 +70,8 @@ void SlicerGranularAudioProcessor::setStateInformation (const void* data, int si
 	}
 	
 	juce::ValueTree root = juce::ValueTree::fromXml (*xmlState);
-	
-	std::cout << root.toXmlString();
 
-//	if (auto params = root.getChildWithName (apvts.state.getType()); params.isValid()){
-		apvts.replaceState (root);
-//	}
+	apvts.replaceState (root);
 
 	auto const settings = apvts.state.getChildWithName ("Settings");
 
