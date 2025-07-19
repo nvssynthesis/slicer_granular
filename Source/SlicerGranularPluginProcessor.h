@@ -140,25 +140,4 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SlicerGranularAudioProcessor)
 };
 
-class AudioFileLoaderThread : public juce::Thread
-{
-public:
-	AudioFileLoaderThread(SlicerGranularAudioProcessor& processor, juce::File fileToLoad, bool notifyEditor)
-	: juce::Thread("AudioFileLoader"),
-	  audioProcessor(processor),
-	  file(fileToLoad),
-	  notifyEd(notifyEditor)
-	{}
-
-	void run() override {
-		// Perform the file loading operation
-		audioProcessor.loadAudioFile(file, notifyEd);
-	}
-
-private:
-	SlicerGranularAudioProcessor& audioProcessor;
-	juce::File file;
-	bool notifyEd;
-};
-
 juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();

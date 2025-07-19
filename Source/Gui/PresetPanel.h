@@ -12,10 +12,9 @@
 #include <JuceHeader.h>
 #include "../Service/PresetManager.h"
 
-class PresetPanel
-:	public juce::Component
-,	juce::Button::Listener
-,	juce::ComboBox::Listener
+class PresetPanel		:		public juce::Component
+,								private juce::Button::Listener
+,								private juce::ComboBox::Listener
 {
 public:
 	PresetPanel(nvs::service::PresetManager &presetManager);
@@ -29,53 +28,11 @@ public:
 	void resized() override;
 	
 private:
-	void buttonClicked(juce::Button *b) override {
-		using namespace juce;
-		
-		if (b == &saveButton) {
-			fileChooser = std::make_unique<juce::FileChooser>(
-				"Enter preset name to save...",
-				nvs::service::PresetManager::defaultDirectory,
-				"*." + nvs::service::PresetManager::extension
-			);
-			fileChooser->launchAsync(FileBrowserComponent::saveMode, [&](const juce::FileChooser &fc)
-			{
-				const auto resultFile = fc.getResult();
-				_presetManager.savePreset(resultFile.getFileNameWithoutExtension());
-				loadPresetList();
-			});
-		}
-		if (b == &previousPresetButton){
-			const auto idx = _presetManager.loadPreviousPreset();
-			presetListBox.setSelectedItemIndex(idx, dontSendNotification);
-		}
-		if (b == &nextPresetButton){
-			const auto idx = _presetManager.loadNextPreset();
-			presetListBox.setSelectedItemIndex(idx, dontSendNotification);
-		}
-		if (b == &deleteButton){
-			[[maybe_unused]]
-			bool const button1Clicked = juce::AlertWindow::showOkCancelBox(
-				juce::AlertWindow::WarningIcon,
-				"Delete Preset",
-				"Are you sure you want to delete the preset '" +
-				_presetManager.getCurrentPreset() + "'?\n\nThis action cannot be undone.",
-				"Delete",
-				"Cancel",
-				this,
-				juce::ModalCallbackFunction::create([this](int result) {
-					if (result == 1) { // User clicked "Delete"
-						_presetManager.deletePreset(_presetManager.getCurrentPreset());
-						loadPresetList();
-					}
-					// If result == 0, user clicked "Cancel" - do nothing
-				})
-			);
-		}
-	}
+	void buttonClicked(juce::Button *b) override;
 	nvs::service::PresetManager &_presetManager;
 	
-	juce::TextButton saveButton, deleteButton, previousPresetButton, nextPresetButton;
+	juce::TextButton saveButton, deleteButton, previousPresetButton, nextPresetButton, reloadButton;
+	
 	juce::ComboBox presetListBox;
 	
 	std::unique_ptr<juce::FileChooser> fileChooser;

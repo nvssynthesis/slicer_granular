@@ -4,7 +4,7 @@
 #include "fmt/core.h"
 #endif
 
-#define DISABLE_STATE_SAVING
+//#define DISABLE_STATE_SAVING
 //==============================================================================
 
 #ifndef TSN
@@ -65,32 +65,29 @@ void SlicerGranularAudioProcessor::setStateInformation (const void* data, int si
 #ifndef DISABLE_STATE_SAVING
 	std::unique_ptr<juce::XmlElement> xmlState (getXmlFromBinary (data, sizeInBytes));
 
+	juce::ValueTree tmp = juce::ValueTree::fromXml(*xmlState);
+	
 	if (xmlState == nullptr || ! xmlState->hasTagName ("PLUGIN_STATE")){
 		return;
 	}
-	
 	juce::ValueTree root = juce::ValueTree::fromXml (*xmlState);
-
 	apvts.replaceState (root);
-
-	auto const settings = apvts.state.getChildWithName ("Settings");
-
-	if (auto const sampleFilePath = apvts.state.getProperty("sampleFilePath"); sampleFilePath.isString()){
-		auto path = sampleFilePath.toString();
-		if (path.isNotEmpty()) {
-			loadAudioFile ({ path }, true);
-		}
-	}
+	
 	writeToLog("Successfully replaced APVTS\n");
 #endif
 }
 void SlicerGranularAudioProcessor::changeListenerCallback (juce::ChangeBroadcaster *source) {
-	auto const fvar = apvts.state.getProperty("sampleFilePath");
-	if (fvar.isString()){
-		auto const path = fvar.toString();
-		if (path.isNotEmpty()) {
-			loadAudioFile(path, true);
+	if (&presetManager == source){
+		auto fileInfo = apvts.state.getChildWithName("FileInfo");
+		if (fileInfo.isValid()) {
+			auto const fp = fileInfo.getPropertyAsValue("sampleFilePath", nullptr).toString();
+			if (fp.isNotEmpty()) {
+				loadAudioFile(fp, true);
+			}
 		}
+	}
+	else {
+		writeToLog("SlicerGranularAudioProcessor::changeListenerCallback: unkown ChangeBroadcaster\n");
 	}
 }
 
@@ -99,12 +96,6 @@ void SlicerGranularAudioProcessor::changeListenerCallback (juce::ChangeBroadcast
 nvs::gran::GranularSynthSharedState const &SlicerGranularAudioProcessor::viewSynthSharedState(){
 	jassert (_granularSynth != nullptr);
 	return _granularSynth->viewSynthSharedState();
-}
-
-[[deprecated]] void SlicerGranularAudioProcessor::loadAudioFileAsync(juce::File const file, bool notifyEditor)
-{
-	auto* loader = new AudioFileLoaderThread(*this, file, notifyEditor);
-	loader->startThread();
 }
 
 void SlicerGranularAudioProcessor::loadAudioFile(juce::File const f, bool notifyEditor){
@@ -124,22 +115,24 @@ void SlicerGranularAudioProcessor::loadAudioFile(juce::File const f, bool notify
 	writeToLog("slicer: loadAudioFile exiting");
 }
 
-void SlicerGranularAudioProcessor::readInAudioFileToBuffer(juce::File const f){
-	juce::String const fullPath = f.getFullPathName();
+void SlicerGranularAudioProcessor::readInAudioFileToBuffer(juce::File const file){
+	juce::String const fullPath = file.getFullPathName();
 	writeToLog("                                          ...reading file" + fullPath);
 	
-	sampleManagementGuts.loadAudioFile(f);
+	sampleManagementGuts.loadAudioFile(file);
 	auto sr = sampleManagementGuts.getSampleRate();
 	
 	writeToLog("                                          ...file read successful");
 	
 	_granularSynth->setAudioBlock(sampleManagementGuts.getSampleBuffer(), sr, fullPath.hash());	// maybe this could just go inside readInAudioFileToBuffer()
 	
-	apvts.state.setProperty("sampleFilePath", fullPath, nullptr);
-	apvts.state.setProperty("sampleRate", sr, nullptr);
+	auto fileInfo = apvts.state.getOrCreateChildWithName("FileInfo", nullptr);
+	fileInfo.setProperty("sampleFilePath", fullPath, nullptr);
+	fileInfo.setProperty("sampleRate", sr, nullptr);
 }
 juce::String SlicerGranularAudioProcessor::getSampleFilePath() const {
-	return apvts.state.getProperty("sampleFilePath");
+	auto fileInfo = apvts.state.getChildWithName("FileInfo");
+	return fileInfo.getProperty("sampleFilePath");
 }
 juce::AudioProcessorValueTreeState &SlicerGranularAudioProcessor::getAPVTS(){
 	return apvts;
@@ -157,7 +150,7 @@ void SlicerGranularAudioProcessor::processBlock (juce::AudioBuffer<float>& buffe
 	
 	const juce::SpinLock::ScopedTryLockType lock(audioBlockLock);
 	if (!lock.isLocked()){
-		writeToLog("processBlock:        lock was not locked; exiting early.");
+//		writeToLog("processBlock:        lock was not locked; exiting early.");
 		return;
 	}
 	

@@ -205,7 +205,9 @@ void WaveformComponent::changeListenerCallback (juce::ChangeBroadcaster* source)
 		
 		for (auto const &wi : currentIndices){
 			auto currentIdx = wi.idx;
-			jassert ((currentIdx == 0) or (currentIdx < (int)onsetMarkerList.size()));
+			if ((currentIdx != 0) && (currentIdx >= (int)onsetMarkerList.size())){
+				return; // invalid
+			}
 			auto nextIdx = (currentIdx + 1) % onsetMarkerList.size();
 			double startPos = onsetMarkerList[currentIdx].position;
 			double endPos = onsetMarkerList[nextIdx].position;

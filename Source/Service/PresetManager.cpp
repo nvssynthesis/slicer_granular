@@ -32,19 +32,28 @@ PresetManager::PresetManager(APVTS& apvts)
 		}
 	}
 	_apvts.state.addListener(this);
-	currentPreset.referTo( apvts.state.getPropertyAsValue(presetNameProperty, nullptr) );
+	
+	auto fileInfo = _apvts.state.getOrCreateChildWithName("FileInfo", nullptr);
+	auto const pname = fileInfo.getPropertyAsValue(presetNameProperty, nullptr);
+	currentPreset.referTo( pname );	// writes to state
 }
 void PresetManager::valueTreeRedirected(ValueTree& treeWhichHasBeenChanged) {
-	currentPreset.referTo(treeWhichHasBeenChanged.getPropertyAsValue(presetNameProperty, nullptr));
+	auto const pname = treeWhichHasBeenChanged.getPropertyAsValue(presetNameProperty, nullptr);
+	currentPreset.referTo(pname);	// writes to state
+	
+	sendChangeMessage();	// inform any listeners (Processor) to update other aspects associated with preset that are not parameters
 }
 
 void PresetManager::savePreset(const String &name){
 	if (name.isEmpty()){
 		return;
 	}
-	
-	currentPreset.setValue(name);
 
+	currentPreset.setValue(name);
+	
+	auto fileInfo = _apvts.state.getOrCreateChildWithName("FileInfo", nullptr);
+	fileInfo.setProperty("PresetName", name, nullptr);
+	
 	const auto xml = _apvts.copyState().createXml();
 
 	const auto presetFile = defaultDirectory.getChildFile(name + "." + extension);
@@ -87,9 +96,8 @@ void PresetManager::loadPreset(const String &name){
 	// presetFile (xml) -> valueTree
 	juce::XmlDocument xmlDoc { presetFile };
 	const auto vtToLoad = juce::ValueTree::fromXml(*xmlDoc.getDocumentElement());
-	_apvts.replaceState(vtToLoad);
+	_apvts.replaceState(vtToLoad);	// in effect calls valueTreeRedirected
 	currentPreset.setValue(name);
-	sendChangeMessage();
 }
 
 int PresetManager::loadNextPreset(){
