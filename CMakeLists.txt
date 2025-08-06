@@ -11,21 +11,6 @@ option(USE_SYSTEM_LIBRARIES "Use system-installed libraries instead of fetching"
 # External dependencies setup
 include(FetchContent)
 
-# Sprout (header-only)
-if(USE_SYSTEM_LIBRARIES AND DEFINED SPROUT_ROOT)
-    set(SPROUT_INCLUDE_DIR ${SPROUT_ROOT})
-else()
-    FetchContent_Declare(
-        Sprout
-        GIT_REPOSITORY https://github.com/bolero-MURAKAMI/Sprout.git
-        GIT_TAG master
-        CONFIGURE_COMMAND ""
-        BUILD_COMMAND ""
-    )
-    FetchContent_MakeAvailable(Sprout)
-    set(SPROUT_INCLUDE_DIR ${sprout_SOURCE_DIR})
-endif()
-
 # fmt library
 if(USE_SYSTEM_LIBRARIES)
     find_package(fmt REQUIRED)
@@ -55,6 +40,10 @@ endif()
 
 # Add JUCE as a subdirectory
 add_subdirectory(JUCE)
+
+# Debug: Print JUCE version and status
+message(STATUS "JUCE version: ${JUCE_VERSION}")
+message(STATUS "JUCE found at: ${JUCE_SOURCE_DIR}")
 
 # Create the plugin target
 juce_add_plugin(slicer-granular
@@ -91,7 +80,7 @@ target_include_directories(slicer-granular
     PRIVATE
         Source
         nvs_libraries/nvs_libraries/include
-        ${SPROUT_INCLUDE_DIR}
+        nvs_libraries/nvs_libraries/external/sprout
         ${XOSHIRO_INCLUDE_DIR}
 )
 
