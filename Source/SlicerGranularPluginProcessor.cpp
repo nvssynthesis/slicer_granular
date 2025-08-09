@@ -1,31 +1,15 @@
 #include "SlicerGranularPluginProcessor.h"
 #include "SlicerGranularPluginEditor.h"
-#if defined(DEBUG_BUILD) | defined(DEBUG) | defined(_DEBUG)
-#include "fmt/core.h"
-#endif
-
-//#define DISABLE_STATE_SAVING
+/*
+ *TRY: 3POINT SLIDERS (2 THUMBS)
+ *
+ */
 //==============================================================================
-
-#ifndef TSN
-namespace nvs::util{}
-nvs::util::LoggingGuts::LoggingGuts()
-: logFile(juce::File::getSpecialLocation(juce::File::SpecialLocationType::currentApplicationFile).getSiblingFile("log.txt"))
-, fileLogger(logFile, "slicer_granular logging")
-{
-	juce::Logger::setCurrentLogger (&fileLogger);
-}
-#endif
 
 SlicerGranularAudioProcessor::SlicerGranularAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
      : AudioProcessor (BusesProperties()
-                     #if ! JucePlugin_IsMidiEffect
-                      #if ! JucePlugin_IsSynth
-                       .withInput  ("Input",  juce::AudioChannelSet::stereo(), true)
-                      #endif
                        .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
-                     #endif
                        ),
 #endif
 	apvts(*this, nullptr, "PLUGIN_STATE", createParameterLayout())
@@ -41,7 +25,7 @@ void SlicerGranularAudioProcessor::prepareToPlay (double sampleRate, int samples
 	_granularSynth->setCurrentPlaybackSampleRate (sampleRate);
 	for (int i = 0; i < _granularSynth->getNumVoices(); i++)
 	{
-		if (auto voice = dynamic_cast<GranularVoice*>(_granularSynth->getVoice(i)))
+		if (auto voice = dynamic_cast<nvs::gran::GranularVoice *>(_granularSynth->getVoice(i)))
 		{
 			voice->prepareToPlay (sampleRate, samplesPerBlock);
 		}
@@ -54,15 +38,12 @@ void SlicerGranularAudioProcessor::writeToLog(juce::String const &s) {
 
 void SlicerGranularAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
-#ifndef DISABLE_STATE_SAVING
 	std::unique_ptr<juce::XmlElement> xml (apvts.state.createXml());
 	copyXmlToBinary (*xml, destData);
-#endif
 }
 
 void SlicerGranularAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
-#ifndef DISABLE_STATE_SAVING
 	std::unique_ptr<juce::XmlElement> xmlState (getXmlFromBinary (data, sizeInBytes));
 
 	juce::ValueTree tmp = juce::ValueTree::fromXml(*xmlState);
@@ -74,26 +55,26 @@ void SlicerGranularAudioProcessor::setStateInformation (const void* data, int si
 	apvts.replaceState (root);
 	
 	writeToLog("Successfully replaced APVTS\n");
-#endif
 }
 void SlicerGranularAudioProcessor::changeListenerCallback (juce::ChangeBroadcaster *source) {
 	if (&presetManager == source){
 		auto fileInfo = apvts.state.getChildWithName("FileInfo");
 		if (fileInfo.isValid()) {
-			auto const fp = fileInfo.getPropertyAsValue("sampleFilePath", nullptr).toString();
-			if (fp.isNotEmpty()) {
+			if (auto const fp = fileInfo.getPropertyAsValue("sampleFilePath", nullptr).toString();
+				fp.isNotEmpty())
+			{
 				loadAudioFile(fp, true);
 			}
 		}
 	}
 	else {
-		writeToLog("SlicerGranularAudioProcessor::changeListenerCallback: unkown ChangeBroadcaster\n");
+		writeToLog("SlicerGranularAudioProcessor::changeListenerCallback: unknown ChangeBroadcaster\n");
 	}
 }
 
 //==============================================================================
 
-nvs::gran::GranularSynthSharedState const &SlicerGranularAudioProcessor::viewSynthSharedState(){
+nvs::gran::GranularSynthSharedState const &SlicerGranularAudioProcessor::viewSynthSharedState() const {
 	jassert (_granularSynth != nullptr);
 	return _granularSynth->viewSynthSharedState();
 }
@@ -115,16 +96,16 @@ void SlicerGranularAudioProcessor::loadAudioFile(juce::File const f, bool notify
 	writeToLog("slicer: loadAudioFile exiting");
 }
 
-void SlicerGranularAudioProcessor::readInAudioFileToBuffer(juce::File const file){
-	juce::String const fullPath = file.getFullPathName();
+void SlicerGranularAudioProcessor::readInAudioFileToBuffer(juce::File const &f){
+	juce::String const fullPath = f.getFullPathName();
 	writeToLog("                                          ...reading file" + fullPath);
 	
-	sampleManagementGuts.loadAudioFile(file);
-	auto sr = sampleManagementGuts.getSampleRate();
+	sampleManagementGuts.loadAudioFile(f);
+	const auto sr = sampleManagementGuts.getSampleRate();
 	
 	writeToLog("                                          ...file read successful");
 	
-	_granularSynth->setAudioBlock(sampleManagementGuts.getSampleBuffer(), sr, fullPath.hash());	// maybe this could just go inside readInAudioFileToBuffer()
+	_granularSynth->setAudioBuffer(sampleManagementGuts.getSampleBuffer(), sr, fullPath.hash());	// maybe this could just go inside readInAudioFileToBuffer()
 	
 	auto fileInfo = apvts.state.getOrCreateChildWithName("FileInfo", nullptr);
 	fileInfo.setProperty("sampleFilePath", fullPath, nullptr);
@@ -150,31 +131,24 @@ void SlicerGranularAudioProcessor::processBlock (juce::AudioBuffer<float>& buffe
 	
 	const juce::SpinLock::ScopedTryLockType lock(audioBlockLock);
 	if (!lock.isLocked()){
-//		writeToLog("processBlock:        lock was not locked; exiting early.");
+		writeToLog("processBlock: lock was not locked; exiting early.");
 		return;
 	}
 	
-	if (sampleManagementGuts.getLength() == 0){
-		return;
-	}
-	if (sampleManagementGuts.getNumChannels() == 0){
+	if ((sampleManagementGuts.getLength() == 0) || (sampleManagementGuts.getNumChannels() == 0)) {
 		return;
 	}
 	
-	
-	_granularSynth->renderNextBlock(buffer,
-						  midiMessages,
-						  0,
-						  buffer.getNumSamples());
-	
-	for (int i=0; i < buffer.getNumChannels(); ++i){
-		auto *wp = buffer.getWritePointer(i);
-		for (int j = 0; j < buffer.getNumSamples(); ++j){
-			wp[j] = juce::jlimit(-1.f, 1.f, wp[j]);
-		}
-	}
-	
-	std::vector<nvs::gran::GrainDescription> descriptions = _granularSynth->getGrainDescriptions();
+    _granularSynth->processBlock(buffer, midiMessages);
+
+	for (int i = 0; i < buffer.getNumChannels(); ++i) {
+        auto *wp = buffer.getWritePointer(i);
+        for (int j = 0; j < buffer.getNumSamples(); ++j) {
+            wp[j] = juce::jlimit(-1.f, 1.f, wp[j]);
+        }
+    }
+
+    const std::vector<nvs::gran::GrainDescription> descriptions = _granularSynth->getGrainDescriptions();
 	writeGrainDescriptionData(descriptions);
 	
 	loggingGuts.logIfNaNOrInf(buffer);
@@ -399,12 +373,3 @@ juce::AudioProcessorEditor* SlicerGranularAudioProcessor::createEditor()
 {
 	return new Slicer_granularAudioProcessorEditor (*this);
 }
-//==============================================================================
-
-#ifndef TSN
-// this preprocessor definition should be defined in tsn_granular to prevent multiple definitions
-juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
-{
-    return SlicerGranularAudioProcessor::create<SlicerGranularAudioProcessor>();
-}
-#endif

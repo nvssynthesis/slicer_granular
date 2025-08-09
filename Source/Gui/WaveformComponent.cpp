@@ -11,9 +11,6 @@
 #include "WaveformComponent.h"
 #include <ranges>
 #include "../SlicerGranularPluginProcessor.h"
-#ifdef TSN
-#include "../../../Source/Synthesis/TSNGranularSynthesizer.h"
-#endif
 
 WaveformComponent::WaveformComponent(SlicerGranularAudioProcessor &proc, int sourceSamplesPerThumbnailSample)
 :	_proc(proc)
@@ -92,7 +89,7 @@ void processLine(juce::Graphics& g, juce::Line<float> &l, WaveformComponent::Pos
 		g.setColour(colour);
 	}
 	l.applyTransform(juce::AffineTransform::translation(0.0f, p * (regionHeight)));	// panning affects y position
-	l.applyTransform(juce::AffineTransform::scale(1.f, 0.5f));						// make line take up just 1 channel's worth of space (half the height)}
+	l.applyTransform(juce::AffineTransform::scale(1.f, 0.5f));						// make line take up just 1 channel's worth of space (half the height)
 }
 }
 void WaveformComponent::drawMarker(juce::Graphics& g, MarkerVariant marker)
@@ -169,15 +166,8 @@ void WaveformComponent::paint(juce::Graphics& g)
 	else {
 //		g.setColour(juce::Colours::whitesmoke.withMultipliedAlpha(0.35));
 	}
-
-
 }
 
-void WaveformComponent::highlight(std::vector<std::pair<double, double>> rangeToHighlight)
-{
-	highlightedRange = rangeToHighlight;
-	repaint();
-}
 
 void WaveformComponent::thumbnailChanged()
 {
@@ -189,38 +179,34 @@ void WaveformComponent::changeListenerCallback (juce::ChangeBroadcaster* source)
 	if (source == &thumbnail){
 		thumbnailChanged();
 	}
-#ifdef TSN
-	else if (auto *tsn_synth = dynamic_cast<TSNGranularSynthesizer*>(source)){
-		std::vector<TSNGranularSynthesizer::WeightedIdx> currentIndices = tsn_synth->getCurrentIndices();
-		std::vector<std::pair<double, double>> ranges;
-		ranges.reserve(currentIndices.size());
-		
-		auto near_eq = [](double a, double b){
-			double eps = std::numeric_limits<double>::lowest() * 10.0;
-			if (std::abs(a - b) < eps){
-				return true;
-			}
-			return false;
-		};
-		
-		for (auto const &wi : currentIndices){
-			auto currentIdx = wi.idx;
-			if ((currentIdx != 0) && (currentIdx >= (int)onsetMarkerList.size())){
-				return; // invalid
-			}
-			auto nextIdx = (currentIdx + 1) % onsetMarkerList.size();
-			double startPos = onsetMarkerList[currentIdx].position;
-			double endPos = onsetMarkerList[nextIdx].position;
-			
-			
-			jassert (!near_eq(startPos, endPos));
-			
-			ranges.push_back(std::make_pair(startPos, endPos));
-		}
-		
-		highlight(ranges);
-	}
-#endif
+}
+void WaveformComponent::highlightOnsets(std::vector<nvs::util::WeightedIdx> const &currentIndices) {
+    std::vector<std::pair<double, double>> ranges;
+    ranges.reserve(currentIndices.size());
+
+    auto near_eq = [](double a, double b) {
+        if (constexpr auto eps = std::numeric_limits<double>::lowest() * 10.0;
+            std::abs(a - b) < eps){
+            return true;
+            }
+        return false;
+    };
+
+    for (auto const &wi : currentIndices) {
+        const auto currentIdx = wi.idx;
+        if ((currentIdx != 0) && (currentIdx >= static_cast<int>(onsetMarkerList.size()))) {
+            return; // invalid
+        }
+        const auto nextIdx = (currentIdx + 1) % onsetMarkerList.size();
+        const double startPos = onsetMarkerList[currentIdx].position;
+        const double endPos = onsetMarkerList[nextIdx].position;
+
+        jassert (!near_eq(startPos, endPos));
+
+        ranges.push_back(std::make_pair(startPos, endPos));
+    }
+	highlightedRange = ranges;
+	repaint();
 }
 
 void WaveformComponent::mouseUp(juce::MouseEvent const &e) {
@@ -328,7 +314,7 @@ WaveformAndPositionComponent::WaveformAndPositionComponent(SlicerGranularAudioPr
 	
 void WaveformAndPositionComponent::hideSlider() {
 	positionSlider._slider.setVisible(false);
-	repaint();
+	resized();
 }
 
 void WaveformAndPositionComponent::resized()
@@ -349,16 +335,15 @@ void WaveformAndPositionComponent::resized()
 		auto const waveformWidthDiff = localBounds.getWidth() - waveformWidth;
 		auto const waveformX = localBounds.getX() + (waveformWidthDiff * 0.5);
 
-		auto const wcRect = juce::Rectangle<int>(waveformX, waveformY, waveformWidth, waveformHeight);
-		wc.setBounds(wcRect);
-		return wcRect;	// return rectangle as that's all we need from this scope
+		auto const wcBounds = juce::Rectangle<int>(waveformX, waveformY, waveformWidth, waveformHeight);
+	    wc.setBounds(wcBounds);
+		return wcBounds;	// return rectangle as that's all we need from this scope
 	}();
-	
-	
+
 	if (sliderVisible)
 	{
 		auto const sliderHeight = reservedHeight - wcRect.getHeight();
-		int const widthIncrease = 14;
+        constexpr int widthIncrease = 14;
 		auto const sliderWidth = wcRect.getWidth() + widthIncrease;
 		auto const sliderX = wcRect.getX() - (widthIncrease*0.5);
 		auto const sliderY = wcRect.getBottom();
@@ -367,4 +352,3 @@ void WaveformAndPositionComponent::resized()
 	}
 }
 
-void WaveformAndPositionComponent::paint (juce::Graphics& g) {}

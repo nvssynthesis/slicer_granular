@@ -74,7 +74,7 @@ struct ParameterDef {
 	bool hasSubGroup() const { return !subGroupName.isEmpty(); }
 	
 	// convenience constructors for common parameter types
-	static ParameterDef linear(juce::StringRef name, juce::StringRef displayName,
+	static ParameterDef linear(juce::StringRef ID, juce::StringRef displayName,
 							   juce::StringRef groupName,
 							   float min=0.f, float max=1.f, float defaultVal=0.f,
 							   juce::StringRef unitSuffix = "", float interval = 0.0f,
@@ -86,18 +86,23 @@ struct ParameterDef {
 								juce::StringRef subGroupName = "",
 								float skew=1.f, bool useSymmetricSkew=false);
 	
-	static ParameterDef skewed(juce::StringRef name, juce::StringRef displayName,
+	static ParameterDef skewed(juce::StringRef ID, juce::StringRef displayName,
 									juce::StringRef groupName,
 									float min=0.f, float max=1.f, float defaultVal=0.f,
 									juce::StringRef unitSuffix = "",
 									float skew=0.3f, bool useSymmetricSkew=false,
 								   juce::StringRef subGroupName = "");
 	
-	static ParameterDef decibel(juce::StringRef name, juce::StringRef displayName,
+	static ParameterDef decibel(juce::StringRef ID, juce::StringRef displayName,
 								juce::StringRef groupName,
 								float minDB, float maxDB, float defaultDB=0.f,
 								juce::StringRef subGroupName = "");
-	
+
+    static ParameterDef choice(juce::StringRef ID, juce::StringRef displayName,
+                            juce::StringRef groupName,
+                            const juce::StringArray &elements,
+                            juce::StringRef subGroupName = "");
+
 	template<typename T>
 	juce::NormalisableRange<T> createNormalisableRange() const {
 		static_assert(std::is_same_v<T, float> || std::is_same_v<T, double>,
@@ -288,6 +293,22 @@ inline ParameterDef ParameterDef::decibel (juce::StringRef ID,
 	};
 	return param;
 }
+inline ParameterDef ParameterDef::choice(const juce::StringRef ID, const juce::StringRef displayName,
+                            juce::StringRef groupName,
+                            const juce::StringArray &elements,
+                            juce::StringRef subGroupName) {
+    ParameterDef param;
+    param.ID			= ID;
+    param.displayName	= displayName;
+    param.groupName		= groupName;
+    param.elementsVar = ChoiceParamElements
+    {
+        .choices 		= elements,
+        .defaultChoiceIndex = 0
+    };
+
+    return param;
+}
 
 static constexpr float envTimingMin {0.01f};
 static constexpr float envTimingMax {8.f};
@@ -322,6 +343,10 @@ inline const std::vector<ParameterDef> ALL_PARAMETERS = {
 	
 #ifdef TSN
 	// create TSN navigation and other params here
+    ParameterDef::choice("navigator_type", "Navigator Type", "Navigator", {"LFO", "RandomWalk", "Lorenz"}),
+
+    // add: higher3Dweight (float), pointSelectionMethod (triangulation vs distance)
+
 	ParameterDef::linear("nav_tendency_x", 			"Navigator Tendency X", "Navigator", -1.f, 1.f, 0.f, "", 0.f, "tendency"),
 	ParameterDef::linear("nav_tendency_y", 			"Navigator Tendency Y", "Navigator", -1.f, 1.f, 0.f, "", 0.f, "tendency"),
 	ParameterDef::linear("nav_tendency_z", 			"Navigator Tendency Z", "Navigator", -1.f, 1.f, 0.f, "", 0.f, "tendency"),
@@ -330,8 +355,9 @@ inline const std::vector<ParameterDef> ALL_PARAMETERS = {
 	ParameterDef::linear("nav_tendency_w", 			"Navigator Tendency W", "Navigator", -1.f, 1.f, 0.f, "", 0.f, "tendency"),
 
 	ParameterDef::linear("histogram_equalization", "Histogram Equalization", "Timbre Space"),
-	
-	ParameterDef::skewed("nav_selection_sharpness", "Sharpness", "Navigator", 1.f, 1000.f, 100.f, "", 0.5f, false, "selection"),
+
+
+    ParameterDef::skewed("nav_selection_sharpness", "Sharpness", "Navigator", 1.f, 1000.f, 100.f, "", 0.5f, false, "selection"),
 	ParameterDef::skewed("nav_selection_neighborhood", "Neighborhood", "Navigator", 4.f, 25.f, 16.f, "", 0.9f, false, "selection"),
 
 	ParameterDef::percent("nav_lfo_amount", "Amount", 	"Navigator", 0.f, 1.f, 0.f,	"nav_lfo"),
@@ -340,7 +366,13 @@ inline const std::vector<ParameterDef> ALL_PARAMETERS = {
 	ParameterDef::skewed("nav_lfo_response", "Response","Navigator", 0.01f, 4.f, 1.f, "", 0.5f, false, "nav_lfo"),
 	ParameterDef::skewed("nav_lfo_overshoot", "Overshoot", "Navigator", 0.55f, 24.f, 0.f, "", 0.3f, false, "nav_lfo"),
 
-	ParameterDef::skewed("nav_rwalk_step_size", "Nav Random Walk Step Size", "Navigator", 0.f, 0.2f, 0.f, "", 0.5f, false, "nav_rwalk"),
+	ParameterDef::skewed("nav_rwalk_step_size", "Nav Random Walk Step Size", "Navigator", 0.f, 0.2f, 0.1f, "", 0.5f, false, "nav_rwalk"),
+
+    ParameterDef::linear("nav_lorenz_a",  "a", "Navigator", 0.f, 20.f, 10.f, "", 0.f, "nav_lorenz"),
+    ParameterDef::linear("nav_lorenz_b",  "b", "Navigator", 10.f, 80.f, 28.f, "", 0.f, "nav_lorenz"),
+    ParameterDef::linear("nav_lorenz_c",  "c", "Navigator", 0.f, 10.f, 2.67f, "", 0.f, "nav_lorenz"),
+    ParameterDef::linear("nav_lorenz_d_t",  "d_t", "Navigator", 0.f, 0.01f, 0.001f, "", 0.f, "nav_lorenz"),
+
 #endif
 	
 	ParameterDef::decibel("fx_grain_drive", "Grain Drive", "Fx", -10.f, 60.f, 0.f, "drive"),

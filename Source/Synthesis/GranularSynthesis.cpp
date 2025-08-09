@@ -12,6 +12,7 @@
  -optimize:
 	-it's not necessary to use some of the gen-translated functions, like switch,  gateSelect, or latch
 	-polToCar calls std::sin and std::cos
+	-setParams should not need to be called in every PolyGrain (a.k.a. per-voice), as it is getting params global to the synth
  -CONSOLIDATE params into a struct that builds in gaussian randomizer
  */
 

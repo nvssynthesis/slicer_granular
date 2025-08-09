@@ -20,8 +20,8 @@
 #include <JuceHeader.h>
 #include <atomic>
 #include "AttachedSlider.h"
-#include "fmt/core.h"
 #include "../Synthesis/GrainDescription.h"
+#include "../misc_util.h"
 
 class SlicerGranularAudioProcessor;
 
@@ -31,7 +31,7 @@ class WaveformComponent		:	public juce::Component
 ,								public juce::FileDragAndDropTarget
 {
 public:
-	WaveformComponent(SlicerGranularAudioProcessor &proc, int sourceSamplesPerThumbnailSample=512);
+    explicit WaveformComponent(SlicerGranularAudioProcessor &proc, int sourceSamplesPerThumbnailSample=512);
 	
 	enum class MarkerType {
 		Onset = 0,
@@ -42,13 +42,14 @@ public:
 	void addMarker(double onsetPosition);							// adds an OnsetMarker
 	void addMarker(nvs::gran::GrainDescription const &grainDescription);	// adds a PositionMarker
 	void removeMarkers(MarkerType markerType);
-	
+    //============================================================================================================
 	void paint(juce::Graphics& g) override;
 	void resized() override {}
+    //============================================================================================================
 	void changeListenerCallback (juce::ChangeBroadcaster* source) override;
-	
+    //============================================================================================================
 	void setThumbnailSource (const juce::AudioBuffer<float> *newSource, double sampleRate, juce::int64 hashCode);
-	
+	void highlightOnsets(std::vector<nvs::util::WeightedIdx> const &currentIndices);
 	//============================================================================================================
 	void mouseUp(juce::MouseEvent const &e) override;
 	//============================================================================================================
@@ -57,7 +58,6 @@ public:
 	void fileDragEnter (juce::StringArray const& files, int x, int y) override;
 	void fileDragExit (juce::StringArray const& files) override;
 	//============================================================================================================
-public:
 	struct OnsetMarker {
 		double position;
 	};
@@ -92,7 +92,6 @@ private:
 
 	void thumbnailChanged();
 	
-	void highlight(std::vector<std::pair<double, double>> rangeToHighlight);
 	std::optional<std::vector<std::pair<double, double>>> highlightedRange;
 	
 	void paintContentsIfNoFileLoaded (juce::Graphics& g);
@@ -110,10 +109,9 @@ private:
 class WaveformAndPositionComponent	:	public juce::Component
 {
 public:
-	WaveformAndPositionComponent(SlicerGranularAudioProcessor &proc, int sourceSamplesPerThumbnailSample=512);
+    explicit WaveformAndPositionComponent(SlicerGranularAudioProcessor &proc, int sourceSamplesPerThumbnailSample=512);
 	
 	void resized() override;
-	void paint (juce::Graphics& g) override;
 
 	
 	void hideSlider();	// effectively makes it function as just the waveformComponent. I don't want to simply use that though because then the slicer_granular version has to change a bunch of code based on #ifdef TSN.

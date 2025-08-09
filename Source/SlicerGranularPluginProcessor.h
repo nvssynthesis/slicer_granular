@@ -15,7 +15,6 @@
 
 class SlicerGranularAudioProcessor  : 	public juce::AudioProcessor
 ,										public juce::ChangeListener
-//,										public juce::ValueTree::Listener
                             #if JucePlugin_Enable_ARA
                              , public juce::AudioProcessorARAExtension
                             #endif
@@ -37,7 +36,7 @@ public:
 #ifndef JucePlugin_PreferredChannelConfigurations
 	bool isBusesLayoutSupported (const BusesLayout& layouts) const override;
 #endif
-	
+
 	void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
 	
 	//==============================================================================
@@ -93,21 +92,21 @@ public:
 	}
 	nvs::service::PresetManager &getPresetManager() { return presetManager; }
 	
-	nvs::gran::GranularSynthSharedState const &viewSynthSharedState();
+	nvs::gran::GranularSynthSharedState const &viewSynthSharedState() const;
 protected:
 	SlicerGranularAudioProcessor();
 	void initialize() {
 		initSynth();
 		_granularSynth->setLogger([this](const juce::String& message)
 		{
-			if (loggingGuts.fileLogger.getCurrentLogger()){
+			if (juce::FileLogger::getCurrentLogger()){
 				loggingGuts.fileLogger.logMessage(message);
 			}
 		});
 	}
 	virtual void initSynth(){
 		// this one-line function gets overriden by TSNGranularAudioProcessor to create a derived type of synthesizer
-		_granularSynth = std::make_unique<GranularSynthesizer>(apvts);
+		_granularSynth = std::make_unique<nvs::gran::GranularSynthesizer>(apvts);
 	}
 	
 	nvs::util::SampleManagementGuts sampleManagementGuts;
@@ -127,14 +126,12 @@ protected:
 	juce::AudioProcessorValueTreeState apvts;
 	nvs::service::PresetManager presetManager;
 
-	std::unique_ptr<GranularSynthesizer> _granularSynth;
+	std::unique_ptr<nvs::gran::GranularSynthesizer> _granularSynth;
 	
 	juce::SpinLock audioBlockLock;
-	void readInAudioFileToBuffer(juce::File const f);
+	void readInAudioFileToBuffer(const juce::File &f);
 	
 private:
-	void loadAudioFileAsync(juce::File const file, bool notifyEditor);
-	
 	nvs::util::MeasuredData measuredGrainDescriptions;
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SlicerGranularAudioProcessor)

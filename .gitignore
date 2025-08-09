@@ -5,6 +5,6 @@ draw/
 JuceLibraryCode/
 ableton_nan_bug_test.sh
 *.trace
-.vscode/JUCE
+.vscode/
+JUCE/
 .idea/
-JUCE

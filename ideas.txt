@@ -1,8 +1,0 @@
-potential visual targets per grain:
-
-x-position	x	playback position
-y-position	o	panning
-opacity		o	envelope multiplier (essentially volume)
-color		o	playback rate (pitch)?
-thickness	o	?
-height		o	?

@@ -26,8 +26,7 @@
  --tanh table
 */
 
-namespace nvs {
-namespace gran {
+namespace nvs::gran {
 
 typedef int noteNumber_t;
 typedef int velocity_t;
@@ -62,7 +61,7 @@ using LatchedExponentialRandom_f = decltype(createLatchedExponentialRandom(std::
 using LatchedExponentialRandom_d = decltype(createLatchedExponentialRandom(std::declval<ExponentialRandomNumberGenerator&>(), std::declval<MuSigmaPair_d>()));
 //========================================================================================================================================
 struct GranularSynthSharedState {
-	GranularSynthSharedState(juce::AudioProcessorValueTreeState &apvts)	:	_apvts(apvts){}
+	explicit GranularSynthSharedState(juce::AudioProcessorValueTreeState &apvts)	:	_apvts(apvts){}
 	double _playback_sample_rate {0.0};
 	
 	struct Buffer {
@@ -101,7 +100,7 @@ struct GranularVoiceSharedState {
 struct ReadBounds {
 	double begin {0.0};	// default normalized
 	double end	 {0.0};	// default 0 length
-	ReadBounds operator*(double mult) {
+	ReadBounds operator*(const double mult) const {
 		return ReadBounds{begin * mult, end * mult};
 	}
 };
@@ -125,8 +124,8 @@ struct GrainwisePostProcessing
 
 class PolyGrain {
 public:
-	PolyGrain(GranularSynthSharedState *const synth_shared_state,
-			  GranularVoiceSharedState *const voice_shared_state);
+	PolyGrain(GranularSynthSharedState *synth_shared_state,
+			  GranularVoiceSharedState *voice_shared_state);
 	virtual ~PolyGrain() = default;
 	//====================================================================================
 	void setSampleRate(double sampleRate);
@@ -134,7 +133,7 @@ public:
 	static constexpr size_t getNumGrains(){
 		return N_GRAINS;
 	}
-	inline void noteOn(noteNumber_t note, velocity_t velocity){	// reassign to noteHolder
+	inline void noteOn(const noteNumber_t note, const velocity_t velocity){	// reassign to noteHolder
 		doNoteOn(note, velocity);
 	}
 	inline void noteOff(noteNumber_t note){						// remove from noteHolder
@@ -195,8 +194,8 @@ private:
 
 class Grain {
 public:
-	explicit Grain(GranularSynthSharedState *const synth_shared_state,
-					   GranularVoiceSharedState *const voice_shared_state,
+	explicit Grain(GranularSynthSharedState *synth_shared_state,
+					   GranularVoiceSharedState *voice_shared_state,
 					   int newId = -1);
 	
 	void setId(int newId);
@@ -218,7 +217,7 @@ public:
 	void setWeight(double w) {
 		_grain_weight = w;
 	}
-	outs operator()(float const trig_in);
+	outs operator()(float trig_in);
 	
 	GrainDescription getGrainDescription() const;
 	
@@ -280,5 +279,4 @@ private:
 	float _grain_makeup_gain {1.0f};
 };
 
-}	// namespace granular
-}	// namespace nvs
+} // namespace nvs::gran

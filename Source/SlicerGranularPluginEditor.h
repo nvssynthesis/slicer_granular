@@ -10,7 +10,6 @@
 
 #include <JuceHeader.h>
 #include "SlicerGranularPluginProcessor.h"
-#include "dsp_util.h"
 #include "Gui/PresetPanel.h"
 #include "Gui/WaveformComponent.h"
 #include "Gui/TabbedPages.h"

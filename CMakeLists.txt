@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.15)
 
-project(slicer-granular VERSION 0.3.0)
+project(slicer-granular VERSION 0.4.0)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -77,11 +77,12 @@ juce_generate_juce_header(slicer-granular)
 
 # Add include directories
 target_include_directories(slicer-granular
+    SYSTEM PRIVATE
+        nvs_libraries/nvs_libraries/external/sprout
+        ${XOSHIRO_INCLUDE_DIR}
     PRIVATE
         Source
         nvs_libraries/nvs_libraries/include
-        nvs_libraries/nvs_libraries/external/sprout
-        ${XOSHIRO_INCLUDE_DIR}
 )
 
 # Link JUCE modules

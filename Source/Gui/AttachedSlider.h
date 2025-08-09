@@ -12,14 +12,15 @@
 #include <JuceHeader.h>
 #include "../Params/params.h"
 
-struct AttachedSlider	:	public juce::Component
+class AttachedSlider	:	public juce::Component
 {
 	using ParameterDef = nvs::param::ParameterDef;
 	using Slider = juce::Slider;
 	using SliderAttachment = juce::AudioProcessorValueTreeState::SliderAttachment;
 	using Label = juce::Label;
 	using String = juce::String;
-	
+
+public:
 	AttachedSlider(juce::AudioProcessorValueTreeState &apvts, ParameterDef param, Slider::SliderStyle sliderStyle,
 				   juce::Slider::TextEntryBoxPosition entryPos = juce::Slider::TextBoxBelow);
 	
@@ -28,7 +29,7 @@ struct AttachedSlider	:	public juce::Component
 	Slider _slider;
 	SliderAttachment _attachment;
 	Label _label;
-	
+
 	String getParamName() const { return _param_name; }
 private:
 	String _param_name;

@@ -34,10 +34,15 @@ struct DistanceIdx	// effectively same class as weightedIdx but reminds you that
 };
 
 struct LoggingGuts {
-	LoggingGuts();	// constructor wants to be defined in the corresponding plugin processor
+	LoggingGuts()
+	: logFile(File::getSpecialLocation(File::SpecialLocationType::currentApplicationFile).getSiblingFile("log.txt"))
+	, fileLogger(logFile, String(ProjectInfo::projectName) + " " + ProjectInfo::versionString + "logging")
+	{
+		Logger::setCurrentLogger (&fileLogger);
+	}
 	~LoggingGuts();
-	juce::File logFile;
-	juce::FileLogger fileLogger;
+	File logFile;
+	FileLogger fileLogger;
 	void logIfNaNOrInf(juce::AudioBuffer<float> buffer);
 };
 
