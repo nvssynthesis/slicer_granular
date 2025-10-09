@@ -8,6 +8,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Options for external dependencies
 option(USE_SYSTEM_LIBRARIES "Use system-installed libraries instead of fetching" OFF)
 
+# JUCE setup options
+set(JUCE_DIR "" CACHE PATH "Path to JUCE framework (leave empty to use bundled JUCE in JUCE/ subdirectory)")
+option(JUCE_FETCH_IF_MISSING "Automatically fetch JUCE if JUCE_DIR is not set and JUCE/ subdirectory doesn't exist" ON)
+set(JUCE_VERSION "8.0.10" CACHE STRING "JUCE version to fetch if JUCE_FETCH_IF_MISSING is ON")
+
 # External dependencies setup
 include(FetchContent)
 
@@ -30,7 +35,7 @@ else()
     FetchContent_Declare(
         Xoshiro
         GIT_REPOSITORY https://github.com/Reputeless/Xoshiro-cpp.git
-        GIT_TAG master 
+        GIT_TAG master
         CONFIGURE_COMMAND ""
         BUILD_COMMAND ""
     )
@@ -38,8 +43,59 @@ else()
     set(XOSHIRO_INCLUDE_DIR ${xoshiro_SOURCE_DIR})
 endif()
 
-# Add JUCE as a subdirectory
-add_subdirectory(JUCE)
+# Handle JUCE setup with fallback logic
+if(JUCE_DIR)
+    # User specified their own JUCE path
+    message(STATUS "Using user-specified JUCE from: ${JUCE_DIR}")
+    add_subdirectory(${JUCE_DIR} juce_build)
+    set(JUCE_SOURCE_DIR ${JUCE_DIR} PARENT_SCOPE)
+elseif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/JUCE/CMakeLists.txt")
+    # Use bundled JUCE subdirectory (existing setup)
+    message(STATUS "Using bundled JUCE from JUCE/ subdirectory")
+    add_subdirectory(JUCE)
+    set(JUCE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/JUCE" PARENT_SCOPE)
+elseif(JUCE_FETCH_IF_MISSING)
+    # Auto-fetch JUCE to the JUCE/ subdirectory
+    message(STATUS "JUCE not found. Fetching JUCE ${JUCE_VERSION} to ${CMAKE_CURRENT_SOURCE_DIR}/JUCE...")
+
+    set(JUCE_FETCH_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/JUCE")
+
+    # Check if JUCE was already fetched (but git clone failed to complete)
+    if(EXISTS "${JUCE_FETCH_LOCATION}" AND NOT EXISTS "${JUCE_FETCH_LOCATION}/CMakeLists.txt")
+        message(STATUS "Removing incomplete JUCE directory...")
+        file(REMOVE_RECURSE "${JUCE_FETCH_LOCATION}")
+    endif()
+
+    # Clone JUCE directly to the JUCE/ subdirectory
+    if(NOT EXISTS "${JUCE_FETCH_LOCATION}/CMakeLists.txt")
+        execute_process(
+                COMMAND git clone --depth 1 --branch ${JUCE_VERSION} https://github.com/juce-framework/JUCE.git "${JUCE_FETCH_LOCATION}"
+                WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                RESULT_VARIABLE GIT_CLONE_RESULT
+                OUTPUT_VARIABLE GIT_CLONE_OUTPUT
+                ERROR_VARIABLE GIT_CLONE_ERROR
+        )
+
+        if(NOT GIT_CLONE_RESULT EQUAL 0)
+            message(STATUS "Git clone output: ${GIT_CLONE_OUTPUT}")
+            message(STATUS "Git clone error: ${GIT_CLONE_ERROR}")
+            message(FATAL_ERROR "Failed to clone JUCE repository")
+        endif()
+
+        message(STATUS "JUCE ${JUCE_VERSION} cloned successfully")
+    endif()
+
+    add_subdirectory(${JUCE_FETCH_LOCATION} juce_build)
+    set(JUCE_SOURCE_DIR ${JUCE_FETCH_LOCATION} PARENT_SCOPE)
+else()
+    message(FATAL_ERROR
+            "JUCE not found!\n"
+            "Please either:\n"
+            "  1. Set JUCE_DIR to your JUCE installation path, or\n"
+            "  2. Place JUCE in the JUCE/ subdirectory, or\n"
+            "  3. Enable JUCE_FETCH_IF_MISSING to auto-download JUCE"
+    )
+endif()
 
 # Debug: Print JUCE version and status
 message(STATUS "JUCE version: ${JUCE_VERSION}")
@@ -126,7 +182,7 @@ if(APPLE)
     set_target_properties(slicer-granular PROPERTIES
         MACOSX_DEPLOYMENT_TARGET "13.1"
     )
-    
+
     target_compile_options(slicer-granular PRIVATE -v)
 endif()
 
