@@ -194,7 +194,7 @@ void WaveformComponent::highlightOnsets(std::vector<nvs::util::WeightedIdx> cons
 
     for (auto const &wi : currentIndices) {
         const auto currentIdx = wi.idx;
-        if ((currentIdx != 0) && (currentIdx >= static_cast<int>(onsetMarkerList.size()))) {
+        if (currentIdx >= static_cast<int>(onsetMarkerList.size())) {
             return; // invalid
         }
         const auto nextIdx = (currentIdx + 1) % onsetMarkerList.size();
@@ -225,7 +225,7 @@ void WaveformComponent::mouseUp(juce::MouseEvent const &e) {
 									 [this, chooser](juce::FileChooser const &fc){
 					auto file = fc.getResult();
 					if (file.existsAsFile()){
-						_proc.loadAudioFile(file, true);
+						_proc.loadAudioFileAndUpdateState(file, true);
 					}
 				});
 			}
@@ -272,7 +272,7 @@ void WaveformComponent::filesDropped (const juce::StringArray& files, int, int)
 {
 	isDragOver = false;
 	if (files.size() > 0) {
-		_proc.loadAudioFile(files[0], true);
+		_proc.loadAudioFileAndUpdateState(files[0], true);
 	}
 	repaint();
 }

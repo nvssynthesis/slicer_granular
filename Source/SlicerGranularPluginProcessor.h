@@ -65,7 +65,7 @@ public:
 	void changeListenerCallback (juce::ChangeBroadcaster *source) override;
 	//==============================================================================
 	void writeToLog(juce::String const &s);
-	virtual void loadAudioFile(juce::File const f, bool notifyEditor);
+	virtual void loadAudioFileAndUpdateState(juce::File const f, bool notifyEditor);
 
 	juce::String getSampleFilePath() const;
 	juce::AudioFormatManager &getAudioFormatManager();
@@ -129,7 +129,7 @@ protected:
 	std::unique_ptr<nvs::gran::GranularSynthesizer> _granularSynth;
 	
 	juce::SpinLock audioBlockLock;
-	void readInAudioFileToBuffer(const juce::File &f);
+	void readIntoBufferAndUpdateState(const juce::File &f);
 	
 private:
 	nvs::util::MeasuredData measuredGrainDescriptions;

@@ -46,18 +46,20 @@ struct LoggingGuts {
 	void logIfNaNOrInf(juce::AudioBuffer<float> buffer);
 };
 
+juce::String computeHash(const juce::AudioBuffer<float> &bufferToHash);
+
 struct SampleManagementGuts : public juce::ChangeBroadcaster
 {
 	SampleManagementGuts();
-	~SampleManagementGuts();
-	
-	// Public interface
+	~SampleManagementGuts() override;
+	using AudioBuffer = juce::AudioBuffer<float>;
+
 	bool loadAudioFile(const juce::File& file);
-	juce::AudioBuffer<float>& getSampleBuffer() { return sampleBuffer; }
+	AudioBuffer& getSampleBuffer() { return sampleBuffer; }
 	
 	bool hasValidAudio() const { return sampleBuffer.getNumSamples() > 0; }
 
-	const juce::String& getHash() const { return hash; }
+	const juce::String& getAudioHash() const { return audioHash; }
 
 	double getSampleRate() const { return sampleRate; }
 	int getLength() const { return sampleBuffer.getNumSamples(); }
@@ -66,12 +68,10 @@ struct SampleManagementGuts : public juce::ChangeBroadcaster
 	juce::AudioFormatManager &getFormatManager() { return formatManager; }
 private:
 	juce::AudioFormatManager formatManager;
-	juce::AudioBuffer<float> sampleBuffer;
-	juce::String hash;
-	
+	AudioBuffer sampleBuffer;
+	juce::String audioHash;
 	double sampleRate {0.0};
 	
-	void computeHash();
 	void clear();
 };
 
@@ -121,6 +121,8 @@ inline juce::String hashValueTree(const juce::ValueTree& settings)
 	auto hash = juce::SHA256(xmlString.toUTF8(), xmlString.getNumBytesAsUTF8());
 	return hash.toHexString();
 }
+
+juce::String valueTreeToXmlStringSafe(const juce::ValueTree& tree);
 
 inline bool isEmpty(juce::ValueTree const &vt){
 	return (vt.getNumChildren() == 0 && vt.getNumProperties() == 0);

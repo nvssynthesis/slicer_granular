@@ -63,7 +63,7 @@ void SlicerGranularAudioProcessor::changeListenerCallback (juce::ChangeBroadcast
 			if (auto const fp = fileInfo.getPropertyAsValue("sampleFilePath", nullptr).toString();
 				fp.isNotEmpty())
 			{
-				loadAudioFile(fp, true);
+				loadAudioFileAndUpdateState(fp, true);
 			}
 		}
 	}
@@ -79,24 +79,24 @@ nvs::gran::GranularSynthSharedState const &SlicerGranularAudioProcessor::viewSyn
 	return _granularSynth->viewSynthSharedState();
 }
 
-void SlicerGranularAudioProcessor::loadAudioFile(juce::File const f, bool notifyEditor){
-	loggingGuts.fileLogger.logMessage("Slicer_granularAudioProcessor::loadAudioFile");
+void SlicerGranularAudioProcessor::loadAudioFileAndUpdateState(const juce::File f, const bool notifyEditor){
+	loggingGuts.fileLogger.logMessage("Slicer_granularAudioProcessor::loadAudioFileAndUpdateState");
 
 	const juce::SpinLock::ScopedLockType lock(audioBlockLock);
 	loggingGuts.fileLogger.logMessage("                                          ...locked");
 
-	readInAudioFileToBuffer(f);
+	readIntoBufferAndUpdateState(f);
 	if (notifyEditor){
-		loggingGuts.fileLogger.logMessage("Processor: sending change message from loadAudioFile");
+		loggingGuts.fileLogger.logMessage("Processor: sending change message from loadAudioFileAndUpdateState");
 		
 		// Whether to use Async or not probably could use more testing. 
 		juce::MessageManager::callAsync([this]() { sampleManagementGuts.sendChangeMessage(); });
 //		sampleManagementGuts.sendChangeMessage();
 	}
-	writeToLog("slicer: loadAudioFile exiting");
+	writeToLog("slicer: loadAudioFileAndUpdateState exiting");
 }
 
-void SlicerGranularAudioProcessor::readInAudioFileToBuffer(juce::File const &f){
+void SlicerGranularAudioProcessor::readIntoBufferAndUpdateState(juce::File const &f){
 	juce::String const fullPath = f.getFullPathName();
 	writeToLog("                                          ...reading file" + fullPath);
 	
@@ -105,14 +105,14 @@ void SlicerGranularAudioProcessor::readInAudioFileToBuffer(juce::File const &f){
 	
 	writeToLog("                                          ...file read successful");
 	
-	_granularSynth->setAudioBuffer(sampleManagementGuts.getSampleBuffer(), sr, fullPath.hash());	// maybe this could just go inside readInAudioFileToBuffer()
+	_granularSynth->setAudioBuffer(sampleManagementGuts.getSampleBuffer(), sr, fullPath.hash());
 	
 	auto fileInfo = apvts.state.getOrCreateChildWithName("FileInfo", nullptr);
 	fileInfo.setProperty("sampleFilePath", fullPath, nullptr);
 	fileInfo.setProperty("sampleRate", sr, nullptr);
 }
 juce::String SlicerGranularAudioProcessor::getSampleFilePath() const {
-	auto fileInfo = apvts.state.getChildWithName("FileInfo");
+	const auto fileInfo = apvts.state.getChildWithName("FileInfo");
 	return fileInfo.getProperty("sampleFilePath");
 }
 juce::AudioProcessorValueTreeState &SlicerGranularAudioProcessor::getAPVTS(){
