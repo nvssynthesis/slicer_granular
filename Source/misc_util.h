@@ -104,7 +104,7 @@ public:
 };
 
 inline juce::String hashAudioData(const std::vector<float>& audioData) {
-	auto hash = juce::SHA256(audioData.data(), audioData.size() * sizeof(float));
+	const auto hash = juce::SHA256(audioData.data(), audioData.size() * sizeof(float));
 	return hash.toHexString();
 }
 
@@ -166,27 +166,24 @@ inline juce::var valueTreeToVar(const juce::ValueTree& tree) {
 }
 
 inline bool saveValueTreeToBinary(const juce::ValueTree& tree, const juce::File& file) {
-	file.getParentDirectory().createDirectory();
-	
-	juce::FileOutputStream stream(file);
-	if (stream.openedOk()) {
+	if (juce::FileOutputStream stream(file); stream.openedOk())
+	{
 		tree.writeToStream(stream);
 		return stream.getStatus().wasOk();
 	}
 	return false;
 }
 inline juce::ValueTree loadValueTreeFromBinary(const juce::File& file) {
-	juce::FileInputStream stream(file);
-	if (stream.openedOk()) {
+	if (juce::FileInputStream stream(file);
+		stream.openedOk())
+	{
 		return juce::ValueTree::readFromStream(stream);
 	}
 	return juce::ValueTree();
 }
 inline bool saveValueTreeToJSON(const juce::ValueTree& tree, const juce::File& file) {
-	file.getParentDirectory().createDirectory();
-	
-	juce::var jsonData = valueTreeToVar(tree);
-	juce::String jsonString = juce::JSON::toString(jsonData);
+	const juce::var jsonData = valueTreeToVar(tree);
+	const juce::String jsonString = juce::JSON::toString(jsonData);
 	
 	return file.replaceWithText(jsonString);
 }

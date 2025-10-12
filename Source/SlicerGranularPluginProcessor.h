@@ -65,9 +65,11 @@ public:
 	void changeListenerCallback (juce::ChangeBroadcaster *source) override;
 	//==============================================================================
 	void writeToLog(juce::String const &s);
+	void loadStoredAudioFileAndUpdateState();	// calls loadAudioFileAndUpdateState using path stored in APVTS
 	virtual void loadAudioFileAndUpdateState(juce::File const f, bool notifyEditor);
 
 	juce::String getSampleFilePath() const;
+	juce::String getAudioHash() const;
 	juce::AudioFormatManager &getAudioFormatManager();
 	juce::AudioProcessorValueTreeState &getAPVTS();
 	
