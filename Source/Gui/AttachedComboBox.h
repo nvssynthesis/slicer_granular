@@ -14,6 +14,7 @@ class AttachedComboBox  :   public juce::Component {
     using Attachment = APVTS::ComboBoxAttachment;
     using Label = juce::Label;
     using String = juce::String;
+    using StringArray = juce::StringArray;
 public:
     AttachedComboBox(APVTS &apvts, const ParameterDef &param);
     void resized() override;
@@ -23,8 +24,8 @@ public:
     }
 
     ComboBox _comboBox;
-    Attachment _attachment;
 private:
+    std::unique_ptr<Attachment> _attachment;
     String _param_name;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AttachedComboBox);

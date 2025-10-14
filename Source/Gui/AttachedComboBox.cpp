@@ -5,9 +5,12 @@
 #include "AttachedComboBox.h"
 
 AttachedComboBox::AttachedComboBox(APVTS &apvts, const ParameterDef &param)
-     :  _attachment(apvts, param.ID, _comboBox)
 {
+    if (const auto* choiceParam = dynamic_cast<juce::AudioParameterChoice*>(apvts.getParameter(param.ID))) {
+        _comboBox.addItemList(choiceParam->choices, 1);
+    }
     addAndMakeVisible(_comboBox);
+    _attachment = std::make_unique<Attachment>(apvts, param.ID, _comboBox);
 }
 
 void AttachedComboBox::resized() {

@@ -12,6 +12,9 @@
 #include <map>
 #include <tuple>
 #include <JuceHeader.h>
+#ifdef TSN
+#include "Analysis/Features.h"
+#endif
 
 /*** TODO:
  -octave
@@ -151,11 +154,11 @@ struct ParameterDef {
 	juce::NormalisableRange<double> getDoubleRange() const { return createNormalisableRange<double>(); }
 };
 
-inline ParameterDef ParameterDef::linear(juce::StringRef ID, juce::StringRef displayName,
-										juce::StringRef groupName,
-										float min, float max, float defaultVal,
-										juce::StringRef unitSuffix, float interval,
-										juce::StringRef subGroupName) {
+inline ParameterDef ParameterDef::linear(const juce::StringRef ID, juce::StringRef displayName,
+										const juce::StringRef groupName,
+										const float min, const float max, const float defaultVal,
+										const juce::StringRef unitSuffix, const float interval,
+										const juce::StringRef subGroupName) {
 	ParameterDef param;
 	param.ID			= ID;
 	param.displayName	= displayName;
@@ -173,12 +176,12 @@ inline ParameterDef ParameterDef::linear(juce::StringRef ID, juce::StringRef dis
 	return param;
 }
 
-inline ParameterDef ParameterDef::skewed(juce::StringRef ID, juce::StringRef displayName,
-											juce::StringRef groupName,
-											float min, float max, float defaultVal,
-											juce::StringRef unitSuffix,
-											float skew, bool symmetricSkew,
-											juce::StringRef subGroupName) {
+inline ParameterDef ParameterDef::skewed(const juce::StringRef ID, const juce::StringRef displayName,
+											const juce::StringRef groupName,
+											const float min, const float max, const float defaultVal,
+											const juce::StringRef unitSuffix,
+											const float skew, const bool useSymmetricSkew,
+											const juce::StringRef subGroupName) {
 	ParameterDef param;
 	param.ID			= ID;
 	param.displayName	= displayName;
@@ -191,18 +194,18 @@ inline ParameterDef ParameterDef::skewed(juce::StringRef ID, juce::StringRef dis
 		.max			= max,
 		.defaultVal 	= defaultVal,
 		.skew			= skew,
-		.symmetrical	= symmetricSkew,
+		.symmetrical	= useSymmetricSkew,
 		.interval		= 0.0f
 	};
 	
 	return param;
 }
 
-inline ParameterDef ParameterDef::percent(juce::StringRef ID, juce::StringRef displayName,
-										juce::StringRef groupName,
-										float min, float max, float defaultVal,
-										juce::StringRef subGroupName,
-										float skew, bool symmetricSkew) {
+inline ParameterDef ParameterDef::percent(const juce::StringRef ID, const juce::StringRef displayName,
+										const juce::StringRef groupName,
+										const float min, const float max, const float defaultVal,
+										const juce::StringRef subGroupName,
+										const float skew, const bool useSymmetricSkew) {
 	ParameterDef param;
 	param.ID			= ID;
 	param.displayName	= displayName;
@@ -222,11 +225,11 @@ inline ParameterDef ParameterDef::percent(juce::StringRef ID, juce::StringRef di
 		.max			= max,
 		.defaultVal 	= defaultVal,
 		.skew			= skew,
-		.symmetrical	= symmetricSkew,
+		.symmetrical	= useSymmetricSkew,
 		.interval		= 0.0f,
 		.numDecimalPlaces = numDecimals,
 		
-		.stringFromValue = [suff = param.unitSuffix, numDecimals](float val, int) -> juce::String
+		.stringFromValue = [suff = param.unitSuffix, numDecimals](const float val, int) -> juce::String
 		{
 			float percentageVal = val * 100.0f;
 			return juce::String(percentageVal, numDecimals) + suff;
@@ -240,11 +243,11 @@ inline ParameterDef ParameterDef::percent(juce::StringRef ID, juce::StringRef di
 	return param;
 }
 
-inline ParameterDef ParameterDef::decibel (juce::StringRef ID,
-										juce::StringRef displayName,
-										juce::StringRef groupName,
-										float minDB, float maxDB, float defaultDB,
-										juce::StringRef subGroupName)
+inline ParameterDef ParameterDef::decibel (const juce::StringRef ID,
+										const juce::StringRef displayName,
+										const juce::StringRef groupName,
+										const float minDB, const float maxDB, const float defaultDB,
+										const juce::StringRef subGroupName)
 {
 	ParameterDef param;
 	param.ID 				= ID;
@@ -256,7 +259,7 @@ inline ParameterDef ParameterDef::decibel (juce::StringRef ID,
 	const float minGain = juce::Decibels::decibelsToGain(minDB, minDB);
 	const float maxGain = juce::Decibels::decibelsToGain(maxDB, minDB);
 	const float defaultGain = juce::Decibels::decibelsToGain(defaultDB, minDB);
-	const float minusInfinityDB = -100.0f;
+    constexpr float minusInfinityDB = -100.0f;
 	
 	param.elementsVar = FloatParamElements
 	{
@@ -266,7 +269,7 @@ inline ParameterDef ParameterDef::decibel (juce::StringRef ID,
 		.numDecimalPlaces = 1,
 		
 		// Convert normalized [0,1] to dB, then to gain for storage
-		.convertFrom0To1 = [minDB, maxDB, minusInfinityDB](float, float, float normVal) -> float
+		.convertFrom0To1 = [minDB, maxDB, minusInfinityDB](float, float, const float normVal) -> float
 		{
 			float dbVal = minDB + normVal * (maxDB - minDB);
 			return juce::Decibels::decibelsToGain(dbVal, minusInfinityDB);
@@ -278,7 +281,7 @@ inline ParameterDef ParameterDef::decibel (juce::StringRef ID,
 		},
 		
 		// Convert gain to dB, then to normalized [0,1]
-		.convertTo0To1 = [minDB, maxDB, minusInfinityDB](float, float, float gainVal) -> float
+		.convertTo0To1 = [minDB, maxDB, minusInfinityDB](float, float, const float gainVal) -> float
 		{
 			float dbVal = juce::Decibels::gainToDecibels(gainVal, minusInfinityDB);
 			float normalized = (dbVal - minDB) / (maxDB - minDB);
@@ -294,13 +297,14 @@ inline ParameterDef ParameterDef::decibel (juce::StringRef ID,
 	return param;
 }
 inline ParameterDef ParameterDef::choice(const juce::StringRef ID, const juce::StringRef displayName,
-                            juce::StringRef groupName,
+                            const juce::StringRef groupName,
                             const juce::StringArray &elements,
-                            juce::StringRef subGroupName) {
+                            const juce::StringRef subGroupName) {
     ParameterDef param;
     param.ID			= ID;
     param.displayName	= displayName;
     param.groupName		= groupName;
+    param.subGroupName	= subGroupName;
     param.elementsVar = ChoiceParamElements
     {
         .choices 		= elements,
@@ -343,35 +347,34 @@ inline const std::vector<ParameterDef> ALL_PARAMETERS = {
 	
 #ifdef TSN
 	// create TSN navigation and other params here
-    ParameterDef::choice("navigator_type", "Navigator Type", "Navigator", {"LFO", "RandomWalk", "Lorenz"}),
+    ParameterDef::choice("navigator_type", "Navigator Type", "TSN", {"LFO", "RandomWalk", "Lorenz"}),
 
     // add: higher3Dweight (float), pointSelectionMethod (triangulation vs distance)
 
-	ParameterDef::linear("nav_tendency_x", 			"Navigator Tendency X", "Navigator", -1.f, 1.f, 0.f, "", 0.f, "tendency"),
-	ParameterDef::linear("nav_tendency_y", 			"Navigator Tendency Y", "Navigator", -1.f, 1.f, 0.f, "", 0.f, "tendency"),
-	ParameterDef::linear("nav_tendency_z", 			"Navigator Tendency Z", "Navigator", -1.f, 1.f, 0.f, "", 0.f, "tendency"),
-	ParameterDef::linear("nav_tendency_u", 			"Navigator Tendency U", "Navigator", -1.f, 1.f, 0.f, "", 0.f, "tendency"),
-	ParameterDef::linear("nav_tendency_v", 			"Navigator Tendency V", "Navigator", -1.f, 1.f, 0.f, "", 0.f, "tendency"),
-	ParameterDef::linear("nav_tendency_w", 			"Navigator Tendency W", "Navigator", -1.f, 1.f, 0.f, "", 0.f, "tendency"),
+	ParameterDef::linear("nav_tendency_x", 			"Navigator Tendency X", "TSN", -1.f, 1.f, 0.f, "", 0.f, "tendency"),
+	ParameterDef::linear("nav_tendency_y", 			"Navigator Tendency Y", "TSN", -1.f, 1.f, 0.f, "", 0.f, "tendency"),
+	ParameterDef::linear("nav_tendency_z", 			"Navigator Tendency Z", "TSN", -1.f, 1.f, 0.f, "", 0.f, "tendency"),
+	ParameterDef::linear("nav_tendency_u", 			"Navigator Tendency U", "TSN", -1.f, 1.f, 0.f, "", 0.f, "tendency"),
+	ParameterDef::linear("nav_tendency_v", 			"Navigator Tendency V", "TSN", -1.f, 1.f, 0.f, "", 0.f, "tendency"),
+	ParameterDef::linear("nav_tendency_w", 			"Navigator Tendency W", "TSN", -1.f, 1.f, 0.f, "", 0.f, "tendency"),
 
-	ParameterDef::linear("histogram_equalization", "Histogram Equalization", "Timbre Space"),
+	ParameterDef::linear("histogram_equalization", "Histogram Equalization", "TSN", 0.f, 1.f, 0.f, "", 0.f, "timbre_space"),
+    ParameterDef::choice("x_axis", "X Axis", "TSN", analysis::getFeatureChoiceVec(), "timbre_space"),
+    ParameterDef::choice("y_axis", "Y Axis", "TSN", analysis::getFeatureChoiceVec(), "timbre_space"),
+    ParameterDef::choice("z_axis", "Z Axis", "TSN", analysis::getFeatureChoiceVec(), "timbre_space"),
 
+	ParameterDef::percent("nav_lfo_amount", "Amount", 	"TSN", 0.f, 1.f, 0.f,	"nav_lfo"),
+	ParameterDef::percent("nav_lfo_shape", "Shape", 	"TSN", 0.f, 1.f, 0.f,	"nav_lfo"),
+	ParameterDef::skewed("nav_lfo_rate", "Rate", 		"TSN", 0.1f, 10.f, 0.3f, "Hz", 0.3f, false, "nav_lfo"),
+	ParameterDef::skewed("nav_lfo_response", "Response","TSN", 0.01f, 4.f, 1.f, "", 0.5f, false, "nav_lfo"),
+	ParameterDef::skewed("nav_lfo_overshoot", "Overshoot", "TSN", 0.55f, 24.f, 0.f, "", 0.3f, false, "nav_lfo"),
 
-    ParameterDef::skewed("nav_selection_sharpness", "Sharpness", "Navigator", 1.f, 1000.f, 100.f, "", 0.5f, false, "selection"),
-	ParameterDef::skewed("nav_selection_neighborhood", "Neighborhood", "Navigator", 4.f, 25.f, 16.f, "", 0.9f, false, "selection"),
+	ParameterDef::skewed("nav_rwalk_step_size", "Nav Random Walk Step Size", "TSN", 0.f, 0.2f, 0.1f, "", 0.5f, false, "nav_rwalk"),
 
-	ParameterDef::percent("nav_lfo_amount", "Amount", 	"Navigator", 0.f, 1.f, 0.f,	"nav_lfo"),
-	ParameterDef::percent("nav_lfo_shape", "Shape", 	"Navigator", 0.f, 1.f, 0.f,	"nav_lfo"),
-	ParameterDef::skewed("nav_lfo_rate", "Rate", 		"Navigator", 0.1f, 10.f, 0.3f, "Hz", 0.3f, false, "nav_lfo"),
-	ParameterDef::skewed("nav_lfo_response", "Response","Navigator", 0.01f, 4.f, 1.f, "", 0.5f, false, "nav_lfo"),
-	ParameterDef::skewed("nav_lfo_overshoot", "Overshoot", "Navigator", 0.55f, 24.f, 0.f, "", 0.3f, false, "nav_lfo"),
-
-	ParameterDef::skewed("nav_rwalk_step_size", "Nav Random Walk Step Size", "Navigator", 0.f, 0.2f, 0.1f, "", 0.5f, false, "nav_rwalk"),
-
-    ParameterDef::linear("nav_lorenz_a",  "a", "Navigator", 0.f, 20.f, 10.f, "", 0.f, "nav_lorenz"),
-    ParameterDef::linear("nav_lorenz_b",  "b", "Navigator", 10.f, 80.f, 28.f, "", 0.f, "nav_lorenz"),
-    ParameterDef::linear("nav_lorenz_c",  "c", "Navigator", 0.f, 10.f, 2.67f, "", 0.f, "nav_lorenz"),
-    ParameterDef::linear("nav_lorenz_d_t",  "d_t", "Navigator", 0.f, 0.01f, 0.001f, "", 0.f, "nav_lorenz"),
+    ParameterDef::linear("nav_lorenz_a",  "a", "TSN", 0.f, 20.f, 10.f, "", 0.f, "nav_lorenz"),
+    ParameterDef::linear("nav_lorenz_b",  "b", "TSN", 10.f, 80.f, 28.f, "", 0.f, "nav_lorenz"),
+    ParameterDef::linear("nav_lorenz_c",  "c", "TSN", 0.f, 10.f, 2.67f, "", 0.f, "nav_lorenz"),
+    ParameterDef::linear("nav_lorenz_d_t",  "d_t", "TSN", 0.f, 0.01f, 0.001f, "", 0.f, "nav_lorenz"),
 
 #endif
 	

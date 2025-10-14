@@ -197,7 +197,7 @@ struct TimedPrinter : public juce::Timer
 		startTimer(intervalMs);
 	}
 	
-	~TimedPrinter() {
+	~TimedPrinter() override {
 		stopTimer();
 	}
 	
