@@ -20,9 +20,6 @@
 /*** TODO:
  -octave
  -fine tuning
- -add automatic traversal
-	-(really this could just be an LFO => Position. Then, it can easily be
-	routed anywhere just like randomness).
  -master volume
  */
 namespace nvs::param {
@@ -334,7 +331,7 @@ inline const std::vector<ParameterDef> ALL_PARAMETERS = {
 	ParameterDef::skewed("position_rand", "Position Randomness", 		"MainRandom"),
 	ParameterDef::skewed("speed_rand", "Speed Randomness", 				"MainRandom"),
 	ParameterDef::skewed("duration_rand", "Duration Randomness", 		"MainRandom"),
-	ParameterDef::skewed("skew_rand", "Skew Randomness",	 			"MainRandom"),
+	ParameterDef::skewed("skew_rand", "Skew Randomness",	 			    "MainRandom"),
 	ParameterDef::skewed("plateau_rand", "Plateau Randomness", 			"MainRandom"),
 	ParameterDef::skewed("pan_rand", "Pan Randomness",		 			"MainRandom", 0.0f, 1.0f, 0.5f),
 
@@ -376,6 +373,10 @@ inline const std::vector<ParameterDef> ALL_PARAMETERS = {
     ParameterDef::linear("nav_lorenz_b",  "b", "TSN", 10.f, 80.f, 28.f, "", 0.f, "nav_lorenz"),
     ParameterDef::linear("nav_lorenz_c",  "c", "TSN", 0.f, 10.f, 2.67f, "", 0.f, "nav_lorenz"),
     ParameterDef::linear("nav_lorenz_d_t",  "d_t", "TSN", 0.f, 0.01f, 0.001f, "", 0.f, "nav_lorenz"),
+
+    ParameterDef::linear("nav_hyperchaos_alpha", "alpha", "TSN", 10e-5, 10e-2, 10e-4, "", 0.f, "nav_hyperchaos"),
+    ParameterDef::linear("nav_hyperchaos_a", "a", "TSN", 10e-5, 10e-1, 10e-4, "", 0.f, "nav_hyperchaos"),
+    ParameterDef::linear("nav_hyperchaos_b", "b", "TSN", 10e-5, 10e-1, 10e-4, "", 0.f, "nav_hyperchaos"),
 
 #endif
 	
