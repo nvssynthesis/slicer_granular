@@ -9,10 +9,11 @@
 */
 
 #pragma once
-#include <map>
 #include <tuple>
 #include <JuceHeader.h>
+
 #ifdef TSN
+#include "Navigation/Navigator.h"
 #include "Analysis/Features.h"
 #endif
 
@@ -347,7 +348,7 @@ inline const std::vector<ParameterDef> ALL_PARAMETERS = {
 	
 #ifdef TSN
 	// create TSN navigation and other params here
-    ParameterDef::choice("navigator_type", "Navigator Type", "TSN", {"LFO", "RandomWalk", "Lorenz"}),
+    ParameterDef::choice("navigator_type", "Navigator Type", "TSN", timbrespace::getNavigatorTypeArray()),
 
     // add: higher3Dweight (float), pointSelectionMethod (triangulation vs distance)
 
