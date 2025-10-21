@@ -49,7 +49,6 @@ public:
 	}
 
 private:
-	double lambda;  // Rate parameter for the exponential distribution
 	RandomNumberGenerator rng;  // Underlying uniform RNG
 };
 
