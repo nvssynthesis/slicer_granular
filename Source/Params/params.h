@@ -372,14 +372,16 @@ inline const std::vector<ParameterDef> ALL_PARAMETERS = {
     ParameterDef::linear("nav_lorenz_a",  "a", "TSN", 0.f, 20.f, 10.f, "", 0.f, "nav_lorenz"),
     ParameterDef::linear("nav_lorenz_b",  "b", "TSN", 10.f, 80.f, 28.f, "", 0.f, "nav_lorenz"),
     ParameterDef::linear("nav_lorenz_c",  "c", "TSN", 0.f, 10.f, 2.67f, "", 0.f, "nav_lorenz"),
-    ParameterDef::linear("nav_lorenz_d_t",  "d_t", "TSN", 0.f, 0.01f, 0.001f, "", 0.f, "nav_lorenz"),
+    ParameterDef::linear("nav_lorenz_d_t",  "d_t", "TSN", 0.f, 0.5f, 0.005f, "", 0.f, "nav_lorenz"),
 
-    ParameterDef::linear("nav_hyperchaos_alpha", "alpha", "TSN", 10e-5, 10e-2, 10e-4, "", 0.f, "nav_hyperchaos"),
     ParameterDef::linear("nav_hyperchaos_a", "a", "TSN", 10e-5, 10e-1, 10e-4, "", 0.f, "nav_hyperchaos"),
     ParameterDef::linear("nav_hyperchaos_b", "b", "TSN", 10e-5, 10e-1, 10e-4, "", 0.f, "nav_hyperchaos"),
+    ParameterDef::linear("nav_hyperchaos_d_t", "d_t", "TSN", 0.f, 0.5f, 0.005f, "", 0.f, "nav_hyperchaos"),
 
-    ParameterDef::linear("rotation", "Rotation", "TSN", 0.f, 1.f, 0.f, "", 0.f, "nav_common"),
-    ParameterDef::linear("scaling", "Scaling", "TSN", 0.f, 1.f, 0.f, "", 0.f, "nav_common"),
+    ParameterDef::linear("nav_rotation_x", "Roll", "TSN", 0.f, 1.f, 0.f, "", 0.f, "nav_common"),
+    ParameterDef::linear("nav_rotation_y", "Pitch", "TSN", 0.f, 1.f, 0.f, "", 0.f, "nav_common"),
+    ParameterDef::linear("nav_rotation_z", "Yaw", "TSN", 0.f, 1.f, 0.f, "", 0.f, "nav_common"),
+    ParameterDef::linear("nav_scaling", "Scaling", "TSN", 0.f, 1.f, 0.f, "", 0.f, "nav_common"),
 
 #endif
 	
