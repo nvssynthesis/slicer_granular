@@ -378,6 +378,9 @@ inline const std::vector<ParameterDef> ALL_PARAMETERS = {
     ParameterDef::linear("nav_hyperchaos_a", "a", "TSN", 10e-5, 10e-1, 10e-4, "", 0.f, "nav_hyperchaos"),
     ParameterDef::linear("nav_hyperchaos_b", "b", "TSN", 10e-5, 10e-1, 10e-4, "", 0.f, "nav_hyperchaos"),
 
+    ParameterDef::linear("rotation", "Rotation", "TSN", 0.f, 1.f, 0.f, "", 0.f, "nav_common"),
+    ParameterDef::linear("scaling", "Scaling", "TSN", 0.f, 1.f, 0.f, "", 0.f, "nav_common"),
+
 #endif
 	
 	ParameterDef::decibel("fx_grain_drive", "Grain Drive", "Fx", -10.f, 60.f, 0.f, "drive"),
