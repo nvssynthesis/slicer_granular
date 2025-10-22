@@ -360,6 +360,8 @@ inline const std::vector<ParameterDef> ALL_PARAMETERS = {
     ParameterDef::choice("x_axis", "X Axis", "TSN", analysis::getFeatureChoiceVec(), "timbre_space"),
     ParameterDef::choice("y_axis", "Y Axis", "TSN", analysis::getFeatureChoiceVec(), "timbre_space"),
     ParameterDef::choice("z_axis", "Z Axis", "TSN", analysis::getFeatureChoiceVec(), "timbre_space"),
+    ParameterDef::choice("u_axis", "U Axis", "TSN", analysis::getFeatureChoiceVec(), "timbre_space"),
+    ParameterDef::choice("v_axis", "V Axis", "TSN", analysis::getFeatureChoiceVec(), "timbre_space"),
 
 	ParameterDef::percent("nav_lfo_amount", "Amount", 	"TSN", 0.f, 1.f, 0.f,	"nav_lfo"),
 	ParameterDef::percent("nav_lfo_shape", "Shape", 	"TSN", 0.f, 1.f, 0.f,	"nav_lfo"),
@@ -369,10 +371,10 @@ inline const std::vector<ParameterDef> ALL_PARAMETERS = {
 
 	ParameterDef::skewed("nav_rwalk_step_size", "Nav Random Walk Step Size", "TSN", 0.f, 0.2f, 0.1f, "", 0.5f, false, "nav_rwalk"),
 
-    ParameterDef::linear("nav_lorenz_a",  "a", "TSN", 0.f, 20.f, 10.f, "", 0.f, "nav_lorenz"),
-    ParameterDef::linear("nav_lorenz_b",  "b", "TSN", 10.f, 80.f, 28.f, "", 0.f, "nav_lorenz"),
-    ParameterDef::linear("nav_lorenz_c",  "c", "TSN", 0.f, 10.f, 2.67f, "", 0.f, "nav_lorenz"),
-    ParameterDef::linear("nav_lorenz_d_t",  "d_t", "TSN", 0.f, 0.5f, 0.005f, "", 0.f, "nav_lorenz"),
+    ParameterDef::linear("nav_lorenz_a",  "a", "TSN", 8.f, 12.f, 10.f, "", 0.f, "nav_lorenz"),
+    ParameterDef::linear("nav_lorenz_b",  "b", "TSN", 1.0f, 350.f, 28.f, "", 0.f, "nav_lorenz"),
+    ParameterDef::linear("nav_lorenz_c",  "c", "TSN", 1.5f, 4.f, 2.67f, "", 0.f, "nav_lorenz"),
+    ParameterDef::skewed("nav_lorenz_d_t",  "d_t", "TSN", 0.f, 0.01f, 0.005f, "", 0.33f, false, "nav_lorenz"),
 
     ParameterDef::linear("nav_hyperchaos_a", "a", "TSN", 10e-5, 10e-1, 10e-4, "", 0.f, "nav_hyperchaos"),
     ParameterDef::linear("nav_hyperchaos_b", "b", "TSN", 10e-5, 10e-1, 10e-4, "", 0.f, "nav_hyperchaos"),
@@ -381,7 +383,7 @@ inline const std::vector<ParameterDef> ALL_PARAMETERS = {
     ParameterDef::linear("nav_rotation_x", "Roll", "TSN", 0.f, 1.f, 0.f, "", 0.f, "nav_common"),
     ParameterDef::linear("nav_rotation_y", "Pitch", "TSN", 0.f, 1.f, 0.f, "", 0.f, "nav_common"),
     ParameterDef::linear("nav_rotation_z", "Yaw", "TSN", 0.f, 1.f, 0.f, "", 0.f, "nav_common"),
-    ParameterDef::linear("nav_scaling", "Scaling", "TSN", 0.f, 1.f, 0.f, "", 0.f, "nav_common"),
+    ParameterDef::skewed("nav_scaling", "Scaling", "TSN", 0.f, 8.f, 1.f, "", 0.25f, false, "nav_common"),
 
 #endif
 	
