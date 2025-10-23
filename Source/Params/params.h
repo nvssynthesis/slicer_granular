@@ -117,15 +117,15 @@ struct ParameterDef {
 			auto valueFromStringCopy = fpe.valueFromString;
 			
 			auto from0To1 = [convertFrom0To1Copy](T start, T end, T val) -> T {
-				return static_cast<T>(convertFrom0To1Copy(float(start), float(end), float(val)));
+				return static_cast<T>(convertFrom0To1Copy(static_cast<float>(start), static_cast<float>(end), static_cast<float>(val)));
 			};
 			auto to0To1 = [convertTo0To1Copy](T start, T end, T val) -> T {
-				return static_cast<T>(convertTo0To1Copy(float(start), float(end), float(val)));
+				return static_cast<T>(convertTo0To1Copy(static_cast<float>(start), static_cast<float>(end), static_cast<float>(val)));
 			};
-			auto stringFromValue = [stringFromValueCopy](T val, int numDecimalPlaces) -> juce::String {
-				return stringFromValueCopy(val, numDecimalPlaces);
+			auto stringFromValue = [stringFromValueCopy](T val, const int numDecimalPlaces) -> juce::String {
+				return stringFromValueCopy(static_cast<float>(val), numDecimalPlaces);
 			};
-			auto valueFromString = [valueFromStringCopy](juce::String &s) -> T {
+			auto valueFromString = [valueFromStringCopy](const juce::String &s) -> T {
 				return valueFromStringCopy(s);
 			};
 			
@@ -133,7 +133,7 @@ struct ParameterDef {
 			if (fpe.snapToLegalValue) {
 				auto snapToLegalValueCopy = fpe.snapToLegalValue;
 				snapFunc = [snapToLegalValueCopy](T start, T end, T val) -> T {
-					return static_cast<T>(snapToLegalValueCopy(float(start), float(end), float(val)));
+					return static_cast<T>(snapToLegalValueCopy(static_cast<float>(start), static_cast<float>(end), static_cast<float>(val)));
 				};
 			}
 			
@@ -357,11 +357,13 @@ inline const std::vector<ParameterDef> ALL_PARAMETERS = {
 	ParameterDef::linear("nav_tendency_w", 			"Navigator Tendency W", "TSN", -1.f, 1.f, 0.f, "", 0.f, "tendency"),
 
 	ParameterDef::linear("histogram_equalization", "Histogram Equalization", "TSN", 0.f, 1.f, 0.f, "", 0.f, "timbre_space"),
-    ParameterDef::choice("x_axis", "X Axis", "TSN", analysis::getFeatureChoiceVec(), "timbre_space"),
-    ParameterDef::choice("y_axis", "Y Axis", "TSN", analysis::getFeatureChoiceVec(), "timbre_space"),
-    ParameterDef::choice("z_axis", "Z Axis", "TSN", analysis::getFeatureChoiceVec(), "timbre_space"),
-    ParameterDef::choice("u_axis", "U Axis", "TSN", analysis::getFeatureChoiceVec(), "timbre_space"),
-    ParameterDef::choice("v_axis", "V Axis", "TSN", analysis::getFeatureChoiceVec(), "timbre_space"),
+    ParameterDef::choice("x_axis", "X Axis", "TSN", analysis::getFeaturesStringArray(), "timbre_space"),
+    ParameterDef::choice("y_axis", "Y Axis", "TSN", analysis::getFeaturesStringArray(), "timbre_space"),
+    ParameterDef::choice("z_axis", "Z Axis", "TSN", analysis::getFeaturesStringArray(), "timbre_space"),
+    ParameterDef::choice("u_axis", "U Axis", "TSN", analysis::getFeaturesStringArray(), "timbre_space"),
+    ParameterDef::choice("v_axis", "V Axis", "TSN", analysis::getFeaturesStringArray(), "timbre_space"),
+
+    ParameterDef::choice("statistic", "statistic", "TSN", analysis::getStatisticsStringArray(), "timbre_space"),
 
 	ParameterDef::percent("nav_lfo_amount", "Amount", 	"TSN", 0.f, 1.f, 0.f,	"nav_lfo"),
 	ParameterDef::percent("nav_lfo_shape", "Shape", 	"TSN", 0.f, 1.f, 0.f,	"nav_lfo"),
