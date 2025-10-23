@@ -380,7 +380,7 @@ inline const std::vector<ParameterDef> ALL_PARAMETERS = {
 
     ParameterDef::linear("nav_hyperchaos_a", "a", "TSN", 10e-5, 10e-1, 10e-4, "", 0.f, "nav_hyperchaos"),
     ParameterDef::linear("nav_hyperchaos_b", "b", "TSN", 10e-5, 10e-1, 10e-4, "", 0.f, "nav_hyperchaos"),
-    ParameterDef::linear("nav_hyperchaos_d_t", "d_t", "TSN", 0.f, 0.5f, 0.005f, "", 0.f, "nav_hyperchaos"),
+    ParameterDef::skewed("nav_hyperchaos_d_t", "d_t", "TSN", 0.f, 0.5f, 0.005f, "", 0.33f, false, "nav_hyperchaos"),
 
     ParameterDef::linear("nav_rotation_x", "Roll", "TSN", 0.f, 1.f, 0.f, "", 0.f, "nav_common"),
     ParameterDef::linear("nav_rotation_y", "Pitch", "TSN", 0.f, 1.f, 0.f, "", 0.f, "nav_common"),
