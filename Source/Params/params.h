@@ -365,11 +365,11 @@ inline const std::vector<ParameterDef> ALL_PARAMETERS = {
 
     ParameterDef::choice("statistic", "statistic", "TSN", analysis::getStatisticsStringArray(), "timbre_space"),
 
-	ParameterDef::percent("nav_lfo_amount", "Amount", 	"TSN", 0.f, 1.f, 0.f,	"nav_lfo"),
+    ParameterDef::skewed("nav_manual_response", "Response","TSN", 0.01f, 4.f, 1.f, "", 0.5f, false, "nav_manual"),
+    ParameterDef::skewed("nav_manual_overshoot", "Overshoot", "TSN", 0.55f, 24.f, 0.f, "", 0.3f, false, "nav_manual"),
+
 	ParameterDef::percent("nav_lfo_shape", "Shape", 	"TSN", 0.f, 1.f, 0.f,	"nav_lfo"),
 	ParameterDef::skewed("nav_lfo_rate", "Rate", 		"TSN", 0.1f, 10.f, 0.3f, "Hz", 0.3f, false, "nav_lfo"),
-	ParameterDef::skewed("nav_lfo_response", "Response","TSN", 0.01f, 4.f, 1.f, "", 0.5f, false, "nav_lfo"),
-	ParameterDef::skewed("nav_lfo_overshoot", "Overshoot", "TSN", 0.55f, 24.f, 0.f, "", 0.3f, false, "nav_lfo"),
 
 	ParameterDef::skewed("nav_rwalk_step_size", "Nav Random Walk Step Size", "TSN", 0.f, 0.2f, 0.1f, "", 0.5f, false, "nav_rwalk"),
 
