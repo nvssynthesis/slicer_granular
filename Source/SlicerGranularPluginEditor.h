@@ -80,13 +80,12 @@ inline
 int placeFileCompAndGrainBusyDisplay(juce::Rectangle<int> localBounds, int pad, GrainBusyDisplay &grainBusyDisplay, PresetPanel &presetPanel, int y) {
 	int const fileCompAndGrainDisplayHeight = 26;
 	{
-		int const pad = 2;
 		int const grainDisplayHeight = fileCompAndGrainDisplayHeight - pad;
 		
-		grainBusyDisplay.setSizePerGrain((float)grainDisplayHeight / (float)N_VOICES);
+		grainBusyDisplay.setSizePerGrain(static_cast<float>(grainDisplayHeight) / static_cast<float>(N_VOICES));
 		float const sizePerGrain = grainBusyDisplay.getSizePerGrain();
 		
-		int const grainBusyDisplayWidth = (float)N_GRAINS * sizePerGrain - pad;
+		int const grainBusyDisplayWidth = static_cast<float>(N_GRAINS) * sizePerGrain - static_cast<float>(pad);
 		
 		int const grainBusyX = localBounds.getX() + (localBounds.getWidth() - grainBusyDisplayWidth) + pad/2;
 		int const grainBusyY = y + pad/2;

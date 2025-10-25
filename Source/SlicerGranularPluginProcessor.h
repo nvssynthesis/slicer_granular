@@ -27,7 +27,7 @@ public:
 		obj->initialize();
 		return obj;
 	}
-	~SlicerGranularAudioProcessor();
+	~SlicerGranularAudioProcessor() override;
 	
 	//==============================================================================
 	void prepareToPlay (double sampleRate, int samplesPerBlock) override;

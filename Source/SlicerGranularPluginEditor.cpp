@@ -117,7 +117,7 @@ void Slicer_granularAudioProcessorEditor::resized()
 	localBounds.reduce(smallPad, smallPad);
 	
 	int y(localBounds.getY());
-	y = placeFileCompAndGrainBusyDisplay(localBounds, smallPad, grainBusyDisplay, presetPanel, y);
+	y = placeFileCompAndGrainBusyDisplay(localBounds, 2, grainBusyDisplay, presetPanel, y);
 	{
 		auto const mainParamsRemainingHeightRatio = 0.8 * localBounds.getHeight();
 

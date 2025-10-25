@@ -187,7 +187,7 @@ void SlicerGranularAudioProcessor::readGrainDescriptionData(std::vector<nvs::gra
 }
 
 //==============================================================================
-std::unique_ptr<juce::RangedAudioParameter> createJuceParameter(const nvs::param::ParameterDef& param) {
+static std::unique_ptr<juce::RangedAudioParameter> createJuceParameter(const nvs::param::ParameterDef& param) {
 	if (param.getParameterType() == nvs::param::ParameterType::Float){
 		
 		nvs::param::ParameterDef::FloatParamElements floatParamElements = std::get<nvs::param::ParameterDef::FloatParamElements>(param.elementsVar);
@@ -334,16 +334,15 @@ int SlicerGranularAudioProcessor::getCurrentProgram()
 	return 0;
 }
 
-void SlicerGranularAudioProcessor::setCurrentProgram (int index)
-{
-}
+void SlicerGranularAudioProcessor::setCurrentProgram ([[maybe_unused]] int index)
+{}
 
-const juce::String SlicerGranularAudioProcessor::getProgramName (int index)
+const juce::String SlicerGranularAudioProcessor::getProgramName ([[maybe_unused]] int index)
 {
 	return {};
 }
 
-void SlicerGranularAudioProcessor::changeProgramName (int index, const juce::String& newName){}
+void SlicerGranularAudioProcessor::changeProgramName ([[maybe_unused]] int index, [[maybe_unused]] const juce::String& newName){}
 
 //==============================================================================
 
