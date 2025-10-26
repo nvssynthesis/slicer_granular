@@ -78,7 +78,7 @@ private:
 
 inline 
 int placeFileCompAndGrainBusyDisplay(juce::Rectangle<int> localBounds, int pad, GrainBusyDisplay &grainBusyDisplay, PresetPanel &presetPanel, int y) {
-	int const fileCompAndGrainDisplayHeight = 26;
+    constexpr int fileCompAndGrainDisplayHeight = 26;
 	{
 		int const grainDisplayHeight = fileCompAndGrainDisplayHeight - pad;
 		
