@@ -12,7 +12,7 @@
 #include <JuceHeader.h>
 #include "../Params/params.h"
 
-class AttachedSlider	:	public juce::Component
+class AttachedSlider final :	public juce::Component
 {
 	using ParameterDef = nvs::param::ParameterDef;
 	using Slider = juce::Slider;
@@ -21,7 +21,7 @@ class AttachedSlider	:	public juce::Component
 	using String = juce::String;
 
 public:
-	AttachedSlider(juce::AudioProcessorValueTreeState &apvts, ParameterDef param, Slider::SliderStyle sliderStyle,
+	AttachedSlider(juce::AudioProcessorValueTreeState &apvts, const ParameterDef& param, Slider::SliderStyle sliderStyle,
 				   juce::Slider::TextEntryBoxPosition entryPos = juce::Slider::TextBoxBelow);
 	
 	void resized() override;

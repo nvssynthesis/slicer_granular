@@ -10,8 +10,8 @@
 
 #include "AttachedSlider.h"
 
-AttachedSlider::AttachedSlider(juce::AudioProcessorValueTreeState &apvts, ParameterDef param, Slider::SliderStyle sliderStyle,
-			   juce::Slider::TextEntryBoxPosition entryPos)
+AttachedSlider::AttachedSlider(juce::AudioProcessorValueTreeState &apvts, const ParameterDef& param, const Slider::SliderStyle sliderStyle,
+			   const juce::Slider::TextEntryBoxPosition entryPos)
 :
 _slider(),
 _attachment(apvts, param.ID, _slider),
@@ -20,21 +20,20 @@ _param_name(param.displayName)
 	addAndMakeVisible(_slider);
 	_slider.setSliderStyle(sliderStyle);
 	_slider.setNormalisableRange(param.createNormalisableRange<double>());
-//	_slider.setTextBoxStyle(entryPos, false, 50, 25);
-	_slider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, int(_slider.getHeight()*0.12) );
+	_slider.setTextBoxStyle(entryPos, false, 60, static_cast<int>(_slider.getHeight() * 0.12) );
 
 	_slider.setColour(Slider::ColourIds::thumbColourId, juce::Colours::palevioletred);
 	_slider.setColour(Slider::ColourIds::textBoxTextColourId, juce::Colours::lightgrey);
 	
 	addAndMakeVisible(_label);
 	_label.setText(_param_name, juce::dontSendNotification);//nvs::param::ParameterRegistry::getParameterByID(mainParamID).displayName, juce::dontSendNotification
-	_label.setFont(juce::Font("Courier New", 13.f, juce::Font::plain));
+	_label.setFont(FontOptions("Courier New", 13.f, juce::Font::plain));
 	_label.setJustificationType(juce::Justification::centred);
 }
 
 void AttachedSlider::resized()
 {
-	if (auto style = _slider.getSliderStyle();
+	if (const auto style = _slider.getSliderStyle();
 		style == Slider::SliderStyle::RotaryHorizontalVerticalDrag ||
 		style == Slider::SliderStyle::RotaryHorizontalDrag ||
 		style == Slider::SliderStyle::RotaryVerticalDrag ||
@@ -46,15 +45,14 @@ void AttachedSlider::resized()
 	auto r = getLocalBounds();
 	constexpr int extraBottomPadding = 12;
 	r.removeFromBottom (extraBottomPadding);
-	auto bounds = r.toFloat();
+	const auto bounds = r.toFloat();
 
 
 	auto const boundsHeight = bounds.getHeight();
 	auto const boundsWidth = bounds.getWidth();
 
-	const float sliderProportion = 0.93f;//boundsHeight > 80 ? 0.93f : 0.0f;
+    constexpr float sliderProportion = 0.93f;//boundsHeight > 80 ? 0.93f : 0.0f;
 	const float labelProportion  = ((boundsWidth > 51) and (boundsHeight > 166)) ? 0.07f : 0.0f;
-	const int   padding          = 10;
 
 	juce::FlexBox fb;
 	fb.flexDirection  = juce::FlexBox::Direction::column;
@@ -66,8 +64,9 @@ void AttachedSlider::resized()
 							   1.0f,//*sliderProportion,
 							   120.0f*sliderProportion));
 
-	if (labelProportion > 0){
-		fb.items.add (juce::FlexItem().withHeight ((float) padding));
+	if (labelProportion > 0) {
+        constexpr float padding = 10.f;
+        fb.items.add (juce::FlexItem().withHeight(padding));
 	}
 	fb.items.add (juce::FlexItem (_label)
 					.withFlex (labelProportion,
@@ -76,9 +75,10 @@ void AttachedSlider::resized()
 
 	fb.performLayout (bounds);
 	
-	int tbW = int (_slider.getWidth() * 0.66f);
-	int tbH = int (_slider.getHeight() * 0.12f);
-	auto textBoxStyle = ((boundsWidth > 66) and (boundsHeight > 146)) ? juce::Slider::TextBoxBelow : juce::Slider::NoTextBox;
+	const auto tbW = static_cast<int>(0.66f * static_cast<float>(_slider.getWidth()));
+	const auto tbH = static_cast<int>(0.12f * static_cast<float>(_slider.getHeight()));
+	const auto textBoxStyle = boundsWidth > 66 && boundsHeight > 146 ? juce::Slider::TextBoxBelow : juce::Slider::NoTextBox;
+
 	_slider.setTextBoxStyle (textBoxStyle,
 									 false,
 									 tbW,
