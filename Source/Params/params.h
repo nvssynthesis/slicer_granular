@@ -102,6 +102,7 @@ struct ParameterDef {
     static ParameterDef choice(juce::StringRef ID, juce::StringRef displayName,
                             juce::StringRef groupName,
                             const juce::StringArray &elements,
+                            int defaultChoiceIdx=0,
                             juce::StringRef subGroupName = "");
 
 	template<typename T>
@@ -269,34 +270,36 @@ inline ParameterDef ParameterDef::decibel (const juce::StringRef ID,
 		// Convert normalized [0,1] to dB, then to gain for storage
 		.convertFrom0To1 = [minDB, maxDB, minusInfinityDB](float, float, const float normVal) -> float
 		{
-			float dbVal = minDB + normVal * (maxDB - minDB);
+			const float dbVal = minDB + normVal * (maxDB - minDB);
 			return juce::Decibels::decibelsToGain(dbVal, minusInfinityDB);
 		},
 		.valueFromString = [minusInfinityDB](juce::String const& text) -> float
 		{
-			float dbVal = text.getFloatValue();
+			const float dbVal = text.getFloatValue();
 			return juce::Decibels::decibelsToGain(dbVal, minusInfinityDB);
 		},
 		
 		// Convert gain to dB, then to normalized [0,1]
 		.convertTo0To1 = [minDB, maxDB, minusInfinityDB](float, float, const float gainVal) -> float
 		{
-			float dbVal = juce::Decibels::gainToDecibels(gainVal, minusInfinityDB);
-			float normalized = (dbVal - minDB) / (maxDB - minDB);
+			const float dbVal = juce::Decibels::gainToDecibels(gainVal, minusInfinityDB);
+			const float normalized = (dbVal - minDB) / (maxDB - minDB);
 			// Clamp to handle floating point precision issues
 			return juce::jlimit(0.0f, 1.0f, normalized);
 		},
-		.stringFromValue = [minusInfinityDB](float gainVal, int numDecimalPlaces) -> juce::String
+		.stringFromValue = [minusInfinityDB](const float gainVal, const int numDecimalPlaces) -> juce::String
 		{
-			float dbVal = juce::Decibels::gainToDecibels(gainVal, minusInfinityDB);
+			const float dbVal = juce::Decibels::gainToDecibels(gainVal, minusInfinityDB);
 			return juce::String(dbVal, numDecimalPlaces) + " dB";
 		}
 	};
 	return param;
 }
-inline ParameterDef ParameterDef::choice(const juce::StringRef ID, const juce::StringRef displayName,
+inline ParameterDef ParameterDef::choice(const juce::StringRef ID,
+                            const juce::StringRef displayName,
                             const juce::StringRef groupName,
                             const juce::StringArray &elements,
+                            const int defaultChoiceIdx,
                             const juce::StringRef subGroupName) {
     ParameterDef param;
     param.ID			= ID;
@@ -306,7 +309,7 @@ inline ParameterDef ParameterDef::choice(const juce::StringRef ID, const juce::S
     param.elementsVar = ChoiceParamElements
     {
         .choices 		= elements,
-        .defaultChoiceIndex = 0
+        .defaultChoiceIndex = defaultChoiceIdx
     };
 
     return param;
@@ -357,19 +360,19 @@ inline const std::vector<ParameterDef> ALL_PARAMETERS = {
 	ParameterDef::linear("nav_tendency_w", 			"Navigator Tendency W", "TSN", -1.f, 1.f, 0.f, "", 0.f, "tendency"),
 
 	ParameterDef::linear("histogram_equalization", "Histogram Equalization", "TSN", 0.f, 1.f, 0.f, "", 0.f, "timbre_space"),
-    ParameterDef::choice("x_axis", "X Axis", "TSN", analysis::getFeaturesStringArray(), "timbre_space"),
-    ParameterDef::choice("y_axis", "Y Axis", "TSN", analysis::getFeaturesStringArray(), "timbre_space"),
-    ParameterDef::choice("z_axis", "Z Axis", "TSN", analysis::getFeaturesStringArray(), "timbre_space"),
-    ParameterDef::choice("u_axis", "U Axis", "TSN", analysis::getFeaturesStringArray(), "timbre_space"),
-    ParameterDef::choice("v_axis", "V Axis", "TSN", analysis::getFeaturesStringArray(), "timbre_space"),
+    ParameterDef::choice("x_axis", "X Axis", "TSN", analysis::getFeaturesStringArray(), 0, "timbre_space"),
+    ParameterDef::choice("y_axis", "Y Axis", "TSN", analysis::getFeaturesStringArray(), 1, "timbre_space"),
+    ParameterDef::choice("z_axis", "Z Axis", "TSN", analysis::getFeaturesStringArray(), 2, "timbre_space"),
+    ParameterDef::choice("u_axis", "U Axis", "TSN", analysis::getFeaturesStringArray(), 3, "timbre_space"),
+    ParameterDef::choice("v_axis", "V Axis", "TSN", analysis::getFeaturesStringArray(), 4, "timbre_space"),
 
-    ParameterDef::choice("statistic", "statistic", "TSN", analysis::getStatisticsStringArray(), "timbre_space"),
+    ParameterDef::choice("statistic", "statistic", "TSN", analysis::getStatisticsStringArray(), 0, "timbre_space"),
 
     ParameterDef::skewed("nav_manual_response", "Response","TSN", 0.01f, 4.f, 1.f, "", 0.5f, false, "nav_manual"),
     ParameterDef::skewed("nav_manual_overshoot", "Overshoot", "TSN", 0.55f, 24.f, 0.f, "", 0.3f, false, "nav_manual"),
 
 	ParameterDef::percent("nav_lfo_shape", "Shape", 	"TSN", 0.f, 1.f, 0.f,	"nav_lfo"),
-	ParameterDef::skewed("nav_lfo_rate", "Rate", 		"TSN", 0.1f, 10.f, 0.3f, "Hz", 0.3f, false, "nav_lfo"),
+	ParameterDef::skewed("nav_lfo_rate", "Rate", 		"TSN", 0.01f, 10.f, 0.3f, "Hz", 0.3f, false, "nav_lfo"),
 
 	ParameterDef::skewed("nav_rwalk_step_size", "Nav Random Walk Step Size", "TSN", 0.f, 0.2f, 0.1f, "", 0.5f, false, "nav_rwalk"),
 
