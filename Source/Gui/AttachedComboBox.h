@@ -7,7 +7,7 @@
 #include <JuceHeader.h>
 #include "../Params/params.h"
 
-class AttachedComboBox  :   public juce::Component {
+class AttachedComboBox final :   public juce::Component {
     using ParameterDef = nvs::param::ParameterDef;
     using ComboBox = juce::ComboBox;
     using APVTS = juce::AudioProcessorValueTreeState;

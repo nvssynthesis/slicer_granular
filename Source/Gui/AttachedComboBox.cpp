@@ -5,6 +5,7 @@
 #include "AttachedComboBox.h"
 
 AttachedComboBox::AttachedComboBox(APVTS &apvts, const ParameterDef &param)
+:   _param_name(param.ID)
 {
     if (const auto* choiceParam = dynamic_cast<juce::AudioParameterChoice*>(apvts.getParameter(param.ID))) {
         _comboBox.addItemList(choiceParam->choices, 1);
