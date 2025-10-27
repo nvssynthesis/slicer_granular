@@ -36,8 +36,10 @@ void GranularEditorCommon::drawThumbnail(){
 	jassert (0 < sampleManagementGuts->getNumChannels());
 	jassert (synthBuffer._file_sample_rate > 0);
 
-	waveformAndPositionComponent.wc.setThumbnailSource(&sampleManagementGuts->getSampleBuffer(),	// do not worry about dangling reference; the thumbnail will internally copy the data as needed to draw waveform
-													   synthBuffer._file_sample_rate, synthBuffer._filename_hash);
+	waveformAndPositionComponent.wc.setThumbnailSource(&sampleManagementGuts->getSampleBuffer(), // do not worry about dangling reference; the thumbnail will internally copy the data as needed to draw waveform
+													   synthBuffer._file_sample_rate,
+#pragma message("Narrowing conversion from 'size_t' (aka 'unsigned long') to signed type 'juce::int64' (aka 'long long') is implementation-defined")
+													   synthBuffer._filename_hash);
 }
 //============================================= ChangeListener - related =======================================================
 void GranularEditorCommon::displayGrainDescriptions() {
