@@ -9,12 +9,10 @@
 */
 
 /**
--instantiate in PluginProcessor
- 
- when processor.loadAudioFile() is called, need to use
-	 WaveformComponent.thumbnail.setSource (new juce::FileInputSource (file));
-
- */
+TODO:
+    Remove more aspects relevant only to TSN, such as onset markers.
+    These should just be handled by the derived class, SegmentedWaveformComponent.
+*/
 
 #pragma once
 #include <JuceHeader.h>
@@ -25,23 +23,23 @@
 
 class SlicerGranularAudioProcessor;
 
-
 class WaveformComponent		:	public juce::Component
 ,								public juce::ChangeListener
 ,								public juce::FileDragAndDropTarget
 {
 public:
     explicit WaveformComponent(SlicerGranularAudioProcessor &proc, int sourceSamplesPerThumbnailSample=512);
-	
+
 	enum class MarkerType {
 		Onset = 0,
 		CurrentPosition
 	};
-	size_t getNumMarkers(MarkerType markerType);
+	size_t getNumMarkers(MarkerType markerType) const;
 	std::vector<double> getNormalizedOnsets() const;
-	void addMarker(double onsetPosition);							// adds an OnsetMarker
+	void addMarker(double onsetPosition);							        // adds an OnsetMarker
 	void addMarker(nvs::gran::GrainDescription const &grainDescription);	// adds a PositionMarker
 	void removeMarkers(MarkerType markerType);
+
     //============================================================================================================
 	void paint(juce::Graphics& g) override;
 	void resized() override {}
@@ -99,14 +97,7 @@ private:
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(WaveformComponent);
 };
 
-/**
- The trick to implement:
- Levels of position quantization
- In the editor, user can set 'requested' position via Position slider.
- These potentially get quantized based on onsetsInSeconds (held in the Processor).
- The positionQuantizedReadOnlySlider should follow that quantized value
- */
-class WaveformAndPositionComponent	:	public juce::Component
+class WaveformAndPositionComponent	:	public WaveformComponent
 {
 public:
     explicit WaveformAndPositionComponent(SlicerGranularAudioProcessor &proc, int sourceSamplesPerThumbnailSample=512);
@@ -118,7 +109,6 @@ public:
 	
 	//========================================================================================
 
-	WaveformComponent wc; // externally accessible 
 private:
 	AttachedSlider positionSlider;
 	std::atomic<double> position;

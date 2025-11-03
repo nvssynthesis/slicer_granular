@@ -19,8 +19,9 @@
 
 struct GranularEditorCommon	:	public juce::ChangeListener
 {
-	GranularEditorCommon(SlicerGranularAudioProcessor& p);
-	~GranularEditorCommon();	// remove listeners
+    explicit GranularEditorCommon(SlicerGranularAudioProcessor& p);
+	~GranularEditorCommon() override;	// remove listeners
+
 	void changeListenerCallback (juce::ChangeBroadcaster* source) override;
 protected:
 	void drawThumbnail();
@@ -29,7 +30,7 @@ protected:
 	void handleSampleManagementBroadcast();
 	void handleGrainDescriptionBroadcast();
 	//===============================================================================
-	WaveformAndPositionComponent waveformAndPositionComponent;
+	std::unique_ptr<WaveformComponent> waveformComponent;
 	GrainBusyDisplay grainBusyDisplay;
 	PresetPanel presetPanel;
 	TabbedPagesComponent tabbedPages;
@@ -54,11 +55,12 @@ inline void displayName(juce::Graphics& g, juce::Rectangle<int> bounds)
 	g.drawText (s, bounds, juce::Justification::bottomRight, true);
 }
 
-class Slicer_granularAudioProcessorEditor  : 	public juce::AudioProcessorEditor
-,												public GranularEditorCommon
+class Slicer_granularAudioProcessorEditor final
+:   public juce::AudioProcessorEditor
+,	public GranularEditorCommon
 {
 public:
-    Slicer_granularAudioProcessorEditor (SlicerGranularAudioProcessor&);
+    explicit Slicer_granularAudioProcessorEditor (SlicerGranularAudioProcessor&);
     //==============================================================================
     void paint (juce::Graphics&) override;
     void resized() override;
@@ -77,7 +79,7 @@ private:
 };
 
 inline 
-int placeFileCompAndGrainBusyDisplay(juce::Rectangle<int> localBounds, int pad, GrainBusyDisplay &grainBusyDisplay, PresetPanel &presetPanel, int y) {
+int placeFileCompAndGrainBusyDisplay(const juce::Rectangle<int> localBounds, const int pad, GrainBusyDisplay &grainBusyDisplay, PresetPanel &presetPanel, int yStart) {
     constexpr int fileCompAndGrainDisplayHeight = 26;
 	{
 		int const grainDisplayHeight = fileCompAndGrainDisplayHeight - pad;
@@ -88,15 +90,15 @@ int placeFileCompAndGrainBusyDisplay(juce::Rectangle<int> localBounds, int pad, 
 		int const grainBusyDisplayWidth = static_cast<float>(N_GRAINS) * sizePerGrain - static_cast<float>(pad);
 		
 		int const grainBusyX = localBounds.getX() + (localBounds.getWidth() - grainBusyDisplayWidth) + pad/2;
-		int const grainBusyY = y + pad/2;
+		int const grainBusyY = yStart + pad/2;
 		grainBusyDisplay.setBounds(grainBusyX, grainBusyY, grainBusyDisplayWidth, grainDisplayHeight);
 	}
 	{
 		int const fileCompWidth = localBounds.getWidth() - grainBusyDisplay.getWidth();
 		int const x(localBounds.getX());
-		presetPanel.setBounds(x, y, fileCompWidth, fileCompAndGrainDisplayHeight);
-		y += fileCompAndGrainDisplayHeight;
-		y += pad;
+		presetPanel.setBounds(x, yStart, fileCompWidth, fileCompAndGrainDisplayHeight);
+		yStart += fileCompAndGrainDisplayHeight;
+		yStart += pad;
 	}
-	return y;	// needs to know the new y to place components at
+	return yStart;	// needs to know the new y to place components at
 }

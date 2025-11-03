@@ -10,8 +10,7 @@
 #include "SlicerGranularPluginEditor.h"
 
 GranularEditorCommon::GranularEditorCommon (SlicerGranularAudioProcessor& p)
-:	waveformAndPositionComponent(p)
-,	presetPanel(p.getPresetManager())
+:	presetPanel(p.getPresetManager())
 ,	tabbedPages(p.getAPVTS())
 ,	audioProcessor(p)
 {
@@ -36,24 +35,28 @@ void GranularEditorCommon::drawThumbnail(){
 	jassert (0 < sampleManagementGuts->getNumChannels());
 	jassert (synthBuffer._file_sample_rate > 0);
 
-	waveformAndPositionComponent.wc.setThumbnailSource(&sampleManagementGuts->getSampleBuffer(), // do not worry about dangling reference; the thumbnail will internally copy the data as needed to draw waveform
+    jassert (waveformComponent != nullptr);
+
+	waveformComponent->setThumbnailSource(&sampleManagementGuts->getSampleBuffer(), // do not worry about dangling reference; the thumbnail will internally copy the data as needed to draw waveform
 													   synthBuffer._file_sample_rate,
 #pragma message("Narrowing conversion from 'size_t' (aka 'unsigned long') to signed type 'juce::int64' (aka 'long long') is implementation-defined")
 													   synthBuffer._filename_hash);
 }
 //============================================= ChangeListener - related =======================================================
 void GranularEditorCommon::displayGrainDescriptions() {
+    jassert (waveformComponent != nullptr);
 	audioProcessor.readGrainDescriptionData(grainDescriptions);
-	waveformAndPositionComponent.wc.removeMarkers(WaveformComponent::MarkerType::CurrentPosition);
+	waveformComponent->removeMarkers(WaveformComponent::MarkerType::CurrentPosition);
 	for (auto gd : grainDescriptions){
-		waveformAndPositionComponent.wc.addMarker(gd);
+		waveformComponent->addMarker(gd);
 		grainBusyDisplay.setStatus(gd.grain_id, gd.voice, gd.busy);
 		grainBusyDisplay.repaint();
 	}
 }
 void GranularEditorCommon::handleGrainDescriptionBroadcast(){
-	displayGrainDescriptions();
-	waveformAndPositionComponent.wc.repaint();
+    jassert (waveformComponent != nullptr);
+    displayGrainDescriptions();
+	waveformComponent->repaint();
 }
 void GranularEditorCommon::handleSampleManagementBroadcast(){
 	audioProcessor.writeToLog("common: handling sample management broadcast");
@@ -75,13 +78,16 @@ void GranularEditorCommon::changeListenerCallback (juce::ChangeBroadcaster* sour
 }
 //==============================================================================
 Slicer_granularAudioProcessorEditor::Slicer_granularAudioProcessorEditor (SlicerGranularAudioProcessor& p)
-    : AudioProcessorEditor (&p)
+:   AudioProcessorEditor (&p)
 ,	GranularEditorCommon(p)
 ,	audioProcessor (p)
 {
-	addAndMakeVisible (presetPanel);
+    waveformComponent = std::make_unique<WaveformAndPositionComponent>(audioProcessor);
+    jassert (waveformComponent != nullptr);
+	addAndMakeVisible(*waveformComponent);
+
+    addAndMakeVisible (presetPanel);
 	addAndMakeVisible(tabbedPages);
-	addAndMakeVisible(waveformAndPositionComponent);
 	addAndMakeVisible(grainBusyDisplay);
 
     // Make sure that before the constructor has finished, you've set the
@@ -115,7 +121,7 @@ void Slicer_granularAudioProcessorEditor::paint (juce::Graphics& g)
 void Slicer_granularAudioProcessorEditor::resized()
 {
 	juce::Rectangle<int> localBounds = getLocalBounds();
-	int const smallPad = 10;
+    constexpr int smallPad = 10;
 	localBounds.reduce(smallPad, smallPad);
 	
 	int y(localBounds.getY());
@@ -130,5 +136,5 @@ void Slicer_granularAudioProcessorEditor::resized()
 		y += tabbedPages.getHeight();
 	}
 	auto const remainingHeight = 0.2f * localBounds.getHeight();
-	waveformAndPositionComponent.setBounds(localBounds.getX(), y, localBounds.getWidth(), remainingHeight);
+	waveformComponent->setBounds(localBounds.getX(), y, localBounds.getWidth(), remainingHeight);
 }
