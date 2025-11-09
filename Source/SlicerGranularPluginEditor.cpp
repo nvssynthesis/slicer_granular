@@ -25,7 +25,7 @@ GranularEditorCommon::~GranularEditorCommon() {
 	audioProcessor.removeMeasuredGrainDescriptionsListener(this);
 }
 
-void GranularEditorCommon::drawThumbnail(){
+void GranularEditorCommon::drawThumbnail() const {
 	auto const &synthBuffer = audioProcessor.viewSynthSharedState()._buffer;
 
 	if (sampleManagementGuts == nullptr){
@@ -39,8 +39,7 @@ void GranularEditorCommon::drawThumbnail(){
 
 	waveformComponent->setThumbnailSource(&sampleManagementGuts->getSampleBuffer(), // do not worry about dangling reference; the thumbnail will internally copy the data as needed to draw waveform
 													   synthBuffer._file_sample_rate,
-#pragma message("Narrowing conversion from 'size_t' (aka 'unsigned long') to signed type 'juce::int64' (aka 'long long') is implementation-defined")
-													   synthBuffer._filename_hash);
+													   synthBuffer._audio_hash);
 }
 //============================================= ChangeListener - related =======================================================
 void GranularEditorCommon::displayGrainDescriptions() {

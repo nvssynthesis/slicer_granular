@@ -67,10 +67,10 @@ struct GranularSynthSharedState {
 	struct Buffer {
 		juce::dsp::AudioBlock<float> _wave_block;
 		double _file_sample_rate {0.0};
-		size_t _filename_hash;
+		juce::int64 _audio_hash {0};
 	};
 	Buffer _buffer;
-	
+
 	std::function<void(const juce::String&)> _logger_func {nullptr};
 	
 	struct Settings {

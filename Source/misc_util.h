@@ -11,6 +11,7 @@
 #pragma once
 #include <JuceHeader.h>
 #include "Synthesis/GrainDescription.h"
+#include "StringAxiom.h"
 #include <fmt/format.h>
 #include <string>
 
@@ -59,7 +60,7 @@ struct SampleManagementGuts : public juce::ChangeBroadcaster
 	
 	bool hasValidAudio() const { return sampleBuffer.getNumSamples() > 0; }
 
-	const juce::String& getAudioHash() const { return audioHash; }
+	const juce::String& getWaveformHash() const { return waveformHash; }
 
 	double getSampleRate() const { return sampleRate; }
 	int getLength() const { return sampleBuffer.getNumSamples(); }
@@ -69,7 +70,7 @@ struct SampleManagementGuts : public juce::ChangeBroadcaster
 private:
 	juce::AudioFormatManager formatManager;
 	AudioBuffer sampleBuffer;
-	juce::String audioHash;
+	juce::String waveformHash;
 	double sampleRate {0.0};
 	
 	void clear();
@@ -106,6 +107,28 @@ public:
 inline juce::String hashAudioData(const std::vector<float>& audioData) {
 	const auto hash = juce::SHA256(audioData.data(), audioData.size() * sizeof(float));
 	return hash.toHexString();
+}
+
+inline juce::String getAndMigrateAudioHash(juce::ValueTree& metadataTree) {
+    // a utility function to match against the hash coming from the key of older versions of the value tree
+    auto hash = metadataTree.getProperty(nvs::axiom::audioHash).toString();
+    if (hash.isEmpty()) {
+        hash = metadataTree.getProperty("waveformHash").toString();
+        if (hash.isNotEmpty()) {
+            // Migrate old to new
+            metadataTree.setProperty(nvs::axiom::audioHash, hash, nullptr);
+            metadataTree.removeProperty("waveformHash", nullptr);
+        }
+    }
+    if (hash.isEmpty()) {
+        hash = metadataTree.getProperty("AudioFileHash").toString();
+        if (hash.isNotEmpty()) {
+            // Migrate old to new
+            metadataTree.setProperty(nvs::axiom::audioHash, hash, nullptr);
+            metadataTree.removeProperty("AudioFileHash", nullptr);
+        }
+    }
+    return hash;
 }
 
 inline juce::String hashValueTree(const juce::ValueTree& settings)

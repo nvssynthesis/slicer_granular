@@ -78,7 +78,7 @@ bool SampleManagementGuts::loadAudioFile(const juce::File& file)
 	}();
 	
 	sampleBuffer.applyGain(normGain);
-	audioHash = computeHash(sampleBuffer);
+	waveformHash = computeHash(sampleBuffer);
 	return true;
 }
 
@@ -101,7 +101,7 @@ juce::String computeHash(const juce::AudioBuffer<float> &bufferToHash)
 void SampleManagementGuts::clear()
 {
 	sampleBuffer.clear();
-	audioHash = juce::String();
+	waveformHash = juce::String();
 }
 
 

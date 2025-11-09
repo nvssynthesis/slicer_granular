@@ -24,7 +24,7 @@ struct GranularEditorCommon	:	public juce::ChangeListener
 
 	void changeListenerCallback (juce::ChangeBroadcaster* source) override;
 protected:
-	void drawThumbnail();
+	void drawThumbnail() const;
 	virtual void displayGrainDescriptions();
 	
 	void handleSampleManagementBroadcast();

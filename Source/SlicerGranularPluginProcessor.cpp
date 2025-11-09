@@ -1,5 +1,6 @@
 #include "SlicerGranularPluginProcessor.h"
 #include "SlicerGranularPluginEditor.h"
+#include "StringAxiom.h"
 /*
  *TRY: 3POINT SLIDERS (2 THUMBS)
  *
@@ -12,10 +13,10 @@ SlicerGranularAudioProcessor::SlicerGranularAudioProcessor()
                        .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
                        ),
 #endif
-	apvts(*this, nullptr, "PLUGIN_STATE", createParameterLayout())
+	apvts(*this, nullptr, "nvs::axiom::PLUGIN_STATE", createParameterLayout())
 ,	presetManager(apvts)
 {
-	apvts.state.appendChild (juce::ValueTree ("Settings"), nullptr);
+	apvts.state.appendChild (juce::ValueTree ("nvs::axiom::Settings"), nullptr);
 	presetManager.addChangeListener(this);
 }
 SlicerGranularAudioProcessor::~SlicerGranularAudioProcessor() = default;
@@ -44,10 +45,10 @@ void SlicerGranularAudioProcessor::getStateInformation (juce::MemoryBlock& destD
 
 void SlicerGranularAudioProcessor::loadStoredAudioFileAndUpdateState()
 {
-    if (auto fileInfo = apvts.state.getChildWithName("FileInfo");
+    if (auto fileInfo = apvts.state.getChildWithName(nvs::axiom::FileInfo);
         fileInfo.isValid())
     {
-        if (auto const fp = fileInfo.getPropertyAsValue("sampleFilePath", nullptr).toString();
+        if (auto const fp = fileInfo.getPropertyAsValue(nvs::axiom::sampleFilePath, nullptr).toString();
             fp.isNotEmpty())
         {
             loadAudioFileAndUpdateState(fp, true);
@@ -59,7 +60,7 @@ void SlicerGranularAudioProcessor::setStateInformation (const void* data, int si
 {
 	std::unique_ptr<juce::XmlElement> xmlState (getXmlFromBinary (data, sizeInBytes));
 
-	if (xmlState == nullptr || ! xmlState->hasTagName ("PLUGIN_STATE")){
+	if (xmlState == nullptr || ! xmlState->hasTagName (nvs::axiom::PLUGIN_STATE)){
 		return;
 	}
 	const juce::ValueTree root = juce::ValueTree::fromXml (*xmlState);
@@ -109,22 +110,22 @@ void SlicerGranularAudioProcessor::readIntoBufferAndUpdateState(juce::File const
 	if (!sampleManagementGuts.loadAudioFile(f)) {
 		writeToLog(fmt::format("readIntoBufferAndUpdateState: could not load file {}\n", fullPath.toStdString()));
 	}
-	const auto sr = sampleManagementGuts.getSampleRate();
 	
 	writeToLog("                                          ...file read successful");
+
+    const auto sr = sampleManagementGuts.getSampleRate();
+	_granularSynth->setAudioBuffer(sampleManagementGuts.getSampleBuffer(), sr, sampleManagementGuts.getWaveformHash().hashCode64()); // waveformHash is a String, but we need to rehash it to get int64
 	
-	_granularSynth->setAudioBuffer(sampleManagementGuts.getSampleBuffer(), sr, fullPath.hash());
-	
-	auto fileInfo = apvts.state.getOrCreateChildWithName("FileInfo", nullptr);
-	fileInfo.setProperty("sampleFilePath", fullPath, nullptr);
-	fileInfo.setProperty("sampleRate", sr, nullptr);
-	fileInfo.setProperty("audioHash", sampleManagementGuts.getAudioHash(), nullptr);
+	auto fileInfo = apvts.state.getOrCreateChildWithName(nvs::axiom::FileInfo, nullptr);
+	fileInfo.setProperty(nvs::axiom::sampleFilePath, fullPath, nullptr);
+	fileInfo.setProperty(nvs::axiom::sampleRate, sr, nullptr);
+	fileInfo.setProperty(nvs::axiom::audioHash, sampleManagementGuts.getWaveformHash(), nullptr);
 }
 juce::String SlicerGranularAudioProcessor::getSampleFilePath() const {
-	return apvts.state.getChildWithName("FileInfo").getProperty("sampleFilePath");
+	return apvts.state.getChildWithName(nvs::axiom::FileInfo).getProperty(nvs::axiom::sampleFilePath);
 }
 juce::String SlicerGranularAudioProcessor::getAudioHash() const {
-	return apvts.state.getChildWithName("FileInfo").getProperty("audioHash");
+	return apvts.state.getChildWithName(nvs::axiom::FileInfo).getProperty(nvs::axiom::audioHash);
 }
 juce::AudioProcessorValueTreeState &SlicerGranularAudioProcessor::getAPVTS(){
 	return apvts;

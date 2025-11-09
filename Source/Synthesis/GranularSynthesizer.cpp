@@ -52,12 +52,12 @@ std::vector<nvs::gran::GrainDescription> GranularSynthesizer::getGrainDescriptio
     }
     return grainDescriptions;
 }
-void GranularSynthesizer::setAudioBuffer(juce::AudioBuffer<float> &waveBuffer, double newFileSampleRate, size_t fileNameHash){
+void GranularSynthesizer::setAudioBuffer(juce::AudioBuffer<float> &waveBuffer, const double newFileSampleRate, const juce::int64 audioHash){
     assert(hasLogger());
     writeToLog(" setAudioBuffer");
     _synth_shared_state._buffer._wave_block = juce::dsp::AudioBlock<float>(waveBuffer);
     _synth_shared_state._buffer._file_sample_rate = newFileSampleRate;
-    _synth_shared_state._buffer._filename_hash = fileNameHash;
+    _synth_shared_state._buffer._audio_hash = audioHash;
 }
 
 void GranularSynthesizer::setCurrentPlaybackSampleRate(double newSampleRate) {

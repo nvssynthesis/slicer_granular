@@ -21,7 +21,7 @@ class GranularSynthesizer
 {
 public:
     explicit GranularSynthesizer(juce::AudioProcessorValueTreeState &apvts);
-    void setAudioBuffer(juce::AudioBuffer<float> &waveBuffer, double newFileSampleRate, size_t fileNameHash);
+    void setAudioBuffer(juce::AudioBuffer<float> &waveBuffer, double newFileSampleRate, juce::int64 audioHash);
 
     virtual void processBlock(juce::AudioBuffer<float> &buffer, juce::MidiBuffer &midi)
     {

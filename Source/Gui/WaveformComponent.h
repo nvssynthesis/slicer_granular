@@ -46,7 +46,8 @@ public:
     //============================================================================================================
 	void changeListenerCallback (juce::ChangeBroadcaster* source) override;
     //============================================================================================================
-	void setThumbnailSource (const juce::AudioBuffer<float> *newSource, double sampleRate, juce::int64 hashCode);
+	virtual void setThumbnailSource (const juce::AudioBuffer<float> *newSource, double sampleRate, juce::int64 hashCode);
+    juce::int64 getHashCode() const;
 	void highlightOnsets(std::vector<nvs::util::WeightedIdx> const &currentIndices);
 	//============================================================================================================
 	void mouseUp(juce::MouseEvent const &e) override;

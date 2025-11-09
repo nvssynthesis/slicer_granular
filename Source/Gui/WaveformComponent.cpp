@@ -10,6 +10,7 @@
 
 #include "WaveformComponent.h"
 #include "../SlicerGranularPluginProcessor.h"
+#include "StringAxiom.h"
 #include <ranges>
 
 WaveformComponent::WaveformComponent(SlicerGranularAudioProcessor &proc, const int sourceSamplesPerThumbnailSample)
@@ -275,8 +276,11 @@ void WaveformComponent::filesDropped (const juce::StringArray& files, int, int)
 	}
 	repaint();
 }
-void WaveformComponent::setThumbnailSource (const juce::AudioBuffer<float> *newSource, double sampleRate, juce::int64 hashCode){
+void WaveformComponent::setThumbnailSource (const juce::AudioBuffer<float> *newSource, const double sampleRate, const juce::int64 hashCode){
 	thumbnail.setSource(newSource, sampleRate, hashCode);
+}
+juce::int64 WaveformComponent::getHashCode() const {
+    return thumbnail.getHashCode();
 }
 
 void WaveformComponent::paintContentsIfNoFileLoaded (juce::Graphics& g)
@@ -299,7 +303,7 @@ void WaveformComponent::paintContentsIfFileLoaded (juce::Graphics& g)
 
 WaveformAndPositionComponent::WaveformAndPositionComponent(SlicerGranularAudioProcessor &proc, int sourceSamplesPerThumbnailSample)
 :	WaveformComponent(proc, sourceSamplesPerThumbnailSample)
-,	positionSlider(proc.getAPVTS(), nvs::param::ParameterRegistry::getParameterByID("position"), juce::Slider::SliderStyle::LinearHorizontal, juce::Slider::NoTextBox)
+,	positionSlider(proc.getAPVTS(), nvs::param::ParameterRegistry::getParameterByID(nvs::axiom::position), juce::Slider::SliderStyle::LinearHorizontal, juce::Slider::NoTextBox)
 {
 	addAndMakeVisible(&positionSlider._slider);
 }
