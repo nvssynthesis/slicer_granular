@@ -31,7 +31,7 @@ private:
 	void buttonClicked(juce::Button *b) override;
 	nvs::service::PresetManager &_presetManager;
 	
-	juce::TextButton saveButton, deleteButton, previousPresetButton, nextPresetButton, reloadButton;
+	juce::TextButton saveButton, deleteButton, previousPresetButton, nextPresetButton, revertButton;
 	
 	juce::ComboBox presetListBox;
 	

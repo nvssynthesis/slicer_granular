@@ -18,7 +18,7 @@ PresetPanel::PresetPanel(nvs::service::PresetManager &presetManager)
 	configureButton(deleteButton, "Delete");
 	configureButton(previousPresetButton, "<");
 	configureButton(nextPresetButton, ">");
-	configureButton(reloadButton, "Reload");
+	configureButton(revertButton, "Revert");
 	
 	presetListBox.setTextWhenNothingSelected("No Preset Selected");
 	presetListBox.setMouseCursor(juce::MouseCursor::PointingHandCursor);
@@ -32,7 +32,7 @@ PresetPanel::~PresetPanel() {
 	deleteButton.removeListener(this);
 	previousPresetButton.removeListener(this);
 	nextPresetButton.removeListener(this);
-	reloadButton.removeListener(this);
+	revertButton.removeListener(this);
 	presetListBox.removeListener(this);
 }
 void PresetPanel::loadPresetList() {
@@ -82,7 +82,7 @@ void PresetPanel::resized() {
 	float const charMaxW = area.getWidth() < 172 ? 0.f : 1000.f;
 	fb.items = {
 		FlexItem (saveButton)               .withFlex (0.08f).withMargin (margin).withMinWidth(txtMinW).withMaxWidth(textMaxW),
-		FlexItem (reloadButton)				.withFlex (0.08f).withMargin (margin).withMinWidth(txtMinW).withMaxWidth(textMaxW),
+		FlexItem (revertButton) 			    .withFlex (0.08f).withMargin (margin).withMinWidth(txtMinW).withMaxWidth(textMaxW),
 		FlexItem (previousPresetButton)     .withFlex (0.03f).withMargin (margin).withMinWidth(charMinW).withMaxWidth(charMaxW),
 		FlexItem (presetListBox)            .withFlex (0.60f).withMargin (margin).withMinWidth(96.f),
 		FlexItem (nextPresetButton)         .withFlex (0.03f).withMargin (margin).withMinWidth(charMinW).withMaxWidth(charMaxW),
@@ -136,7 +136,21 @@ void PresetPanel::buttonClicked(juce::Button *b) {
 			})
 		);
 	}
-	if (b == &reloadButton){
-		std::cerr << "no implementation yet\n";
+	if (b == &revertButton){
+	    [[maybe_unused]]
+	    bool const button1Clicked = juce::AlertWindow::showOkCancelBox(
+	        MessageBoxIconType::WarningIcon,
+	        "Revert preset",
+	        "Revert Preset? All current changes will be lost and the preset will be restored to its last saved state.",
+	        "Revert",
+	        "Cancel",
+	        this,
+	        juce::ModalCallbackFunction::create([this](int result) {
+                if (result == 1) { // User clicked "Revert"
+                    _presetManager.loadPreset(_presetManager.getCurrentPreset());
+                }
+                // else if result was 0, user clicked "Cancel" - do nothing
+            })
+        );
 	}
 }
