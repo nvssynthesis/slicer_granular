@@ -69,6 +69,7 @@ STRAXIOMIZE(weight_flux);
 STRAXIOMIZE(weight_hfc);
 STRAXIOMIZE(weight_rms);
 STRAXIOMIZE(Pitch);
+STRAXIOMIZE(equalizeLoudness);
 STRAXIOMIZE(yin);
 STRAXIOMIZE(pYin);
 STRAXIOMIZE(chroma);
