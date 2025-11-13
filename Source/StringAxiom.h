@@ -46,6 +46,7 @@ STRAXIOMIZE(highFrequencyBound);
 STRAXIOMIZE(liftering);
 STRAXIOMIZE(lowFrequencyBound);
 STRAXIOMIZE(normalize);
+STRAXIOMIZE(BFCC0_normalizationFactor);
 STRAXIOMIZE(unit_sum);
 STRAXIOMIZE(unit_max);
 STRAXIOMIZE(numBands);
