@@ -52,10 +52,10 @@ void GranularVoice::startNote (int midiNoteNumber, float velocity, juce::Synthes
     {
         auto &apvts = _synth_shared_state->_apvts;
         adsr.setParameters(juce::ADSR::Parameters (
-            (float)*apvts.getRawParameterValue("amp_env_attack"),
-            (float)*apvts.getRawParameterValue("amp_env_decay"),
-            (float)*apvts.getRawParameterValue("amp_env_sustain"),
-            (float)*apvts.getRawParameterValue("amp_env_release")
+            *apvts.getRawParameterValue("amp_env_attack"),
+            *apvts.getRawParameterValue("amp_env_decay"),
+            *apvts.getRawParameterValue("amp_env_sustain"),
+            *apvts.getRawParameterValue("amp_env_release")
         ));
     }
 
