@@ -49,7 +49,7 @@ public:
     static size_t getNumGrains(){
         return nvs::gran::PolyGrain::getNumGrains();
     }
-    void setLogger(std::function<void(const juce::String&)> loggerFunction);
+    void setLogger(const std::function<void(const juce::String &)> &loggerFunction);
 private:
     GranularVoice(nvs::gran::GranularSynthSharedState *const synth_shared_state, unsigned long seed, int voice_id);
 
