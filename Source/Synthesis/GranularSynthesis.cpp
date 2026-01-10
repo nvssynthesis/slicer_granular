@@ -158,11 +158,11 @@ void PolyGrain::setReadBounds(ReadBounds newReadBounds) {
 		g.setReadBounds(newReadBounds);
 	}
 }
-void PolyGrain::setMultiReadBounds(std::vector<WeightedReadBounds> newWeightedReadBounds) {
+void PolyGrain::setMultiReadBounds(const std::vector<WeightedReadBounds> &newWeightedReadBounds) {
 	
-	auto pickedWeightedReadBounds = pickWeightedReadBoundsEvenly(newWeightedReadBounds, (int)_grains.size());
+	auto pickedWeightedReadBounds = pickWeightedReadBoundsEvenly(newWeightedReadBounds, static_cast<int>(_grains.size()));
 	double w_sum = 0.0;
-	for (auto wrb : pickedWeightedReadBounds){
+	for (const auto &wrb : pickedWeightedReadBounds){
 		jassert(wrb.weight >= 0.0);
 		w_sum += wrb.weight;
 	}
@@ -170,11 +170,11 @@ void PolyGrain::setMultiReadBounds(std::vector<WeightedReadBounds> newWeightedRe
 		w_sum = 1.0;
 	}
 	
-	std::sort(pickedWeightedReadBounds.begin(), pickedWeightedReadBounds.end(), [](auto a, auto b) { return a.weight < b.weight; });
+	std::ranges::sort(pickedWeightedReadBounds, [](auto a, auto b) { return a.weight < b.weight; });
 	for (size_t i = 0; i < _grains.size(); ++i){
 		// for now, we will just have all grains use same read bounds.
-		// however, we may want to have some prorortions of grains using different readbounds in the future.
-		auto b = pickedWeightedReadBounds[i];
+		// however, we may want to have some proportions of grains using different readbounds in the future.
+		const auto &b = pickedWeightedReadBounds[i];
 		assert ((b.bounds.begin >= 0.0) && (b.bounds.begin <= 1.0));
 		assert ((b.bounds.end >= 0.0) && (b.bounds.end <= 1.0));
 		

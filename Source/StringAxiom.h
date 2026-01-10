@@ -41,6 +41,7 @@ STRAXIOMIZE(blackmanharris62);
 STRAXIOMIZE(blackmanharris70);
 STRAXIOMIZE(blackmanharris74);
 STRAXIOMIZE(blackmanharris92);
+
 STRAXIOMIZE(BFCC);
 STRAXIOMIZE(SpectralCentroid);
 STRAXIOMIZE(SpectralDecrease);
@@ -48,6 +49,7 @@ STRAXIOMIZE(SpectralFlatness);
 STRAXIOMIZE(SpectralCrest);
 STRAXIOMIZE(SpectralComplexity);
 STRAXIOMIZE(StrongPeak);
+
 STRAXIOMIZE(highFrequencyBound);
 STRAXIOMIZE(liftering);
 STRAXIOMIZE(lowFrequencyBound);

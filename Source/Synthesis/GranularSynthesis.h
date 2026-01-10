@@ -158,7 +158,7 @@ public:
 		double weight;
 		WeightedReadBounds(ReadBounds b, double w)	:	bounds(b), weight(w) {}
 	};
-	void setMultiReadBounds(std::vector<WeightedReadBounds> newReadBounds) ;
+	void setMultiReadBounds(const std::vector<WeightedReadBounds> &newWeightedReadBounds) ;
 	std::vector<GrainDescription> getGrainDescriptions() const;
 	void setLogger(std::function<void(const juce::String&)> loggerFunction);
 	
