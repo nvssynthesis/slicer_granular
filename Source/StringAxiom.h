@@ -69,7 +69,11 @@ STRAXIOMIZE(linear);
 STRAXIOMIZE(dctType);
 STRAXIOMIZE(typeII);
 STRAXIOMIZE(typeIII);
+
 STRAXIOMIZE(Onset);
+STRAXIOMIZE(segmentation);
+STRAXIOMIZE(Event);
+STRAXIOMIZE(Uniform);
 STRAXIOMIZE(alpha);
 STRAXIOMIZE(numFrames_shortOnsetFilter);
 STRAXIOMIZE(silenceThreshold);
