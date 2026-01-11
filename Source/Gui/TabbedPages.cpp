@@ -38,7 +38,7 @@ TabbedPagesComponent::TabbedPagesComponent (juce::AudioProcessorValueTreeState &
 									}//, juce::Slider::SliderStyle::LinearVertical
 								   ), true);
 	addTab ("Scanner", juce::Colours::transparentWhite, new BasicParameterPage(apvts,
-																			   {"scanner_rate", "scanner_amount"},
+																			   {"scanner_shape", "scanner_rate", "scanner_amount"},
 																			   Slider::SliderStyle::LinearVertical
 																			   ), true);
 	addTab ("Fx", juce::Colours::transparentWhite, new BasicParameterPage(apvts,

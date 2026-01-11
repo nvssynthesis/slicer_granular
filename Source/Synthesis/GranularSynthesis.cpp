@@ -29,10 +29,10 @@
 #define pade false	// unfortunately, this optimization did not seem to clearly improve performance.
 
 namespace nvs::gran {
-
+// NOLINTBEGIN(cppcoreguidelines-narrowing-conversions)
 template <typename float_t>
 float semitonesToRatio(float_t semitones){
-	constexpr float_t semitoneRatio = static_cast<float_t>(1.059463094359295);
+	constexpr auto semitoneRatio = static_cast<float_t>(1.059463094359295);
 	
 #if(pade)
 	float_t transpositionRatio = pow_fixed_base<float_t, semitoneRatio>(semitones);
@@ -42,7 +42,7 @@ float semitonesToRatio(float_t semitones){
 	
 	return transpositionRatio;
 }
-inline float fastSemitonesToRatio(float semitones){
+inline float fastSemitonesToRatio(const float semitones){
 	return nvs::util::semitonesRatioTable(semitones);
 }
 namespace {
@@ -105,7 +105,7 @@ std::vector<WeightedReadBounds> pickWeightedReadBoundsProbabilistically (std::ve
 /**
  This version simply evenly distributes the choices amongst the available grains.
  */
-std::vector<WeightedReadBounds> pickWeightedReadBoundsEvenly (std::vector<WeightedReadBounds> choices, int numToPick)
+std::vector<WeightedReadBounds> pickWeightedReadBoundsEvenly (const std::vector<WeightedReadBounds> &choices, const int numToPick)
 {
 	
 	const int N = (int) choices.size();
@@ -135,26 +135,26 @@ _normalizer(1.f / std::sqrt(static_cast<float>(std::clamp(N_GRAINS, 1UL, 10000UL
 _grain_indices(N_GRAINS),
 _speed_ler(_voice_shared_state->_expo_rng,  {10.f, 0.f})
 {
-	assert (_grains.size() == 0);
+	assert (_grains.empty());
 	_grains.reserve(N_GRAINS);
 	for (size_t i = 0; i < N_GRAINS; ++i){
 		_grains.emplace_back(_synth_shared_state, _voice_shared_state, i);
 	}
 	std::iota(_grain_indices.begin(), _grain_indices.end(), 0);
 }
-void PolyGrain::setSampleRate(double sample_rate){
+void PolyGrain::setSampleRate(const double sampleRate){
 	assert(_synth_shared_state);
-	_phasor_internal_trig.setSampleRate(sample_rate);
-	_voice_shared_state->_scanner.setSampleRate(sample_rate);
-	_synth_shared_state->_playback_sample_rate = sample_rate;
+	_phasor_internal_trig.setSampleRate(sampleRate);
+	_voice_shared_state->_scanner.lfo.setSampleRate(sampleRate);
+	_synth_shared_state->_playback_sample_rate = sampleRate;
 }
-void PolyGrain::setReadBounds(ReadBounds newReadBounds) {
+void PolyGrain::setReadBounds(const ReadBounds newReadBounds) {
 	assert ((newReadBounds.begin >= 0.0) && (newReadBounds.begin <= 1.0));
 	assert ((newReadBounds.end >= 0.0) && (newReadBounds.end <= 1.0));
 	
 	for (auto &g : _grains){
 		// for now, we will just have all grains use same read bounds.
-		// however, we may want to have some prorortions of grains using different readbounds in the future.
+		// however, we may want to have some proportions of grains using different readbounds in the future.
 		g.setReadBounds(newReadBounds);
 	}
 }
@@ -185,7 +185,7 @@ void PolyGrain::setMultiReadBounds(const std::vector<WeightedReadBounds> &newWei
 	}
 }
 
-void PolyGrain::setLogger(std::function<void(const juce::String&)> loggerFunction) {
+void PolyGrain::setLogger(const std::function<void(const juce::String&)> &loggerFunction) const {
 	assert(_synth_shared_state);
 	_synth_shared_state->_logger_func = loggerFunction;
 }
@@ -197,7 +197,7 @@ void PolyGrain::doNoteOn(noteNumber_t note, velocity_t velocity){
 	_note_holder.insert(p);
 	updateNotes();
 	_phasor_internal_trig.reset();
-	_voice_shared_state->_scanner.reset();
+	_voice_shared_state->_scanner.lfo.reset();
 	
 #if GRAIN_UPDATE_HACK
 	for (int i = 0; i < _grains.size(); ++i) {
@@ -258,8 +258,10 @@ void PolyGrain::setParams() {
 	auto const &apvts = _synth_shared_state->_apvts;
 	_speed_ler.setMu(*apvts.getRawParameterValue("speed"));
 	_speed_ler.setSigma(*apvts.getRawParameterValue("speed_rand"));
-	_voice_shared_state->_scanner._freq = *apvts.getRawParameterValue("scanner_rate");
-	_voice_shared_state->_scanner_amount = *apvts.getRawParameterValue("scanner_amount");
+
+	_voice_shared_state->_scanner.lfo._freq = *apvts.getRawParameterValue("scanner_rate");
+	_voice_shared_state->_scanner.amount = *apvts.getRawParameterValue("scanner_amount");
+    _voice_shared_state->_scanner.shape = *apvts.getRawParameterValue("scanner_shape");
 	
 	for (auto &g : _grains){
 		g.setParams();
@@ -274,14 +276,14 @@ std::array<float, 2> PolyGrain::doProcess(float trigger_in){
 	std::array<float, 2> output {0.f, 0.f};
 	
 	// update phasor's frequency only if _triggerHisto.val is true
-	float const freq_tmp = _speed_ler(static_cast<bool>(_trigger_histo.val)); // used to clamp by percentage of mu. should no longer be necessary.
+	auto const freq_tmp = _speed_ler(static_cast<bool>(_trigger_histo.val)); // used to clamp by percentage of mu. should no longer be necessary.
 	_phasor_internal_trig.setFrequency(freq_tmp);
 	++_phasor_internal_trig;
 	float trig = _ramp2trig(_phasor_internal_trig.getPhase());
 	_trigger_histo(trig);
 	trig = (!trig && !trigger_in) ? 0.f : 1.f;
 	
-	_voice_shared_state->_scanner.phasor();	// increment scanner phase per sample
+	_voice_shared_state->_scanner.lfo.phasor();	// increment scanner phase per sample
 
 	std::array<Grain::outs, N_GRAINS> _outs;
 
@@ -296,10 +298,10 @@ std::array<float, 2> PolyGrain::doProcess(float trigger_in){
 	
 
 	for (size_t i = 1; i < N_GRAINS; ++i){
-		idx = _grain_indices.data()[i];
-		size_t prevIdx = _grain_indices.data()[i - 1];
-		
-		float currentTrig = _outs[prevIdx].next;
+		idx = _grain_indices[i];
+		size_t prevIdx = _grain_indices[i - 1];
+
+		const float currentTrig = _outs[prevIdx].next;
 		_outs[idx] = _grains[idx](currentTrig);
 		audio_out_L += _outs[idx].audio_L;
 		audio_out_R += _outs[idx].audio_R;
@@ -422,7 +424,7 @@ float calculateWindow(double const accum, double const duration, float const tra
 	assert (duration > 0.0);
 	double const v = (accum / duration);
 	double const windowIdx = nvs::memoryless::clamp(v / transpositionMultiplier, 0.0, 1.0);
-	float win = nvs::gen::triangle<float, false>(static_cast<float>(windowIdx), skew);
+	auto win = nvs::gen::triangle<float, false>(static_cast<float>(windowIdx), skew);
 	
 	plateau = memoryless::clamp_low(plateau, 0.000001f);
 	win *= plateau;
@@ -507,6 +509,8 @@ void Grain::setAccum(const float newVal) {
 float GrainwisePostProcessing::processChannel(float x, double t) const {
 	float retval {0.f};
 
+    // NEED TO WRAP t
+
     const float signal_rms = _synth_shared_state->_buffer._loudness_profile[static_cast<size_t>(t)];
     float normalizer = 1.f / std::max(signal_rms, 0.05f);
     static constexpr auto NORMALIZATION_TARGET_AMPLITUDE = 0.33;
@@ -574,7 +578,9 @@ Grain::outs Grain::operator()(float const trig_in){
 	size_t const compensatedLength = [&settings, &denormedReadBounds, buffLength, file_sample_rate_compensate_ratio](){
 		float const dur_dep_on_read_bounds = settings._duration_dependence_on_read_bounds;
 		size_t const event_length = denormedReadBounds.end - denormedReadBounds.begin;
-		size_t const cLen = static_cast<size_t>(nvs::memoryless::linterp((float)buffLength, (float)event_length, dur_dep_on_read_bounds) / file_sample_rate_compensate_ratio);
+		auto const cLen = static_cast<size_t>(nvs::memoryless::linterp(static_cast<float>(buffLength),
+		    static_cast<float>(event_length),
+		    dur_dep_on_read_bounds) / file_sample_rate_compensate_ratio);
 		assert (0 < cLen);
 		return cLen;
 	}();
@@ -590,7 +596,9 @@ Grain::outs Grain::operator()(float const trig_in){
 //#endif
 	double norm_pos = [this, should_open_latches](){
 		double np = _position_lgr(should_open_latches);
-		auto const scanner_pos = _scanner_for_position_latch(_voice_shared_state->_scanner.phasor_offset(0.f) * _voice_shared_state->_scanner_amount, should_open_latches);
+	    const auto &[lfo, shape, amount] = _voice_shared_state->_scanner;
+	    auto const phasorVal = (lfo.multi(shape * 4.0f) + 1) * 0.5f;
+		auto const scanner_pos = _scanner_for_position_latch(phasorVal * amount, should_open_latches);
 		np = nvs::memoryless::mspWrap(np + scanner_pos);
 		assert (np >= 0.0);
 		assert (np <= 1.0);
@@ -647,4 +655,5 @@ Grain::outs Grain::operator()(float const trig_in){
 	
 	return o;
 }
+// NOLINTEND(cppcoreguidelines-narrowing-conversions)
 }	// namespace nvs::gran

@@ -343,6 +343,7 @@ inline const std::vector<ParameterDef> ALL_PARAMETERS = {
 	ParameterDef::percent("amp_env_sustain", "Sustain", "Amplitude Envelope", 	0.f, 				1.f, 		0.85f),
 	ParameterDef::skewed("amp_env_release", "Release", 	"Amplitude Envelope", envTimingMin, 	envTimingMax, 	1.0f,	" Seconds"),
 
+    ParameterDef::linear("scanner_shape", "Shape",      "Scanner"),
 	ParameterDef::skewed("scanner_rate",	"Rate",		"Scanner", 				-20.f,				20.f,		0.f,	"Hz", 0.3f, true),
 	ParameterDef::percent("scanner_amount",	"Amount",	"Scanner"),
 	

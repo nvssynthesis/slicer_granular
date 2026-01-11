@@ -91,9 +91,12 @@ struct GranularVoiceSharedState {
 	int _voice_id;
 	
 	float trigger;
-	
-	nvs::lfo::simple_lfo<float> _scanner;
-	float _scanner_amount {0.f};
+
+    struct Scanner {
+        nvs::lfo::simple_lfo<float> lfo;
+        float shape {0.f};
+    	float amount {0.f};
+    } _scanner;
 };
 
 //========================================================================================================================================
@@ -180,7 +183,7 @@ public:
 	};
 	void setMultiReadBounds(const std::vector<WeightedReadBounds> &newWeightedReadBounds) ;
 	std::vector<GrainDescription> getGrainDescriptions() const;
-	void setLogger(std::function<void(const juce::String&)> loggerFunction);
+	void setLogger(const std::function<void(const juce::String&)> &loggerFunction) const;
 	
 	void setParams();
 protected:
