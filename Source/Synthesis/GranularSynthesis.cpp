@@ -52,9 +52,9 @@ namespace {
  * returns all of them in arbitrary (but weighted) order.
  */
 using WeightedReadBounds = PolyGrain::WeightedReadBounds;
-std::vector<WeightedReadBounds> pickWeightedReadBoundsProbabilistically (std::vector<WeightedReadBounds> choices, int numToPick)
+std::vector<WeightedReadBounds> pickWeightedReadBoundsProbabilistically (const std::vector<WeightedReadBounds> &choices, const int numToPick)
 {
-	const int N = (int) choices.size();
+	const int N = static_cast<int>(choices.size());
 	if (N == 0 || numToPick <= 0){
 		return {};
 	}
@@ -175,8 +175,8 @@ void PolyGrain::setMultiReadBounds(const std::vector<WeightedReadBounds> &newWei
 		// for now, we will just have all grains use same read bounds.
 		// however, we may want to have some proportions of grains using different readbounds in the future.
 		const auto &b = pickedWeightedReadBounds[i];
-		assert ((b.bounds.begin >= 0.0) && (b.bounds.begin <= 1.0));
-		assert ((b.bounds.end >= 0.0) && (b.bounds.end <= 1.0));
+        assert (b.bounds.begin >= 0.0 && b.bounds.begin <= 1.0);
+        assert (b.bounds.end >= 0.0 && b.bounds.end <= 1.0);
 		
 		_grains[i].setReadBounds(b.bounds);
 		auto w = b.weight;
