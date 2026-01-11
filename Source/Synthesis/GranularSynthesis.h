@@ -108,19 +108,38 @@ struct ReadBounds {
 
 //========================================================================================================================================
 
-struct GrainwisePostProcessing
+class GrainwisePostProcessing
 {
-	float operator()(float x) const;	// single channel
-	
-	std::array<float, 2> operator()(std::array<float, 2> x){	// apply single to both channels
+public:
+    explicit GrainwisePostProcessing(GranularSynthSharedState *synth_shared_state) {
+        jassert(synth_shared_state != nullptr);
+        _synth_shared_state = synth_shared_state;
+    }
+
+	std::array<float, 2> operator()(std::array<float, 2> x, double fractionalSample) const {	// apply single to both channels
 		std::array<float, 2> retval {0.f, 0.f};
 		for (size_t i = 0; i < x.size(); ++i){
-			retval[i] = operator()(x[i]);
+			retval[i] = processChannel(x[i], fractionalSample);
 		}
 		return retval;
 	}
-	float drive {1.0f};
-	float makeup_gain {1.0f};
+    void setNormalization(float norm) {
+        _normalization = norm;
+    }
+    void setDrive(float drive) {
+        _drive = drive;
+    }
+    void setMakeupGain(float gain) {
+        _makeup_gain = gain;
+    }
+private:
+    float processChannel(float x, double t) const;	// single channel
+
+    float _normalization {0.f};
+	float _drive {1.0f};
+	float _makeup_gain {1.0f};
+
+    GranularSynthSharedState *_synth_shared_state;
 };
 
 class PolyGrain {
@@ -276,6 +295,7 @@ private:
     float _ratio_based_on_note {1.f}; // =1.f. later this may change according to a settable concert pitch
     float _amplitude_based_on_note {0.f};
 
+    float _grain_normalize_amount {0.f};    // works as lerp between no normalization to full normalization
 	float _grain_drive {1.0f};
 	float _grain_makeup_gain {1.0f};
 };

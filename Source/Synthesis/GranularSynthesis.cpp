@@ -339,7 +339,8 @@ void Grain::setParams(){
 	_plateau_lgr.setSigma(*apvts.getRawParameterValue("plateau_rand"));
 	_pan_lgr.setMu(1.f - *apvts.getRawParameterValue("pan"));	// makes more sense internally to reverse this
 	_pan_lgr.setSigma(*apvts.getRawParameterValue("pan_rand"));
-	
+
+    _grain_normalize_amount = *apvts.getRawParameterValue("fx_grain_normalize");
 	_grain_drive = *apvts.getRawParameterValue("fx_grain_drive");
 	_grain_makeup_gain = *apvts.getRawParameterValue("fx_makeup_gain");
 }
@@ -356,6 +357,7 @@ Grain::Grain(GranularSynthSharedState *const synth_shared_state,
 ,	_skew_lgr(_voice_shared_state->_gaussian_rng, {0.5f, 0.f})
 ,	_plateau_lgr(_voice_shared_state->_gaussian_rng, {1.f, 0.f})
 ,	_pan_lgr(_voice_shared_state->_gaussian_rng, {0.5f, 0.23f})
+,   _postProcessing(_synth_shared_state)
 {
 //#ifdef DBG
 //	_timed_printer = std::make_unique<nvs::util::TimedPrinter>(100);
@@ -466,8 +468,7 @@ double calculateSampleIndex(double const accum,
 }
 float calculateSample(juce::dsp::AudioBlock<float> const wave_block, double const sample_index,
     float const win,
-    float const velocity_amplitude,
-    float const signal_rms = 1.f)
+    float const velocity_amplitude)
 {
 	assert(wave_block.getNumChannels() > 0);
 	assert(wave_block.getNumSamples() > 0);
@@ -475,15 +476,13 @@ float calculateSample(juce::dsp::AudioBlock<float> const wave_block, double cons
 						gen::interpolationModes_e::hermite,
 						gen::boundsModes_e::wrap
 						>(wave_block.getChannelPointer(0), sample_index, wave_block.getNumSamples());
-
-    auto const normalizer = 1.f / std::max(signal_rms, 0.05f);
-	return win * velocity_amplitude * samp * normalizer;
+	return win * velocity_amplitude * samp;
 }
 float calculatePan(float pan_latch_val){
 	return memoryless::clamp(pan_latch_val, 0.f, 1.f) * std::numbers::pi * 0.5f;
 }
-void writeAudioToOuts(float const sample, float const pan_latch_val, GrainwisePostProcessing &postProcessing, Grain::outs &outs){
-	std::array<float, 2> const lr = postProcessing(gen::pol2car(sample, pan_latch_val));
+void writeAudioToOuts(float const sample, double fractionalIndex, float const pan_latch_val, GrainwisePostProcessing &postProcessing, Grain::outs &outs){
+	std::array<float, 2> const lr = postProcessing(gen::pol2car(sample, pan_latch_val), fractionalIndex);
 	outs.audio_L = lr[0];
 	outs.audio_R = lr[1];
 }
@@ -494,7 +493,7 @@ void processBusyness(float const window, nvs::gen::history<float> &busyHistory, 
 }
 }	// end anonymous namespace
 
-void Grain::setReadBounds(ReadBounds newReadBounds){
+void Grain::setReadBounds(const ReadBounds newReadBounds){
 	_upcoming_normalized_read_bounds = newReadBounds;
 
     // based on settings (?) we can query the corresponding loudness of the source to have a grainwise normalization...
@@ -505,14 +504,22 @@ void Grain::resetAccum() {
 void Grain::setAccum(const float newVal) {
 	_accum.set(newVal);
 }
-float GrainwisePostProcessing::operator()(float x) const {
+float GrainwisePostProcessing::processChannel(float x, double t) const {
 	float retval {0.f};
-	jassert (drive > 0);
-	x *= drive;
+
+    const float signal_rms = _synth_shared_state->_buffer._loudness_profile[static_cast<size_t>(t)];
+    float normalizer = 1.f / std::max(signal_rms, 0.05f);
+    static constexpr auto NORMALIZATION_TARGET_AMPLITUDE = 0.33;
+    normalizer = _normalization * normalizer * NORMALIZATION_TARGET_AMPLITUDE + (1.f - _normalization);
+
+    x *= normalizer;
+
+	jassert (_drive > 0);
+	x *= _drive;
 	retval = (2.f * x) / (1.f + std::sqrt(1.f + std::abs(x)));
-	retval /= (2.f * drive) / (1.f + std::sqrt(1.f + std::abs(drive)));
-	jassert(makeup_gain > 0.f);
-	retval *= makeup_gain;
+	retval /= (2.f * _drive) / (1.f + std::sqrt(1.f + std::abs(_drive)));
+	jassert(_makeup_gain > 0.f);
+	retval *= _makeup_gain;
 	return retval;
 }
 Grain::outs Grain::operator()(float const trig_in){
@@ -536,8 +543,9 @@ Grain::outs Grain::operator()(float const trig_in){
 
 	if (should_open_latches){
 		_normalized_read_bounds = _upcoming_normalized_read_bounds;
-		_postProcessing.drive = _grain_drive;
-		_postProcessing.makeup_gain = _grain_makeup_gain;
+	    _postProcessing.setNormalization(_grain_normalize_amount);
+		_postProcessing.setDrive(_grain_drive);
+		_postProcessing.setMakeupGain(_grain_makeup_gain);
 
 #if GRAIN_UPDATE_HACK
 		if (wantsToDisableFirstPlaythroughOfVoicesNote){
@@ -551,7 +559,7 @@ Grain::outs Grain::operator()(float const trig_in){
 	
 	if (_normalized_read_bounds.end - _normalized_read_bounds.begin == 0.0){	// protection for initialization case
 		_window = 0.f;
-		writeAudioToOuts(0.f, 0.f, _postProcessing, o);
+		writeAudioToOuts(0.f, 0.0, 0.f, _postProcessing, o);
 		processBusyness(_window, _busy_histo, o);
 		return o;
 	}
@@ -625,13 +633,11 @@ Grain::outs Grain::operator()(float const trig_in){
 								* _grain_weight_latch(_grain_weight, should_open_latches);
 #endif
 		;
-
-	    const float loudness_comp_factor = _synth_shared_state->_buffer._loudness_profile[static_cast<size_t>(_sample_index)];
-		return calculateSample(wave_block, _sample_index, _window, vel_amplitude, loudness_comp_factor);
+	    return calculateSample(wave_block, _sample_index, _window, vel_amplitude);
 	}();
 	_pan = calculatePan(_pan_lgr(should_open_latches));
 	
-	writeAudioToOuts(sample, _pan, _postProcessing, o);
+	writeAudioToOuts(sample, _sample_index, _pan, _postProcessing, o);
 	
 	processBusyness(_window, _busy_histo, o);
 	

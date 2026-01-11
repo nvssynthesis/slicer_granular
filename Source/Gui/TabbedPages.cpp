@@ -38,9 +38,11 @@ TabbedPagesComponent::TabbedPagesComponent (juce::AudioProcessorValueTreeState &
 									}//, juce::Slider::SliderStyle::LinearVertical
 								   ), true);
 	addTab ("Scanner", juce::Colours::transparentWhite, new BasicParameterPage(apvts,
-																			   {"scanner_rate", "scanner_amount"}, juce::Slider::SliderStyle::LinearVertical
+																			   {"scanner_rate", "scanner_amount"},
+																			   Slider::SliderStyle::LinearVertical
 																			   ), true);
 	addTab ("Fx", juce::Colours::transparentWhite, new BasicParameterPage(apvts,
-																		  {"fx_grain_drive", "fx_makeup_gain"}, juce::Slider::SliderStyle::LinearVertical
+																		  {"fx_grain_normalize", "fx_grain_drive", "fx_makeup_gain"}, juce::
+																		  Slider::SliderStyle::LinearVertical
 																		  ), true);
 }
