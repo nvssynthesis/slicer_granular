@@ -72,7 +72,8 @@ void WaveformComponent::drawMarkers(juce::Graphics& g, const MarkerType markerTy
 }
 namespace {
 void processLine(juce::Graphics& g, juce::Line<float> &, WaveformComponent::OnsetMarker const &){
-	g.setColour(juce::Colour(juce::Colours::blue).withMultipliedAlpha(0.75f));
+	g.setColour(juce::Colour(juce::Colours::blue).withMultipliedAlpha(0.1f));
+#pragma message("alpha should depend on neighboring onset density")
 }
 void processLine(juce::Graphics& g, juce::Line<float> &l, WaveformComponent::PositionMarker const &marker){
 	auto const regionHeight = l.getLength();
@@ -295,7 +296,10 @@ void WaveformComponent::paintContentsIfFileLoaded (juce::Graphics& g)
 							getLocalBounds(),
 							0.0,                                    // start time
 							thumbnail.getTotalLength(),             // end time
-							1.0f);                                  // vertical zoom
+							1.0f);                   // vertical zoom
+
+    // TODO: Draw envelope using (probably) juce::Path
+#pragma message("draw envelope")
 }
 
 //================================================================================================================================================
