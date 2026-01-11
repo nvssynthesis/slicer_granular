@@ -170,29 +170,45 @@ inline void calculateSymmetricEnvelope(const juce::dsp::AudioBlock<float>& audio
 
     // rectify and monoize
     std::vector<float> signal(numSamples);
+
+    const auto inputHPCoeffs = juce::dsp::IIR::Coefficients<float>::makeLowPass(sampleRate, 8000.0);
+    const auto inputLPCoeffs = juce::dsp::IIR::Coefficients<float>::makeHighPass(sampleRate, 100.0);
+
+    std::vector<std::unique_ptr<juce::dsp::IIR::Filter<float>>> inputHPFilters;
+    std::vector<std::unique_ptr<juce::dsp::IIR::Filter<float>>> inputLPFilters;
+    for (size_t chan = 0; chan < audioBlock.getNumChannels(); chan++) {
+        auto hpf = std::make_unique<juce::dsp::IIR::Filter<float>>();
+        auto lpf = std::make_unique<juce::dsp::IIR::Filter<float>>();
+        hpf->coefficients = inputHPCoeffs;
+        lpf->coefficients = inputLPCoeffs;
+        inputHPFilters.push_back(std::move(hpf));
+        inputLPFilters.push_back(std::move(lpf));
+    }
+
     for (size_t i = 0; i < numSamples; ++i)
     {
         float sum = 0.0f;
         for (size_t ch = 0; ch < audioBlock.getNumChannels(); ++ch) {
-            const auto val = audioBlock.getSample(ch, i);
+            auto val = audioBlock.getSample(ch, i);
+            val = inputHPFilters[ch]->processSample(val);
+            val = inputLPFilters[ch]->processSample(val);
             sum += val * val;   // accumulate the squares
         }
         signal[i] = sum / audioBlock.getNumChannels();
     }
 
-    const auto coeffs = juce::dsp::IIR::Coefficients<float>::makeLowPass(sampleRate, 20.0);
-    juce::dsp::IIR::Filter<float> filter;
-    filter.coefficients = coeffs;
+    juce::dsp::IIR::Filter<float> smoothingFilter;
+    smoothingFilter.coefficients = juce::dsp::IIR::Coefficients<float>::makeLowPass(sampleRate, 20.0);
 
     // bidirectional filtering: forward
-    filter.reset();
+    smoothingFilter.reset();
     for (auto& s : signal) {
-        s = filter.processSample(s);
+        s = smoothingFilter.processSample(s);
     }
     // bidirectional filtering: backward (and in-place)
-    filter.reset();
+    smoothingFilter.reset();
     for (int i = numSamples - 1; i >= 0; --i) {
-        envelope[i] = filter.processSample(signal[i]);
+        envelope[i] = smoothingFilter.processSample(signal[i]);
     }
     std::ranges::transform(envelope, envelope.begin(),[](const float x) {
         return std::sqrt(x);
