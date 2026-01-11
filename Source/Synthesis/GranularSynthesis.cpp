@@ -384,7 +384,7 @@ GrainDescription Grain::getGrainDescription() const {
 	assert(_synth_shared_state);
 	auto const N = _synth_shared_state->_buffer._wave_block.getNumSamples();
 
-	GrainDescription gd;
+	GrainDescription gd{};
 	gd.voice = _voice_shared_state->_voice_id;
 	gd.grain_id = _grain_id;
 	gd.position = nvs::gen::wrap01(_sample_index / N);
@@ -464,14 +464,20 @@ double calculateSampleIndex(double const accum,
 	double const sample_index = sample_rate_compensate_ratio * (accum - center_of_env) + position_in_samps;
 	return sample_index;
 }
-float calculateSample(juce::dsp::AudioBlock<float> const wave_block, double const sample_index, float const win, float const velocity_amplitude){
+float calculateSample(juce::dsp::AudioBlock<float> const wave_block, double const sample_index,
+    float const win,
+    float const velocity_amplitude,
+    float const signal_rms = 1.f)
+{
 	assert(wave_block.getNumChannels() > 0);
 	assert(wave_block.getNumSamples() > 0);
 	auto const samp = gen::peek<float,
 						gen::interpolationModes_e::hermite,
 						gen::boundsModes_e::wrap
 						>(wave_block.getChannelPointer(0), sample_index, wave_block.getNumSamples());
-	return win * velocity_amplitude * samp;
+
+    auto const normalizer = 1.f / std::max(signal_rms, 0.05f);
+	return win * velocity_amplitude * samp * normalizer;
 }
 float calculatePan(float pan_latch_val){
 	return memoryless::clamp(pan_latch_val, 0.f, 1.f) * std::numbers::pi * 0.5f;
@@ -490,14 +496,16 @@ void processBusyness(float const window, nvs::gen::history<float> &busyHistory, 
 
 void Grain::setReadBounds(ReadBounds newReadBounds){
 	_upcoming_normalized_read_bounds = newReadBounds;
+
+    // based on settings (?) we can query the corresponding loudness of the source to have a grainwise normalization...
 }
 void Grain::resetAccum() {
 	_accum.reset();
 }
-void Grain::setAccum(float newVal) {
+void Grain::setAccum(const float newVal) {
 	_accum.set(newVal);
 }
-float GrainwisePostProcessing::operator()(float x){
+float GrainwisePostProcessing::operator()(float x) const {
 	float retval {0.f};
 	jassert (drive > 0);
 	x *= drive;
@@ -617,7 +625,9 @@ Grain::outs Grain::operator()(float const trig_in){
 								* _grain_weight_latch(_grain_weight, should_open_latches);
 #endif
 		;
-		return calculateSample(wave_block, _sample_index, _window, vel_amplitude);
+
+	    const float loudness_comp_factor = _synth_shared_state->_buffer._loudness_profile[static_cast<size_t>(_sample_index)];
+		return calculateSample(wave_block, _sample_index, _window, vel_amplitude, loudness_comp_factor);
 	}();
 	_pan = calculatePan(_pan_lgr(should_open_latches));
 	

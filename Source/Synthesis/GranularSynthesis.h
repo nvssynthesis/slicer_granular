@@ -66,6 +66,7 @@ struct GranularSynthSharedState {
 	
 	struct Buffer {
 		juce::dsp::AudioBlock<float> _wave_block;
+	    std::vector<float> _loudness_profile;
 		double _file_sample_rate {0.0};
 		juce::int64 _audio_hash {0};
 	};
@@ -109,7 +110,7 @@ struct ReadBounds {
 
 struct GrainwisePostProcessing
 {
-	float operator()(float x);	// single channel
+	float operator()(float x) const;	// single channel
 	
 	std::array<float, 2> operator()(std::array<float, 2> x){	// apply single to both channels
 		std::array<float, 2> retval {0.f, 0.f};

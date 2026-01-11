@@ -99,7 +99,7 @@ void GranularVoice::renderNextBlock (juce::AudioBuffer< float > &outputBuffer, c
 
     const auto totalNumOutputChannels = outputBuffer.getNumChannels();
 
-    const auto envelopeVal = [startSample, numSamples, this, &outputBuffer] -> float {
+    const auto envelopeVal = [startSample, numSamples, totalNumOutputChannels, this, &outputBuffer] -> float {
         float env {1.0};
         for (auto samp = startSample; samp < startSample + numSamples; ++samp){
             env = adsr.getNextSample();
