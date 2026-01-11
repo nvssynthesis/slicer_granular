@@ -158,6 +158,24 @@ void PolyGrain::setReadBounds(const ReadBounds newReadBounds) {
 		g.setReadBounds(newReadBounds);
 	}
 }
+
+#pragma message("needs more benchmarking")
+float sqrtCached(const float x) {
+    // this is useful because many incoming weights should be identical
+    static constexpr size_t CACHE_SIZE = 16;
+    static std::array<std::pair<float, float>, CACHE_SIZE> cache{};
+    static size_t next_slot = 0;
+
+    for (const auto& [key, val] : cache) {
+        if (key == x) return val;
+    }
+
+    float answer = std::sqrt(x);
+    cache[next_slot] = {x, answer};
+    next_slot = (next_slot + 1) % CACHE_SIZE;
+
+    return answer;
+}
 void PolyGrain::setMultiReadBounds(const std::vector<WeightedReadBounds> &newWeightedReadBounds) {
 	
 	auto pickedWeightedReadBounds = pickWeightedReadBoundsEvenly(newWeightedReadBounds, static_cast<int>(_grains.size()));
@@ -181,7 +199,7 @@ void PolyGrain::setMultiReadBounds(const std::vector<WeightedReadBounds> &newWei
 		_grains[i].setReadBounds(b.bounds);
 		auto w = b.weight;
 		w *= w;
-		_grains[i].setWeight(w);
+		_grains[i].setWeight(sqrtCached(w));
 	}
 }
 
