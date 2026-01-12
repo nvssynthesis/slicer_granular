@@ -114,6 +114,9 @@ STRAXIOMIZE(v_axis);
 STRAXIOMIZE(nav_tendency_x);
 STRAXIOMIZE(nav_tendency_y);
 STRAXIOMIZE(histogram_equalization);
+STRAXIOMIZE(filtered_feature);
+STRAXIOMIZE(filtered_feature_min);
+STRAXIOMIZE(filtered_feature_max);
 
 STRAXIOMIZE(statistic);
 STRAXIOMIZE(mean);

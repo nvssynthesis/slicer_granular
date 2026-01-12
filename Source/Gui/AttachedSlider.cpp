@@ -43,8 +43,8 @@ void AttachedSlider::resized()
 		return;
 	}
 	auto r = getLocalBounds();
-	constexpr int extraBottomPadding = 12;
-	r.removeFromBottom (extraBottomPadding);
+	// constexpr int extraBottomPadding = 12;
+	// r.removeFromBottom (extraBottomPadding);
 	const auto bounds = r.toFloat();
 
 

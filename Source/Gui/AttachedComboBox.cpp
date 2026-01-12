@@ -17,8 +17,8 @@ AttachedComboBox::AttachedComboBox(APVTS &apvts, const ParameterDef &param)
 void AttachedComboBox::resized() {
 
     auto r = getLocalBounds();
-    constexpr int extraBottomPadding = 2;
-    r.removeFromBottom (extraBottomPadding);
+    // constexpr int extraBottomPadding = 2;
+    // r.removeFromBottom (extraBottomPadding);
     _comboBox.setBounds(r);
 
     return;
