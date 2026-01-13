@@ -137,6 +137,7 @@ inline const juce::String AudioFilePathAbsolute = "AudioFilePath (absolute)";
 
 STRAXIOMIZE(saveAnalysis);
 STRAXIOMIZE(onsetsAvailable);
+STRAXIOMIZE(shapedPointsAvailable);
 
 STRAXIOMIZE(tsn_granular);
 STRAXIOMIZE(Analyses);
