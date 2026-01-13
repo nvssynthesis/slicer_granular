@@ -370,7 +370,7 @@ inline const std::vector<ParameterDef> ALL_PARAMETERS = {
 
     ParameterDef::choice(nvs::axiom::filtered_feature, "Filtered Feature", "TSN", analysis::getFeaturesStringArray(), 16 /*spectral flatness for now, spectral entropy when available */, "timbre_space_cull"),
     ParameterDef::linear(nvs::axiom::filtered_feature_min, "Filtered Feature Minimum", "TSN", 0.f, 1.f, 0.f, "", 0.f, "timbre_space_cull"),
-    ParameterDef::linear(nvs::axiom::filtered_feature_max, "Filtered Feature Maximum", "TSN", 0.f, 1.f, 0.f, "", 0.f, "timbre_space_cull"),
+    ParameterDef::linear(nvs::axiom::filtered_feature_max, "Filtered Feature Maximum", "TSN", 0.f, 1.f, 1.f, "", 0.f, "timbre_space_cull"),
 
     ParameterDef::skewed("nav_manual_response", "Response","TSN", 0.01f, 4.f, 1.f, "", 0.5f, false, "nav_manual"),
     ParameterDef::skewed("nav_manual_overshoot", "Overshoot", "TSN", 0.55f, 24.f, 0.f, "", 0.3f, false, "nav_manual"),
