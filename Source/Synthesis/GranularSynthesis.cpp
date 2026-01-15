@@ -528,6 +528,10 @@ float GrainwisePostProcessing::processChannel(float x, double t) const {
 	float retval {0.f};
 
     // NEED TO WRAP t
+    const double L = static_cast<double>(_synth_shared_state->_buffer._loudness_profile.size());
+    t /= L;
+    t = nvs::memoryless::mspWrap(t);
+    t *= L;
 
     const float signal_rms = _synth_shared_state->_buffer._loudness_profile[static_cast<size_t>(t)];
     float normalizer = 1.f / std::max(signal_rms, 0.05f);
