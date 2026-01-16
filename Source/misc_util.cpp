@@ -50,8 +50,7 @@ bool SampleManagementGuts::loadAudioFile(const juce::File& file)
 	
 	auto reader = std::unique_ptr<juce::AudioFormatReader>(formatManager.createReaderFor(file));
 	if (!reader) {
-		std::cerr << "could not read file\n";
-		jassertfalse;
+		DBG("could not read file\n");
 		return false;
 	}
 	const auto lengthInSamps = static_cast<int>(reader->lengthInSamples);

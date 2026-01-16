@@ -31,6 +31,9 @@ void GranularEditorCommon::drawThumbnail() const {
 	if (sampleManagementGuts == nullptr){
 		return;
 	}
+    if (!sampleManagementGuts->hasValidAudio()) {
+        return;
+    }
 	jassert (0 < sampleManagementGuts->getLength());
 	jassert (0 < sampleManagementGuts->getNumChannels());
 	jassert (synthBuffer._file_sample_rate > 0);

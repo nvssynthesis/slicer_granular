@@ -109,6 +109,7 @@ void SlicerGranularAudioProcessor::readIntoBufferAndUpdateState(juce::File const
 	
 	if (!sampleManagementGuts.loadAudioFile(f)) {
 		writeToLog(fmt::format("readIntoBufferAndUpdateState: could not load file {}\n", fullPath.toStdString()));
+	    return;
 	}
 	
 	writeToLog("                                          ...file read successful");
