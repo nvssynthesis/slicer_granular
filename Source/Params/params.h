@@ -11,10 +11,12 @@
 #pragma once
 #include <tuple>
 #include <JuceHeader.h>
+#include "../StringAxiom.h"
 
 #ifdef TSN
 #include "Navigation/Navigator.h"
-#include "Analysis/Features.h"
+#include "Analysis/FeatureOperations.h"
+#include "Analysis/StatisticsOperations.h"
 #endif
 
 /*** TODO:

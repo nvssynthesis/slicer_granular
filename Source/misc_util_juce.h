@@ -4,6 +4,8 @@
 
 #pragma once
 #include <JuceHeader.h>
+#include "Synthesis/GrainDescription.h"
+#include "fmt/core.h"
 
 namespace nvs::util {
 
@@ -63,27 +65,7 @@ inline juce::String hashAudioData(const std::vector<float>& audioData) {
 	return hash.toHexString();
 }
 
-inline juce::String getAndMigrateAudioHash(juce::ValueTree& metadataTree) {
-    // a utility function to match against the hash coming from the key of older versions of the value tree
-    auto hash = metadataTree.getProperty(nvs::axiom::audioHash).toString();
-    if (hash.isEmpty()) {
-        hash = metadataTree.getProperty("waveformHash").toString();
-        if (hash.isNotEmpty()) {
-            // Migrate old to new
-            metadataTree.setProperty(nvs::axiom::audioHash, hash, nullptr);
-            metadataTree.removeProperty("waveformHash", nullptr);
-        }
-    }
-    if (hash.isEmpty()) {
-        hash = metadataTree.getProperty("AudioFileHash").toString();
-        if (hash.isNotEmpty()) {
-            // Migrate old to new
-            metadataTree.setProperty(nvs::axiom::audioHash, hash, nullptr);
-            metadataTree.removeProperty("AudioFileHash", nullptr);
-        }
-    }
-    return hash;
-}
+juce::String getAndMigrateAudioHash(juce::ValueTree& metadataTree);
 
 inline juce::String hashValueTree(const juce::ValueTree& settings)
 {
@@ -166,7 +148,7 @@ inline bool saveValueTreeToJSON(const juce::ValueTree& tree, const juce::File& f
 }
 
 
-struct TimedPrinter : public juce::Timer
+struct TimedPrinter final : public juce::Timer
 {
 	TimedPrinter(int intervalMs = 100)
 		: criticalSection_(std::make_unique<juce::CriticalSection>())

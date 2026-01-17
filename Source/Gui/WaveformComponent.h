@@ -20,6 +20,7 @@ TODO:
 #include "AttachedSlider.h"
 #include "../Synthesis/GrainDescription.h"
 #include "../misc_util.h"
+#include "IndexTypes.h"
 
 class SlicerGranularAudioProcessor;
 
@@ -48,7 +49,7 @@ public:
     //============================================================================================================
 	virtual void setThumbnailSource (const juce::AudioBuffer<float> *newSource, double sampleRate, juce::int64 hashCode);
     juce::int64 getHashCode() const;
-	void highlightOnsets(std::vector<nvs::util::WeightedIdx> const &currentIndices);
+	void highlightOnsets(std::vector<nvs::timbrespace::WeightedIdx> const &currentIndices);
 	//============================================================================================================
 	void mouseUp(juce::MouseEvent const &e) override;
 	//============================================================================================================

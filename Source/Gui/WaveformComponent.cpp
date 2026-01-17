@@ -181,7 +181,7 @@ void WaveformComponent::thumbnailChanged()
 	repaint();
 }
 
-void WaveformComponent::highlightOnsets(std::vector<nvs::util::WeightedIdx> const &currentIndices) {
+void WaveformComponent::highlightOnsets(std::vector<nvs::timbrespace::WeightedIdx> const &currentIndices) {
     std::vector<std::pair<double, double>> ranges;
     ranges.reserve(currentIndices.size());
 

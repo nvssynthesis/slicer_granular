@@ -3,7 +3,7 @@
 //
 
 #include "misc_util_juce.h"
-
+#include "StringAxiom.h"
 
 namespace nvs::util
 {
@@ -97,8 +97,29 @@ void SampleManagementGuts::clear()
 	waveformHash = juce::String();
 }
 
+juce::String getAndMigrateAudioHash(juce::ValueTree& metadataTree) {
+    // a utility function to match against the hash coming from the key of older versions of the value tree
+    auto hash = metadataTree.getProperty(nvs::axiom::audioHash).toString();
+    if (hash.isEmpty()) {
+        hash = metadataTree.getProperty("waveformHash").toString();
+        if (hash.isNotEmpty()) {
+            // Migrate old to new
+            metadataTree.setProperty(nvs::axiom::audioHash, hash, nullptr);
+            metadataTree.removeProperty("waveformHash", nullptr);
+        }
+    }
+    if (hash.isEmpty()) {
+        hash = metadataTree.getProperty("AudioFileHash").toString();
+        if (hash.isNotEmpty()) {
+            // Migrate old to new
+            metadataTree.setProperty(nvs::axiom::audioHash, hash, nullptr);
+            metadataTree.removeProperty("AudioFileHash", nullptr);
+        }
+    }
+    return hash;
+}
 
-	juce::String sanitizeXmlName(const juce::String& name)
+juce::String sanitizeXmlName(const juce::String& name)
 {
 	// Replace invalid characters with underscores
 	juce::String sanitized;
