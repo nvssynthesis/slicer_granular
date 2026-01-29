@@ -11,12 +11,12 @@
 #pragma once
 #include <tuple>
 #include <JuceHeader.h>
-#include "../StringAxiom.h"
 
 #ifdef TSN
+#include "../tsn-analyzer/Source/lib/StringAxiom.h"
 #include "Navigation/Navigator.h"
-#include "Analysis/FeatureOperations.h"
-#include "Analysis/StatisticsOperations.h"
+#include "FeatureOperations.h"
+#include "StatisticsOperations.h"
 #endif
 
 /*** TODO:
@@ -362,17 +362,17 @@ inline const std::vector<ParameterDef> ALL_PARAMETERS = {
 	ParameterDef::linear("nav_tendency_v", 			"Navigator Tendency V", "TSN", -1.f, 1.f, 0.f, "", 0.f, "tendency"),
 	ParameterDef::linear("nav_tendency_w", 			"Navigator Tendency W", "TSN", -1.f, 1.f, 0.f, "", 0.f, "tendency"),
 
-	ParameterDef::linear(nvs::axiom::histogram_equalization, "Histogram Equalization", "TSN", 0.f, 1.f, 0.f, "", 0.f, "timbre_space"),
+	ParameterDef::linear(nvs::axiom::tsn::histogram_equalization, "Histogram Equalization", "TSN", 0.f, 1.f, 0.f, "", 0.f, "timbre_space"),
     ParameterDef::choice("x_axis", "X Axis", "TSN", analysis::getFeaturesStringArray(), 0, "timbre_space"),
     ParameterDef::choice("y_axis", "Y Axis", "TSN", analysis::getFeaturesStringArray(), 1, "timbre_space"),
     ParameterDef::choice("z_axis", "Z Axis", "TSN", analysis::getFeaturesStringArray(), 2, "timbre_space"),
     ParameterDef::choice("u_axis", "U Axis", "TSN", analysis::getFeaturesStringArray(), 3, "timbre_space"),
     ParameterDef::choice("v_axis", "V Axis", "TSN", analysis::getFeaturesStringArray(), 4, "timbre_space"),
-    ParameterDef::choice(nvs::axiom::statistic, "statistic", "TSN", analysis::getStatisticsStringArray(), 0, "timbre_space"),
+    ParameterDef::choice(nvs::axiom::tsn::statistic, "statistic", "TSN", analysis::getStatisticsStringArray(), 0, "timbre_space"),
 
-    ParameterDef::choice(nvs::axiom::filtered_feature, "Filtered Feature", "TSN", analysis::getFeaturesStringArray(), 16 /*spectral flatness for now, spectral entropy when available */, "timbre_space_cull"),
-    ParameterDef::linear(nvs::axiom::filtered_feature_min, "Filtered Feature Minimum", "TSN", 0.f, 1.f, 0.f, "", 0.f, "timbre_space_cull"),
-    ParameterDef::linear(nvs::axiom::filtered_feature_max, "Filtered Feature Maximum", "TSN", 0.f, 1.f, 1.f, "", 0.f, "timbre_space_cull"),
+    ParameterDef::choice(nvs::axiom::tsn::filtered_feature, "Filtered Feature", "TSN", analysis::getFeaturesStringArray(), 16 /*spectral flatness for now, spectral entropy when available */, "timbre_space_cull"),
+    ParameterDef::linear(nvs::axiom::tsn::filtered_feature_min, "Filtered Feature Minimum", "TSN", 0.f, 1.f, 0.f, "", 0.f, "timbre_space_cull"),
+    ParameterDef::linear(nvs::axiom::tsn::filtered_feature_max, "Filtered Feature Maximum", "TSN", 0.f, 1.f, 1.f, "", 0.f, "timbre_space_cull"),
 
     ParameterDef::skewed("nav_manual_response", "Response","TSN", 0.01f, 4.f, 1.f, "", 0.5f, false, "nav_manual"),
     ParameterDef::skewed("nav_manual_overshoot", "Overshoot", "TSN", 0.55f, 24.f, 0.f, "", 0.3f, false, "nav_manual"),

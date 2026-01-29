@@ -1,6 +1,6 @@
 #include "SlicerGranularPluginProcessor.h"
 #include "SlicerGranularPluginEditor.h"
-#include "StringAxiom.h"
+#include "./StringAxiom.h"
 /*
  *TRY: 3POINT SLIDERS (2 THUMBS)
  *
