@@ -139,6 +139,8 @@ target_include_directories(slicer-granular
     PRIVATE
         Source
         nvs_libraries/nvs_libraries/include
+    PUBLIC
+        juce_utils
 )
 
 # Link JUCE modules
@@ -163,6 +165,7 @@ target_link_libraries(slicer-granular
         juce::juce_recommended_config_flags
         juce::juce_recommended_lto_flags
         juce::juce_recommended_warning_flags
+        juce_utils
 )
 
 # Compiler definitions

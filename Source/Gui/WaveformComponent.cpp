@@ -10,7 +10,7 @@
 
 #include "WaveformComponent.h"
 #include "../SlicerGranularPluginProcessor.h"
-#include "StringAxiom.h"
+#include "../slicer_granular/Source/StringAxiom.h"
 #include <ranges>
 
 WaveformComponent::WaveformComponent(SlicerGranularAudioProcessor &proc, const int sourceSamplesPerThumbnailSample)

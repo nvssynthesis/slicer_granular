@@ -4,3 +4,6 @@
 [submodule "JUCE"]
 	path = JUCE
 	url = https://github.com/juce-framework/JUCE.git
+[submodule "juce_utils"]
+	path = juce_utils
+	url = https://github.com/nvssynthesis/juce_utils.git
