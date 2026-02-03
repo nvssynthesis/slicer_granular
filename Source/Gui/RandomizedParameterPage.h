@@ -19,5 +19,5 @@ struct RandomizedParameterPage	:	public juce::Component
 private:
 	juce::OwnedArray<SliderColumn> sliders;
 	
-	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(RandomizedParameterPage);
+	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(RandomizedParameterPage)
 };

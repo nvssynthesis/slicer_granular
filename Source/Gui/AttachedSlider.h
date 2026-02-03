@@ -34,5 +34,5 @@ public:
 private:
 	String _param_name;
 	
-	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AttachedSlider);
+	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AttachedSlider)
 };

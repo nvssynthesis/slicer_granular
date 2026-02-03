@@ -18,12 +18,12 @@
 
 //==============================================================================
 
-struct GranularEditorCommon	:	public juce::ChangeListener
+struct GranularEditorCommon	:	public ChangeListener
 {
     explicit GranularEditorCommon(SlicerGranularAudioProcessor& p);
 	~GranularEditorCommon() override;	// remove listeners
 
-	void changeListenerCallback (juce::ChangeBroadcaster* source) override;
+	void changeListenerCallback (ChangeBroadcaster* source) override;
 protected:
 	void drawThumbnail() const;
 	virtual void displayGrainDescriptions();
@@ -43,44 +43,43 @@ protected:
 	nvs::util::SampleManagementGuts *sampleManagementGuts {nullptr};
 };
 
-inline void displayName(juce::Graphics& g, juce::Rectangle<int> bounds)
+inline void displayName(Graphics& g, Rectangle<int> bounds)
 {
-	g.setColour (juce::Colours::bisque);
+	g.setColour (Colours::bisque);
 	g.setFont (14.0f);
-	juce::String const s = juce::String(ProjectInfo::companyName) +
-		juce::String(" ") +
-		juce::String(ProjectInfo::projectName) +
-		juce::String(" version ") +
-		juce::String(ProjectInfo::versionString) +
-		juce::String("     ");
-	g.drawText (s, bounds, juce::Justification::bottomRight, true);
+	String const s = String(ProjectInfo::companyName) +
+		String(" ") +
+		String(ProjectInfo::projectName) +
+		String(" version ") +
+		String(ProjectInfo::versionString) +
+		String("     ");
+	g.drawText (s, bounds, Justification::bottomRight, true);
 }
 
 class Slicer_granularAudioProcessorEditor final
-:   public juce::AudioProcessorEditor
+:   public AudioProcessorEditor
 ,	public GranularEditorCommon
 {
 public:
     explicit Slicer_granularAudioProcessorEditor (SlicerGranularAudioProcessor&);
     //==============================================================================
-    void paint (juce::Graphics&) override;
+    void paint (Graphics&) override;
     void resized() override;
 private:	
-	std::array<juce::Colour, 5> gradientColors {
-		juce::Colours::darkred,
-		juce::Colours::darkred,
-		juce::Colours::red,
-		juce::Colours::darkred,
-		juce::Colours::black
+	std::array<Colour, 5> gradientColors {
+		Colours::darkred,
+		Colours::darkred,
+		Colours::red,
+		Colours::darkred,
+		Colours::black
 	};
 	size_t colourOffsetIndex {0};
 	
-    SlicerGranularAudioProcessor& audioProcessor;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Slicer_granularAudioProcessorEditor)
 };
 
 inline 
-int placeFileCompAndGrainBusyDisplay(const juce::Rectangle<int> localBounds, const int pad, GrainBusyDisplay &grainBusyDisplay, PresetPanel &presetPanel, int yStart) {
+int placeFileCompAndGrainBusyDisplay(const Rectangle<int> localBounds, const int pad, GrainBusyDisplay &grainBusyDisplay, PresetPanel &presetPanel, int yStart) {
     constexpr int fileCompAndGrainDisplayHeight = 26;
 	{
 		int const grainDisplayHeight = fileCompAndGrainDisplayHeight - pad;

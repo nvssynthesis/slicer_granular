@@ -18,7 +18,7 @@ class PresetPanel		:		public juce::Component
 {
 public:
 	PresetPanel(nvs::service::PresetManager &presetManager);
-	~PresetPanel();
+	~PresetPanel() override;
 	void loadPresetList() ;
 	
 	void comboBoxChanged(juce::ComboBox *cb) override;

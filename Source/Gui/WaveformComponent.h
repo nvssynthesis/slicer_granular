@@ -96,7 +96,7 @@ private:
 	
 	void paintContentsIfNoFileLoaded (juce::Graphics& g);
 	void paintContentsIfFileLoaded (juce::Graphics& g);
-	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(WaveformComponent);
+	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(WaveformComponent)
 };
 
 class WaveformAndPositionComponent	:	public WaveformComponent
@@ -115,5 +115,5 @@ private:
 	AttachedSlider positionSlider;
 	std::atomic<double> position;
 	
-	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(WaveformAndPositionComponent);
+	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(WaveformAndPositionComponent)
 };

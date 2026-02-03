@@ -32,11 +32,11 @@ enum class ParameterType {
 };
 
 struct ParameterDef {
-	juce::String ID;
-	juce::String displayName;  // for UI display (can differ from internal name)
-	juce::String groupName;
-	juce::String unitSuffix = "";  // e.g., "dB", "Hz", "%"
-	juce::String subGroupName = "";
+	String ID;
+	String displayName;  // for UI display (can differ from internal name)
+	String groupName;
+	String unitSuffix = "";  // e.g., "dB", "Hz", "%"
+	String subGroupName = "";
 	
 	struct FloatParamElements {
 		// core range values
@@ -50,14 +50,14 @@ struct ParameterDef {
 		std::function<float(float,float,float)> convertTo0To1 = nullptr;
 		std::function<float(float,float,float)> snapToLegalValue = nullptr;
 		
-		std::function<juce::String (float, int)> stringFromValue = nullptr;
-		std::function<float (const juce::String&)> valueFromString = nullptr;
+		std::function<String (float, int)> stringFromValue = nullptr;
+		std::function<float (const String&)> valueFromString = nullptr;
 		
 		int numDecimalPlaces = 2;
 	};
 	
 	struct ChoiceParamElements {
-		juce::StringArray choices;
+		StringArray choices;
 		int defaultChoiceIndex = 0;
 	};
 	
@@ -77,38 +77,38 @@ struct ParameterDef {
 	bool hasSubGroup() const { return !subGroupName.isEmpty(); }
 	
 	// convenience constructors for common parameter types
-	static ParameterDef linear(juce::StringRef ID, juce::StringRef displayName,
-							   juce::StringRef groupName,
+	static ParameterDef linear(StringRef ID, StringRef displayName,
+							   StringRef groupName,
 							   float min=0.f, float max=1.f, float defaultVal=0.f,
-							   juce::StringRef unitSuffix = "", float interval = 0.0f,
-							   juce::StringRef subGroupName = "");
+							   StringRef unitSuffix = "", float interval = 0.0f,
+							   StringRef subGroupName = "");
 	
-	static ParameterDef percent(juce::StringRef ID, juce::StringRef displayName,
-											juce::StringRef groupName,
+	static ParameterDef percent(StringRef ID, StringRef displayName,
+											StringRef groupName,
 								float min=0.f, float max=1.f, float defaultVal=0.f,
-								juce::StringRef subGroupName = "",
+								StringRef subGroupName = "",
 								float skew=1.f, bool useSymmetricSkew=false);
 	
-	static ParameterDef skewed(juce::StringRef ID, juce::StringRef displayName,
-									juce::StringRef groupName,
+	static ParameterDef skewed(StringRef ID, StringRef displayName,
+									StringRef groupName,
 									float min=0.f, float max=1.f, float defaultVal=0.f,
-									juce::StringRef unitSuffix = "",
+									StringRef unitSuffix = "",
 									float skew=0.3f, bool useSymmetricSkew=false,
-								   juce::StringRef subGroupName = "");
+								   StringRef subGroupName = "");
 	
-	static ParameterDef decibel(juce::StringRef ID, juce::StringRef displayName,
-								juce::StringRef groupName,
+	static ParameterDef decibel(StringRef ID, StringRef displayName,
+								StringRef groupName,
 								float minDB, float maxDB, float defaultDB=0.f,
-								juce::StringRef subGroupName = "");
+								StringRef subGroupName = "");
 
-    static ParameterDef choice(juce::StringRef ID, juce::StringRef displayName,
-                            juce::StringRef groupName,
-                            const juce::StringArray &elements,
+    static ParameterDef choice(StringRef ID, StringRef displayName,
+                            StringRef groupName,
+                            const StringArray &elements,
                             int defaultChoiceIdx=0,
-                            juce::StringRef subGroupName = "");
+                            StringRef subGroupName = "");
 
 	template<typename T>
-	juce::NormalisableRange<T> createNormalisableRange() const {
+	NormalisableRange<T> createNormalisableRange() const {
 		static_assert(std::is_same_v<T, float> || std::is_same_v<T, double>,
 					  "T must be float or double");
 		auto const fpe = std::get<FloatParamElements>(elementsVar);
@@ -125,10 +125,10 @@ struct ParameterDef {
 			auto to0To1 = [convertTo0To1Copy](T start, T end, T val) -> T {
 				return static_cast<T>(convertTo0To1Copy(static_cast<float>(start), static_cast<float>(end), static_cast<float>(val)));
 			};
-			auto stringFromValue = [stringFromValueCopy](T val, const int numDecimalPlaces) -> juce::String {
+			auto stringFromValue = [stringFromValueCopy](T val, const int numDecimalPlaces) -> String {
 				return stringFromValueCopy(static_cast<float>(val), numDecimalPlaces);
 			};
-			auto valueFromString = [valueFromStringCopy](const juce::String &s) -> T {
+			auto valueFromString = [valueFromStringCopy](const String &s) -> T {
 				return valueFromStringCopy(s);
 			};
 			
@@ -140,26 +140,26 @@ struct ParameterDef {
 				};
 			}
 			
-			return juce::NormalisableRange<T>(static_cast<T>(fpe.min), static_cast<T>(fpe.max),
+			return NormalisableRange<T>(static_cast<T>(fpe.min), static_cast<T>(fpe.max),
 											  from0To1, to0To1, snapFunc);
 		} else {
 			// Standard constructor
-			return juce::NormalisableRange<T>(static_cast<T>(fpe.min), static_cast<T>(fpe.max),
+			return NormalisableRange<T>(static_cast<T>(fpe.min), static_cast<T>(fpe.max),
 											  static_cast<T>(fpe.interval), static_cast<T>(fpe.skew),
 											  fpe.symmetrical);
 		}
 	}
 	
 	// convenience methods for JUCE components
-	juce::NormalisableRange<float> getFloatRange() const { return createNormalisableRange<float>(); }
-	juce::NormalisableRange<double> getDoubleRange() const { return createNormalisableRange<double>(); }
+	NormalisableRange<float> getFloatRange() const { return createNormalisableRange<float>(); }
+	NormalisableRange<double> getDoubleRange() const { return createNormalisableRange<double>(); }
 };
 
-inline ParameterDef ParameterDef::linear(const juce::StringRef ID, juce::StringRef displayName,
-										const juce::StringRef groupName,
+inline ParameterDef ParameterDef::linear(const StringRef ID, StringRef displayName,
+										const StringRef groupName,
 										const float min, const float max, const float defaultVal,
-										const juce::StringRef unitSuffix, const float interval,
-										const juce::StringRef subGroupName) {
+										const StringRef unitSuffix, const float interval,
+										const StringRef subGroupName) {
 	ParameterDef param;
 	param.ID			= ID;
 	param.displayName	= displayName;
@@ -177,12 +177,12 @@ inline ParameterDef ParameterDef::linear(const juce::StringRef ID, juce::StringR
 	return param;
 }
 
-inline ParameterDef ParameterDef::skewed(const juce::StringRef ID, const juce::StringRef displayName,
-											const juce::StringRef groupName,
+inline ParameterDef ParameterDef::skewed(const StringRef ID, const StringRef displayName,
+											const StringRef groupName,
 											const float min, const float max, const float defaultVal,
-											const juce::StringRef unitSuffix,
+											const StringRef unitSuffix,
 											const float skew, const bool useSymmetricSkew,
-											const juce::StringRef subGroupName) {
+											const StringRef subGroupName) {
 	ParameterDef param;
 	param.ID			= ID;
 	param.displayName	= displayName;
@@ -202,10 +202,10 @@ inline ParameterDef ParameterDef::skewed(const juce::StringRef ID, const juce::S
 	return param;
 }
 
-inline ParameterDef ParameterDef::percent(const juce::StringRef ID, const juce::StringRef displayName,
-										const juce::StringRef groupName,
+inline ParameterDef ParameterDef::percent(const StringRef ID, const StringRef displayName,
+										const StringRef groupName,
 										const float min, const float max, const float defaultVal,
-										const juce::StringRef subGroupName,
+										const StringRef subGroupName,
 										const float skew, const bool useSymmetricSkew) {
 	ParameterDef param;
 	param.ID			= ID;
@@ -230,12 +230,12 @@ inline ParameterDef ParameterDef::percent(const juce::StringRef ID, const juce::
 		.interval		= 0.0f,
 		.numDecimalPlaces = numDecimals,
 		
-		.stringFromValue = [suff = param.unitSuffix, numDecimals](const float val, int) -> juce::String
+		.stringFromValue = [suff = param.unitSuffix, numDecimals](const float val, int) -> String
 		{
 			float percentageVal = val * 100.0f;
-			return juce::String(percentageVal, numDecimals) + suff;
+			return String(percentageVal, numDecimals) + suff;
 		},
-		.valueFromString = [](juce::String const &text) -> float
+		.valueFromString = [](String const &text) -> float
 		{
 			return text.getFloatValue() * 0.01f;
 		}
@@ -244,11 +244,11 @@ inline ParameterDef ParameterDef::percent(const juce::StringRef ID, const juce::
 	return param;
 }
 
-inline ParameterDef ParameterDef::decibel (const juce::StringRef ID,
-										const juce::StringRef displayName,
-										const juce::StringRef groupName,
+inline ParameterDef ParameterDef::decibel (const StringRef ID,
+										const StringRef displayName,
+										const StringRef groupName,
 										const float minDB, const float maxDB, const float defaultDB,
-										const juce::StringRef subGroupName)
+										const StringRef subGroupName)
 {
 	ParameterDef param;
 	param.ID 				= ID;
@@ -257,9 +257,9 @@ inline ParameterDef ParameterDef::decibel (const juce::StringRef ID,
 	param.unitSuffix 		= " dB";
 	param.subGroupName 		= subGroupName;
 	
-	const float minGain = juce::Decibels::decibelsToGain(minDB, minDB);
-	const float maxGain = juce::Decibels::decibelsToGain(maxDB, minDB);
-	const float defaultGain = juce::Decibels::decibelsToGain(defaultDB, minDB);
+	const float minGain = Decibels::decibelsToGain(minDB, minDB);
+	const float maxGain = Decibels::decibelsToGain(maxDB, minDB);
+	const float defaultGain = Decibels::decibelsToGain(defaultDB, minDB);
     constexpr float minusInfinityDB = -100.0f;
 	
 	param.elementsVar = FloatParamElements
@@ -270,39 +270,39 @@ inline ParameterDef ParameterDef::decibel (const juce::StringRef ID,
 		.numDecimalPlaces = 1,
 		
 		// Convert normalized [0,1] to dB, then to gain for storage
-		.convertFrom0To1 = [minDB, maxDB, minusInfinityDB](float, float, const float normVal) -> float
+		.convertFrom0To1 = [minDB, maxDB](float, float, const float normVal) -> float
 		{
 			const float dbVal = minDB + normVal * (maxDB - minDB);
-			return juce::Decibels::decibelsToGain(dbVal, minusInfinityDB);
+			return Decibels::decibelsToGain(dbVal, minusInfinityDB);
 		},
-		.valueFromString = [minusInfinityDB](juce::String const& text) -> float
+		.valueFromString = [](String const& text) -> float
 		{
 			const float dbVal = text.getFloatValue();
-			return juce::Decibels::decibelsToGain(dbVal, minusInfinityDB);
+			return Decibels::decibelsToGain(dbVal, minusInfinityDB);
 		},
 		
 		// Convert gain to dB, then to normalized [0,1]
-		.convertTo0To1 = [minDB, maxDB, minusInfinityDB](float, float, const float gainVal) -> float
+		.convertTo0To1 = [minDB, maxDB](float, float, const float gainVal) -> float
 		{
-			const float dbVal = juce::Decibels::gainToDecibels(gainVal, minusInfinityDB);
+			const float dbVal = Decibels::gainToDecibels(gainVal, minusInfinityDB);
 			const float normalized = (dbVal - minDB) / (maxDB - minDB);
 			// Clamp to handle floating point precision issues
-			return juce::jlimit(0.0f, 1.0f, normalized);
+			return jlimit(0.0f, 1.0f, normalized);
 		},
-		.stringFromValue = [minusInfinityDB](const float gainVal, const int numDecimalPlaces) -> juce::String
+		.stringFromValue = [](const float gainVal, const int numDecimalPlaces) -> String
 		{
-			const float dbVal = juce::Decibels::gainToDecibels(gainVal, minusInfinityDB);
-			return juce::String(dbVal, numDecimalPlaces) + " dB";
+			const float dbVal = Decibels::gainToDecibels(gainVal, minusInfinityDB);
+			return String(dbVal, numDecimalPlaces) + " dB";
 		}
 	};
 	return param;
 }
-inline ParameterDef ParameterDef::choice(const juce::StringRef ID,
-                            const juce::StringRef displayName,
-                            const juce::StringRef groupName,
-                            const juce::StringArray &elements,
+inline ParameterDef ParameterDef::choice(const StringRef ID,
+                            const StringRef displayName,
+                            const StringRef groupName,
+                            const StringArray &elements,
                             const int defaultChoiceIdx,
-                            const juce::StringRef subGroupName) {
+                            const StringRef subGroupName) {
     ParameterDef param;
     param.ID			= ID;
     param.displayName	= displayName;
@@ -327,7 +327,7 @@ inline const std::vector<ParameterDef> ALL_PARAMETERS = {
 	ParameterDef::linear("transpose", 	"Transpose", 	"Main", -60.f,	    60.f,		0.f, 	" semi"),
 	ParameterDef::percent("position", "Position", 		"Main",   0.f,	     1.f,		0.f),
 	ParameterDef::skewed("speed", "Speed", 			 	"Main",  0.1f, 	  1000.f, 		50.f,	"hz"),
-	ParameterDef::percent("duration", "Duration", 	 	"Main", 1e-6f, 	  	 1.f, 		0.1f,	"", 0.3, false),	// percent with skew
+	ParameterDef::percent("duration", "Duration", 	 	"Main", 1e-6f, 	  	 1.f, 		0.1f,	"", 0.3f, false),	// percent with skew
 	ParameterDef::percent("skew", 	"Skew", 			"Main",	skeps, 	1.f-skeps, 		0.5f),						// percent with clipped range
 	ParameterDef::skewed("plateau", "Plateau", 		 	"Main",	0.01f, 		10.f, 		1.f, 	""),
 	ParameterDef::percent("pan", 	"Pan", 			 	"Main", 0.f,		 1.f,		0.5f),
@@ -387,8 +387,8 @@ inline const std::vector<ParameterDef> ALL_PARAMETERS = {
     ParameterDef::linear("nav_lorenz_c",  "c", "TSN", 1.5f, 4.f, 2.67f, "", 0.f, "nav_lorenz"),
     ParameterDef::skewed("nav_lorenz_d_t",  "d_t", "TSN", 0.f, 0.01f, 0.005f, "", 0.33f, false, "nav_lorenz"),
 
-    ParameterDef::skewed("nav_hyperchaos_a", "a", "TSN", 10e-5, 10e-1, 10e-4, "", 0.2f, false, "nav_hyperchaos"),
-    ParameterDef::skewed("nav_hyperchaos_b", "b", "TSN", 10e-5, 10e-1, 10e-4, "", 0.2f, false, "nav_hyperchaos"),
+    ParameterDef::skewed("nav_hyperchaos_a", "a", "TSN", 10e-5f, 10e-1f, 10e-4f, "", 0.2f, false, "nav_hyperchaos"),
+    ParameterDef::skewed("nav_hyperchaos_b", "b", "TSN", 10e-5f, 10e-1f, 10e-4f, "", 0.2f, false, "nav_hyperchaos"),
     ParameterDef::skewed("nav_hyperchaos_d_t", "d_t", "TSN", 0.f, 0.5f, 0.005f, "", 0.33f, false, "nav_hyperchaos"),
 
     ParameterDef::linear("nav_rotation_x", "Roll", "TSN", 0.f, 1.f, 0.f, "", 0.f, "nav_common"),
@@ -398,7 +398,7 @@ inline const std::vector<ParameterDef> ALL_PARAMETERS = {
 
 #endif
 
-    ParameterDef::linear("fx_grain_normalize", "Grain Normalization", "Fx", 0, 1, 0.1, "", 0, "normalization"),
+    ParameterDef::linear("fx_grain_normalize", "Grain Normalization", "Fx", 0, 1, 0.1f, "", 0, "normalization"),
 	ParameterDef::decibel("fx_grain_drive", "Grain Drive", "Fx", -10.f, 60.f, 0.f, "drive"),
 	ParameterDef::decibel("fx_makeup_gain", "Makeup Gain", "Fx", -40.f, 20.f, 0.f, "drive")
 };
@@ -406,14 +406,14 @@ inline const std::vector<ParameterDef> ALL_PARAMETERS = {
 
 struct ParameterRegistry {
 public:
-	static std::vector<ParameterDef> getParametersForGroup(juce::StringRef groupName);
-	static std::vector<ParameterDef> getParametersForSubGroup(juce::StringRef groupName);
-	static const ParameterDef& getParameterByName(juce::StringRef name);
-	static const ParameterDef& getParameterByID(juce::StringRef id);
-	static juce::StringArray getAllParameterNames();
-	static size_t getParameterIndex(juce::StringRef name);
+	static std::vector<ParameterDef> getParametersForGroup(StringRef groupName);
+	static std::vector<ParameterDef> getParametersForSubGroup(StringRef groupName);
+	static const ParameterDef& getParameterByName(StringRef name);
+	static const ParameterDef& getParameterByID(StringRef id);
+	static StringArray getAllParameterNames();
+	static size_t getParameterIndex(StringRef name);
 };
-inline std::vector<ParameterDef> ParameterRegistry::getParametersForGroup(juce::StringRef groupName){
+inline std::vector<ParameterDef> ParameterRegistry::getParametersForGroup(StringRef groupName){
 	std::vector<ParameterDef> params;
 	for (auto const &pd : ALL_PARAMETERS){
 		if (pd.groupName.equalsIgnoreCase(groupName)){
@@ -422,7 +422,7 @@ inline std::vector<ParameterDef> ParameterRegistry::getParametersForGroup(juce::
 	}
 	return params;
 }
-inline std::vector<ParameterDef> ParameterRegistry::getParametersForSubGroup(juce::StringRef subGroupName){
+inline std::vector<ParameterDef> ParameterRegistry::getParametersForSubGroup(StringRef subGroupName){
 	std::vector<ParameterDef> params;
 	for (auto const &pd : ALL_PARAMETERS){
 		if (pd.subGroupName.equalsIgnoreCase(subGroupName)){
@@ -431,7 +431,7 @@ inline std::vector<ParameterDef> ParameterRegistry::getParametersForSubGroup(juc
 	}
 	return params;
 }
-inline const ParameterDef& ParameterRegistry::getParameterByID(juce::StringRef id) {
+inline const ParameterDef& ParameterRegistry::getParameterByID(StringRef id) {
 	auto it = std::find_if(ALL_PARAMETERS.begin(), ALL_PARAMETERS.end(),
 	[id](ParameterDef const &pd){
 		return pd.ID.equalsIgnoreCase(id);
@@ -442,20 +442,21 @@ inline const ParameterDef& ParameterRegistry::getParameterByID(juce::StringRef i
 	jassertfalse;
 	return ALL_PARAMETERS[0];	// just to avoid warning about not returning for all control paths
 }
-inline size_t ParameterRegistry::getParameterIndex(juce::StringRef name) {
-	auto it = std::find_if(ALL_PARAMETERS.begin(), ALL_PARAMETERS.end(),
-	[name](ParameterDef const &pd){
-		return pd.displayName.equalsIgnoreCase(name);
-	});
+inline size_t ParameterRegistry::getParameterIndex(StringRef name) {
+	const auto it = std::ranges::find_if(ALL_PARAMETERS,
+                                   [name](ParameterDef const &pd){
+                                       return pd.displayName.equalsIgnoreCase(name);
+                                   });
 	if (it != ALL_PARAMETERS.end()){
-		size_t index = std::distance(ALL_PARAMETERS.begin(), it);
-		return index;
+		const auto index = std::distance(ALL_PARAMETERS.begin(), it);
+	    jassert(index >= 0);
+		return static_cast<size_t>(index);
 	}
 	jassertfalse;
 	return 0; // just to avoid warning about not returning for all control paths
 }
-inline juce::StringArray ParameterRegistry::getAllParameterNames() {
-	juce::StringArray a;
+inline StringArray ParameterRegistry::getAllParameterNames() {
+	StringArray a;
 	for (auto const &pd : ALL_PARAMETERS){
 		a.add(pd.displayName);
 	}

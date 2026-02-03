@@ -10,17 +10,22 @@
 
 #include "GrainBusyDisplay.h"
 
-void GrainBusyDisplay::paint(juce::Graphics &g){
-	juce::Colour clearColour {juce::Colour(juce::uint8(0), juce::uint8(0), juce::uint8(0), juce::uint8(0))};
+void GrainBusyDisplay::paint(Graphics &g){
+	const auto clearColour {Colour(
+	    static_cast<juce::uint8>(0),
+	    static_cast<juce::uint8>(0),
+	    static_cast<juce::uint8>(0),
+	    static_cast<juce::uint8>(0))
+	};
 	g.setColour(clearColour);
 	g.fillAll();
 	
 	g.setColour(juce::Colours::black);
 	for (size_t i = 0; i < _statuses.size(); ++i){
-		auto const voiceAndGrain = getVoiceAndGrain(i);
-		int status = _statuses[getIndex(voiceAndGrain.voice, voiceAndGrain.grain)];
-		int const x = voiceAndGrain.grain * _sizePerGrain;
-		int const y = voiceAndGrain.voice * _sizePerGrain;
+	    const auto voiceAndGrain = getVoiceAndGrain(i);
+		const int status = _statuses[getIndex(voiceAndGrain.voice, voiceAndGrain.grain)];
+	    const int x = static_cast<int>(std::round(static_cast<float>(voiceAndGrain.grain) * _sizePerGrain));
+		const int y = static_cast<int>(std::round(static_cast<float>(voiceAndGrain.voice) * _sizePerGrain));
 		if (status){
 			g.fillRect(x, y, (int)_sizePerGrain, (int)_sizePerGrain);
 		}

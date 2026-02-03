@@ -82,7 +82,6 @@ void GranularEditorCommon::changeListenerCallback (juce::ChangeBroadcaster* sour
 Slicer_granularAudioProcessorEditor::Slicer_granularAudioProcessorEditor (SlicerGranularAudioProcessor& p)
 :   AudioProcessorEditor (&p)
 ,	GranularEditorCommon(p)
-,	audioProcessor (p)
 {
     waveformComponent = std::make_unique<WaveformAndPositionComponent>(audioProcessor);
     jassert (waveformComponent != nullptr);

@@ -23,10 +23,10 @@ public:
 	void paint(juce::Graphics &g) override;
 	void resized() override;
 	
-	void setStatus(int grain, int voice, bool status){
+	void setStatus(const size_t grain, const size_t voice, const bool status){
 		_statuses[getIndex(voice, grain)] = status;
 	}
-	void setSizePerGrain(float s) {
+	void setSizePerGrain(const float s) {
 		_sizePerGrain = s;
 	}
 	
