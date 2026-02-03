@@ -237,14 +237,14 @@ public:
 	};
 	
 	void setReadBounds(ReadBounds newReadBounds);
-	void setWeight(double w) {
-		_grain_weight = w;
+	void setWeight(const double w) {
+		_grain_weight = static_cast<float>(w);
 	}
 	outs operator()(float trig_in);
 	
 	GrainDescription getGrainDescription() const;
 	
-	void setFirstPlaythroughOfVoicesNote(bool isFirstPlaythrough){
+	void setFirstPlaythroughOfVoicesNote(const bool isFirstPlaythrough){
 		firstPlaythroughOfVoicesNote = isFirstPlaythrough;
 	}
 	void setParams();
@@ -252,7 +252,7 @@ private:
 	GranularSynthSharedState *const _synth_shared_state;
 	GranularVoiceSharedState *const _voice_shared_state;
 	
-	void writeToLog(const juce::String &s){
+	void writeToLog(const String &s) {
 		assert(_synth_shared_state != nullptr);
 		_synth_shared_state->_logger_func(s);
 	}
