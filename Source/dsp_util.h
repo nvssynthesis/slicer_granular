@@ -137,9 +137,9 @@ struct SemitonesRatioTable {
 
     constexpr SemitonesRatioTable()	:	values()
     {
-        double incr = range() / static_cast<double>(reso);
+        const double incr = range() / static_cast<double>(reso);
         int i = 0;
-        for (double x = static_cast<double>(minSemitones); x < static_cast<double>(maxSemitones);
+        for (auto x = static_cast<double>(minSemitones); x < static_cast<double>(maxSemitones);
              x += incr)
         {
             values[i] = sprout::pow(semitoneRatio, static_cast<float>(x));
@@ -189,12 +189,12 @@ inline void calculateSymmetricEnvelope(const juce::dsp::AudioBlock<float>& audio
     {
         float sum = 0.0f;
         for (size_t ch = 0; ch < audioBlock.getNumChannels(); ++ch) {
-            auto val = audioBlock.getSample(ch, i);
+            auto val = audioBlock.getSample(static_cast<int>(ch), static_cast<int>(i));
             val = inputHPFilters[ch]->processSample(val);
             val = inputLPFilters[ch]->processSample(val);
             sum += val * val;   // accumulate the squares
         }
-        signal[i] = sum / audioBlock.getNumChannels();
+        signal[i] = sum / static_cast<float>(audioBlock.getNumChannels());
     }
 
     juce::dsp::IIR::Filter<float> smoothingFilter;

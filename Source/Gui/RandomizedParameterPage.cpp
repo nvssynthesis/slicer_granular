@@ -22,15 +22,54 @@ RandomizedParameterPage::RandomizedParameterPage(AudioProcessorValueTreeState& a
 
     {
         auto cb = std::make_unique<ComboBoxHider>(StringArray{"Frequency Options", "Freq. Options", "Freq. Opt.", "Freq Opt", "Options", "Opt.", "Opt", ""});
-        cb->cb.addSectionHeading("Randomization Mode");
-        cb->cb.addItemList({nvs::axiom::Continuous, nvs::axiom::Octaves}, 1);
+        ComboBox &underlyingCB = cb->cb;
+        underlyingCB.addSectionHeading("Randomization Mode");
+        underlyingCB.addItemList({nvs::axiom::Continuous, nvs::axiom::Octaves}, 1);
     #ifdef TSN
-        cb->cb.addSectionHeading("Pitchify");
-        cb->cb.addItemList({"Yes", "No"}, 3);
+        underlyingCB.addSectionHeading("Pitchify");
+        underlyingCB.addItemList({"On", "Off"}, 3);
     #endif
         comboBoxes.add(std::move(cb));
-        comboBoxes[0]->cb.onChange = [this]() {
+        comboBoxes[0]->cb.onChange = [this, &apvts]() {
             const Value val = comboBoxes[0]->cb.getSelectedIdAsValue();
+            switch (static_cast<int>(val.getValue())) {
+                [[unlikely]]
+                default: {
+                    break;
+                }
+                case 0:
+                    break;
+                case 1: {
+                    RangedAudioParameter *fRandModeParam = apvts.getParameter(nvs::axiom::frequency_randomization_mode);
+                    if (fRandModeParam != nullptr) {
+                        fRandModeParam->setValueNotifyingHost(0.f);
+                    }
+                    break;
+                }
+                case 2: {
+                    RangedAudioParameter *fRandModeParam = apvts.getParameter(nvs::axiom::frequency_randomization_mode);
+                    if (fRandModeParam != nullptr) {
+                        fRandModeParam->setValueNotifyingHost(1.f);
+                    }
+                    break;
+                }
+#ifdef TSN
+                case 3: {
+                    RangedAudioParameter *pitchifyParam = apvts.getParameter(nvs::axiom::tsn::pitchify);
+                    if (pitchifyParam != nullptr) {
+                        pitchifyParam->setValueNotifyingHost(0.f);
+                    }
+                    break;
+                }
+                case 4: {
+                    RangedAudioParameter *pitchifyParam = apvts.getParameter(nvs::axiom::tsn::pitchify);
+                    if (pitchifyParam != nullptr) {
+                        pitchifyParam->setValueNotifyingHost(1.f);
+                    }
+                    break;
+                }
+#endif
+            }
         };
         addAndMakeVisible(comboBoxes[0]);
     }

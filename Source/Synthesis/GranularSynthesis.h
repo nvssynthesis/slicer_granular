@@ -294,6 +294,10 @@ private:
 	// these get used both for operator() as well as passing on to gui via getGrainDescription
     double _sample_index {0.0};
     float _waveform_read_rate {0.0};
+    enum class FrequencyRandomizationMode {
+        Continuous = 0,
+        Octaves
+    } _frequencyRandomizationMode;
     float _window {0.f};
 	float _pan {0.f};
 	float _grain_weight {1.f};

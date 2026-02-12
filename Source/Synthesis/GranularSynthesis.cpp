@@ -22,6 +22,8 @@
 #include <numbers>
 #include <random>
 #include <span>
+
+#include "StringAxiom.h"
 #if defined(DEBUG_BUILD) | defined(DEBUG) | defined(_DEBUG)
 #include "fmt/core.h"
 #endif
@@ -347,6 +349,8 @@ std::vector<GrainDescription> PolyGrain::getGrainDescriptions() const {
 void Grain::setParams(){
 	auto const &apvts = _synth_shared_state->_apvts;
 	_transpose_lgr.setMu(*apvts.getRawParameterValue("transpose"));
+    _frequencyRandomizationMode = (*apvts.getRawParameterValue(nvs::axiom::frequency_randomization_mode))
+    == 0.f ? FrequencyRandomizationMode::Continuous : FrequencyRandomizationMode::Octaves;
 	_transpose_lgr.setSigma(24.0f * (*apvts.getRawParameterValue("transpose_rand")));
 	_duration_ler.setMu(*apvts.getRawParameterValue("duration"));
 	_duration_ler.setSigma(*apvts.getRawParameterValue("duration_rand"));
@@ -560,10 +564,12 @@ Grain::outs Grain::operator()(float const trig_in){
 	
 	bool const should_open_latches = _busy_histo.val ? false : static_cast<bool>(trig_in);
 
-	
+    static constexpr float twelfth = 1.f / 12.f;
+	const float randomSemitoneOffset = _frequencyRandomizationMode == FrequencyRandomizationMode::Continuous ? _transpose_lgr(should_open_latches)
+	    :   12.f * std::round( _transpose_lgr(should_open_latches) * twelfth );
 	_waveform_read_rate = calculateTransposeMultiplier(_ratio_for_note_latch(_ratio_based_on_note, should_open_latches),
-													   fastSemitonesToRatio(_transpose_lgr(should_open_latches)));
-	_accum(_waveform_read_rate, static_cast<bool>(should_open_latches));
+													   fastSemitonesToRatio(randomSemitoneOffset));
+	_accum(_waveform_read_rate, should_open_latches);
 	
 	double const file_sample_rate_compensate_ratio = calculateSampleReadRate(playback_sr, file_sr);
 
