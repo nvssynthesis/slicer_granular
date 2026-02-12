@@ -23,5 +23,9 @@ inline const juce::String AudioFilePathAbsolute = "AudioFilePath (absolute)";
 
 STRAXIOMIZE(position);
 
+STRAXIOMIZE(frequency_randomization_mode);
+STRAXIOMIZE(Continuous);
+STRAXIOMIZE(Octaves);
+
 #undef STRAXIOMIZE
 }

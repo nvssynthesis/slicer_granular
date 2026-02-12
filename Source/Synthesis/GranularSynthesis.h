@@ -78,9 +78,6 @@ struct GranularSynthSharedState {
 	std::function<void(const juce::String&)> _logger_func {nullptr};
 	
 	struct Settings {
-#ifdef TSN
-	    bool _pitchify { false }; // whether to use the pitch of analyzed sound to determine grain playback pitch
-#endif
 	    bool _center_position_at_env_peak { true };
 		float _duration_pitch_compensation { 1.f };
 		float _duration_dependence_on_read_bounds { 0.95f }; // at 0, the 'duration' parameter is a fraction of the whole file; at 1, it is a fraction of the current event within the file.

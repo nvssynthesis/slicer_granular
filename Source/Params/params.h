@@ -12,6 +12,8 @@
 #include <tuple>
 #include <JuceHeader.h>
 
+#include "StringAxiom.h"
+
 #ifdef TSN
 #include "../tsn-analyzer/Source/lib/StringAxiom.h"
 #include "Navigation/Navigator.h"
@@ -332,6 +334,8 @@ inline const std::vector<ParameterDef> ALL_PARAMETERS = {
 	ParameterDef::skewed("plateau", "Plateau", 		 	"Main",	0.01f, 		10.f, 		1.f, 	""),
 	ParameterDef::percent("pan", 	"Pan", 			 	"Main", 0.f,		 1.f,		0.5f),
 
+    ParameterDef::choice(nvs::axiom::frequency_randomization_mode, "Frequency Randomization Mode", "MainHidden", {nvs::axiom::Continuous, nvs::axiom::Octaves}, 0, ""),
+
 	ParameterDef::skewed("transpose_rand", "Transpose Randomness", 		"MainRandom"),
 	ParameterDef::skewed("position_rand", "Position Randomness", 		"MainRandom"),
 	ParameterDef::skewed("speed_rand", "Speed Randomness", 				"MainRandom"),
@@ -361,6 +365,8 @@ inline const std::vector<ParameterDef> ALL_PARAMETERS = {
 	ParameterDef::linear("nav_tendency_u", 			"Navigator Tendency U", "TSN", -1.f, 1.f, 0.f, "", 0.f, "tendency"),
 	ParameterDef::linear("nav_tendency_v", 			"Navigator Tendency V", "TSN", -1.f, 1.f, 0.f, "", 0.f, "tendency"),
 	ParameterDef::linear("nav_tendency_w", 			"Navigator Tendency W", "TSN", -1.f, 1.f, 0.f, "", 0.f, "tendency"),
+
+    ParameterDef::choice(nvs::axiom::tsn::pitchify, "Pitchify", "MainHidden", {"On", "Off"}, 0, ""),
 
 	ParameterDef::linear(nvs::axiom::tsn::histogram_equalization, "Histogram Equalization", "TSN", 0.f, 1.f, 0.f, "", 0.f, "timbre_space"),
     ParameterDef::choice("x_axis", "X Axis", "TSN", analysis::getFeaturesStringArray(), 0, "timbre_space"),

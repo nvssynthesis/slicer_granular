@@ -23,7 +23,7 @@ RandomizedParameterPage::RandomizedParameterPage(AudioProcessorValueTreeState& a
     {
         auto cb = std::make_unique<ComboBoxHider>(StringArray{"Frequency Options", "Freq. Options", "Freq. Opt.", "Freq Opt", "Options", "Opt.", "Opt", ""});
         cb->cb.addSectionHeading("Randomization Mode");
-        cb->cb.addItemList({"Continuous", "Nearest Octave"}, 1);
+        cb->cb.addItemList({nvs::axiom::Continuous, nvs::axiom::Octaves}, 1);
     #ifdef TSN
         cb->cb.addSectionHeading("Pitchify");
         cb->cb.addItemList({"Yes", "No"}, 3);

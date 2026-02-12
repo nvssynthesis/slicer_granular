@@ -232,21 +232,21 @@ void PolyGrain::doNoteOff(noteNumber_t note){
 	updateNotes();
 }
 void PolyGrain::doUpdateNotes(){
-	size_t num_notes = _note_holder.size();
+	const size_t num_notes = _note_holder.size();
 	float grainsPerNoteFloor = N_GRAINS / static_cast<float>(num_notes);
 
-	auto begin = _grains.begin();
+	const auto begin = _grains.begin();
 	float fractional_right_side = 0.f;
 	for (auto e : _note_holder){
 		auto left = begin + static_cast<size_t>(fractional_right_side);
 		fractional_right_side += grainsPerNoteFloor;
 		auto right = begin + static_cast<size_t>(fractional_right_side);
 		for (; left != right; ++left){
-			float note = e.first;
-			float rat = fastSemitonesToRatio(note - 69);
+			const float note = e.first;
+			const float rat = fastSemitonesToRatio(note - 69);
 			(*left).setRatioBasedOnNote(rat);
-			float vel = e.second;
-			float amp = vel / static_cast<float>(100);
+			const float vel = e.second;
+			const float amp = vel / static_cast<float>(100);
 			(*left).setAmplitudeBasedOnNote(amp);
 		}
 	}
@@ -255,8 +255,8 @@ void PolyGrain::doClearNotes(){
 	_note_holder.clear();
 }
 void PolyGrain::doShuffleIndices(){
-	std::shuffle(_grain_indices.begin(), _grain_indices.end(),
-				 _voice_shared_state->_gaussian_rng.getGenerator());
+	std::ranges::shuffle(_grain_indices,
+                         _voice_shared_state->_gaussian_rng.getGenerator());
 }
 std::vector<float> PolyGrain::getBusyStatuses() const {
 	std::vector<float> busyStatuses;
@@ -317,7 +317,7 @@ std::array<float, 2> PolyGrain::doProcess(float trigger_in){
 
 	for (size_t i = 1; i < N_GRAINS; ++i){
 		idx = _grain_indices[i];
-		size_t prevIdx = _grain_indices[i - 1];
+		const size_t prevIdx = _grain_indices[i - 1];
 
 		const float currentTrig = _outs[prevIdx].next;
 		_outs[idx] = _grains[idx](currentTrig);
