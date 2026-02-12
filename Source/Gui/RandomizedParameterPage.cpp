@@ -11,7 +11,7 @@
 #include "RandomizedParameterPage.h"
 
 RandomizedParameterPage::RandomizedParameterPage(AudioProcessorValueTreeState& apvts,
-							std::initializer_list<String> paramIDs) {
+							const std::initializer_list<String> paramIDs) {
     for (const auto& id : paramIDs) {
         const auto s = new SliderColumn (apvts, id);
         sliders.add (s);

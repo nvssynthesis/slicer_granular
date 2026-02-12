@@ -30,7 +30,7 @@ public:
         renderNextBlock(buffer, midi, 0, buffer.getNumSamples());
     }
     static constexpr int getNumVoices(){ return num_voices; }
-    std::vector<nvs::gran::GrainDescription> getGrainDescriptions() const;
+    std::vector<GrainDescription> getGrainDescriptions() const;
     void setCurrentPlaybackSampleRate(double newSampleRate) override;
 
     enum class PositionAlignmentSetting {
@@ -45,12 +45,12 @@ public:
     bool hasLogger() const {
         return _synth_shared_state._logger_func != nullptr;
     }
-    nvs::gran::GranularSynthSharedState const &viewSynthSharedState() {
+    GranularSynthSharedState const &viewSynthSharedState() {
         return _synth_shared_state;
     }
 protected:
     constexpr static int num_voices = N_VOICES;
-    nvs::gran::GranularSynthSharedState _synth_shared_state;
+    GranularSynthSharedState _synth_shared_state;
 private:
     void initializeVoices();
     size_t totalNumGrains_;
