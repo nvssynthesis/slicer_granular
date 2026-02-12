@@ -4,6 +4,7 @@
 
 #pragma once
 #include <JuceHeader.h>
+#include <StringAxiom.h>
 
 namespace nvs::axiom {
 #ifndef STRAXIOMIZE
@@ -26,6 +27,11 @@ STRAXIOMIZE(position);
 STRAXIOMIZE(frequency_randomization_mode);
 STRAXIOMIZE(Continuous);
 STRAXIOMIZE(Octaves);
+
+namespace tsn {
+#pragma message("move to StringAxiom of tsn-analyzer after pull")
+STRAXIOMIZE(pitchify);
+}
 
 #undef STRAXIOMIZE
 }
