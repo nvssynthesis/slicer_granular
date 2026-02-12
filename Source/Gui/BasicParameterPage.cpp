@@ -10,14 +10,14 @@
 
 #include "BasicParameterPage.h"
 
-BasicParameterPage::BasicParameterPage(juce::AudioProcessorValueTreeState &apvts,
-									   std::initializer_list<juce::String> paramIDs,
-									   juce::Slider::SliderStyle style)
+BasicParameterPage::BasicParameterPage(AudioProcessorValueTreeState &apvts,
+									   std::initializer_list<String> paramIDs,
+									   Slider::SliderStyle style)
 {
 	for (auto& id : paramIDs) {
 		sliders.add (new AttachedSlider (apvts, nvs::param::ParameterRegistry::getParameterByID(id), style));
 	}
-	for (auto &s : sliders) {
+	for (const auto &s : sliders) {
 		addAndMakeVisible(s);
 	}
 }
@@ -28,7 +28,7 @@ void BasicParameterPage::resized() {
 	int x = 0;
 	int const y = bounds.getY();
 	int const h = bounds.getHeight();
-	for (auto &s : sliders){
+	for (const auto &s : sliders){
 		s->setBounds(x, y, sliderWidth, h);
 		x += sliderWidth;
 	}

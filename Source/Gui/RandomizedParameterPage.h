@@ -11,13 +11,16 @@
 #pragma once
 #include <JuceHeader.h>
 #include "SliderColumn.h"
+#include "ComboBoxHider.h"
 
-struct RandomizedParameterPage	:	public juce::Component
+struct RandomizedParameterPage final :	public Component
 {
-	RandomizedParameterPage(juce::AudioProcessorValueTreeState& apvts, std::initializer_list<juce::String> paramIDs);
+	RandomizedParameterPage(AudioProcessorValueTreeState& apvts, std::initializer_list<String> paramIDs);
 	void resized() override;
 private:
-	juce::OwnedArray<SliderColumn> sliders;
-	
+	OwnedArray<SliderColumn> sliders;
+
+    OwnedArray<ComboBoxHider> comboBoxes;
+
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(RandomizedParameterPage)
 };

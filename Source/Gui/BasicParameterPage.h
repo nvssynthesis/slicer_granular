@@ -13,15 +13,15 @@
 #include "./AttachedSlider.h"
 #include "../Params/params.h"
 
-struct BasicParameterPage	:	public juce::Component
+struct BasicParameterPage	:	public Component
 {
-	BasicParameterPage(juce::AudioProcessorValueTreeState &apvts,
-					   std::initializer_list<juce::String> paramIDs,
-					   juce::Slider::SliderStyle style = juce::Slider::LinearBarVertical);
+	BasicParameterPage(AudioProcessorValueTreeState &apvts,
+					   std::initializer_list<String> paramIDs,
+					   Slider::SliderStyle style = Slider::LinearBarVertical);
 	void resized() override;
 
 private:
-	juce::OwnedArray<AttachedSlider> sliders;
+	OwnedArray<AttachedSlider> sliders;
 	
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(BasicParameterPage)
 };

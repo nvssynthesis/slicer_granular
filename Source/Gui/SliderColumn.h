@@ -14,12 +14,12 @@
 /*
  embeds a linear vertical slider, label, and knob into a single component
  */
-class SliderColumn	:	public juce::Component
+class SliderColumn final :	public Component
 {
 public:
-	SliderColumn(juce::AudioProcessorValueTreeState &apvts, juce::StringRef mainParamID);
+	SliderColumn(AudioProcessorValueTreeState &apvts, StringRef mainParamID);
 	
-	void paint(juce::Graphics& g) override;
+	void paint(Graphics& g) override;
 	void resized() override;
 	
 	void setVal(double val){
@@ -28,6 +28,6 @@ public:
 private:
 	AttachedSlider _slider;
 	AttachedSlider _knob;
-	juce::ComponentBoundsConstrainer _knobConstrainer;
+	ComponentBoundsConstrainer _knobConstrainer;
 	static constexpr int knobMinSz = 60;
 };
