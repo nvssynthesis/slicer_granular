@@ -369,12 +369,13 @@ inline const std::vector<ParameterDef> ALL_PARAMETERS = {
     ParameterDef::choice(nvs::axiom::tsn::pitchify, "Pitchify", "MainHidden", {"On", "Off"}, 0, ""),
 
 	ParameterDef::linear(nvs::axiom::tsn::histogram_equalization, "Histogram Equalization", "TSN", 0.f, 1.f, 0.f, "", 0.f, "timbre_space"),
-    ParameterDef::choice("x_axis", "X Axis", "TSN", analysis::getFeaturesStringArray(), 0, "timbre_space"),
-    ParameterDef::choice("y_axis", "Y Axis", "TSN", analysis::getFeaturesStringArray(), 1, "timbre_space"),
-    ParameterDef::choice("z_axis", "Z Axis", "TSN", analysis::getFeaturesStringArray(), 2, "timbre_space"),
-    ParameterDef::choice("u_axis", "U Axis", "TSN", analysis::getFeaturesStringArray(), 3, "timbre_space"),
-    ParameterDef::choice("v_axis", "V Axis", "TSN", analysis::getFeaturesStringArray(), 4, "timbre_space"),
+    ParameterDef::choice(nvs::axiom::tsn::x_axis, "X Axis", "TSN", analysis::getFeaturesStringArray(), 0, "timbre_space"),
+    ParameterDef::choice(nvs::axiom::tsn::y_axis, "Y Axis", "TSN", analysis::getFeaturesStringArray(), 1, "timbre_space"),
+    ParameterDef::choice(nvs::axiom::tsn::z_axis, "Z Axis", "TSN", analysis::getFeaturesStringArray(), 2, "timbre_space"),
+    ParameterDef::choice(nvs::axiom::tsn::u_axis, "U Axis", "TSN", analysis::getFeaturesStringArray(), 3, "timbre_space"),
+    ParameterDef::choice(nvs::axiom::tsn::v_axis, "V Axis", "TSN", analysis::getFeaturesStringArray(), 4, "timbre_space"),
     ParameterDef::choice(nvs::axiom::tsn::statistic, "statistic", "TSN", analysis::getStatisticsStringArray(), 0, "timbre_space"),
+    ParameterDef::choice(nvs::axiom::tsn::decorrelateFromPitchAndLoudness, "Decorrelate", "TSN", {"Not Decorrelated", "Decorrelated"}, 1, "timbre_space"),
 
     ParameterDef::choice(nvs::axiom::tsn::filtered_feature, "Filtered Feature", "TSN", analysis::getFeaturesStringArray(), 16 /*spectral flatness for now, spectral entropy when available */, "timbre_space_cull"),
     ParameterDef::linear(nvs::axiom::tsn::filtered_feature_min, "Filtered Feature Minimum", "TSN", 0.f, 1.f, 0.f, "", 0.f, "timbre_space_cull"),
