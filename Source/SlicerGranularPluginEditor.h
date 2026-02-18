@@ -14,7 +14,7 @@
 #include "Gui/WaveformComponent.h"
 #include "Gui/TabbedPages.h"
 #include "Gui/GrainBusyDisplay.h"
-#include "../juce_utils/juce_utils.h"
+#include "juce_utils.h"
 
 //==============================================================================
 
