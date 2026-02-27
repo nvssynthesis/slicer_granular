@@ -24,7 +24,7 @@ TabbedPagesComponent::TabbedPagesComponent (juce::AudioProcessorValueTreeState &
 										{	"transpose",
 											"position",
 											"speed",
-											"duration",
+											"density",
 											"skew",
 											"plateau",
 											"pan"

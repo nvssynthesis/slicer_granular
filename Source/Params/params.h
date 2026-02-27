@@ -39,6 +39,7 @@ struct ParameterDef {
 	String groupName;
 	String unitSuffix = "";  // e.g., "dB", "Hz", "%"
 	String subGroupName = "";
+    String deprecatedID = "";
 	
 	struct FloatParamElements {
 		// core range values
@@ -89,14 +90,14 @@ struct ParameterDef {
 											StringRef groupName,
 								float min=0.f, float max=1.f, float defaultVal=0.f,
 								StringRef subGroupName = "",
-								float skew=1.f, bool useSymmetricSkew=false);
+								float skew=1.f, bool useSymmetricSkew=false, StringRef deprecatedID = "");
 	
 	static ParameterDef skewed(StringRef ID, StringRef displayName,
 									StringRef groupName,
 									float min=0.f, float max=1.f, float defaultVal=0.f,
 									StringRef unitSuffix = "",
 									float skew=0.3f, bool useSymmetricSkew=false,
-								   StringRef subGroupName = "");
+								   StringRef subGroupName = "", StringRef deprecatedID = "");
 	
 	static ParameterDef decibel(StringRef ID, StringRef displayName,
 								StringRef groupName,
@@ -184,13 +185,15 @@ inline ParameterDef ParameterDef::skewed(const StringRef ID, const StringRef dis
 											const float min, const float max, const float defaultVal,
 											const StringRef unitSuffix,
 											const float skew, const bool useSymmetricSkew,
-											const StringRef subGroupName) {
+											const StringRef subGroupName,
+											const StringRef deprecatedID) {
 	ParameterDef param;
 	param.ID			= ID;
 	param.displayName	= displayName;
 	param.groupName		= groupName;
 	param.unitSuffix	= unitSuffix;
 	param.subGroupName	= subGroupName;
+    param.deprecatedID	= deprecatedID;
 	param.elementsVar = FloatParamElements
 	{
 		.min 			= min,
@@ -208,13 +211,15 @@ inline ParameterDef ParameterDef::percent(const StringRef ID, const StringRef di
 										const StringRef groupName,
 										const float min, const float max, const float defaultVal,
 										const StringRef subGroupName,
-										const float skew, const bool useSymmetricSkew) {
+										const float skew, const bool useSymmetricSkew,
+										const StringRef deprecatedID) {
 	ParameterDef param;
 	param.ID			= ID;
 	param.displayName	= displayName;
 	param.groupName		= groupName;
 	param.unitSuffix	= "%";
 	param.subGroupName	= subGroupName;
+    param.deprecatedID	= deprecatedID;
 	int numDecimals = 1;
 	
 	auto const check = [](float x){
@@ -329,7 +334,7 @@ inline const std::vector<ParameterDef> ALL_PARAMETERS = {
 	ParameterDef::linear("transpose", 	"Transpose", 	"Main", -60.f,	    60.f,		0.f, 	" semi"),
 	ParameterDef::percent("position", "Position", 		"Main",   0.f,	     1.f,		0.f),
 	ParameterDef::skewed("speed", "Speed", 			 	"Main",  0.1f, 	  1000.f, 		50.f,	"hz"),
-	ParameterDef::percent("duration", "Duration", 	 	"Main", 1e-5f, 	  	 1.f, 		0.1f,	"", 0.4f, false),	// percent with skew
+	ParameterDef::percent("density", "Density", 	 	"Main", 1e-4f, 	  	 1.f, 		0.1f,	"", 1.0f, false, "duration"),	// percent with skew
 	ParameterDef::percent("skew", 	"Skew", 			"Main",	skeps, 	1.f-skeps, 		0.5f),						// percent with clipped range
 	ParameterDef::skewed("plateau", "Plateau", 		 	"Main",	0.01f, 		10.f, 		1.f, 	""),
 	ParameterDef::percent("pan", 	"Pan", 			 	"Main", 0.f,		 1.f,		0.5f),
@@ -339,7 +344,7 @@ inline const std::vector<ParameterDef> ALL_PARAMETERS = {
 	ParameterDef::skewed("transpose_rand", "Transpose Randomness", 		"MainRandom"),
 	ParameterDef::skewed("position_rand", "Position Randomness", 		"MainRandom"),
 	ParameterDef::skewed("speed_rand", "Speed Randomness", 				"MainRandom"),
-	ParameterDef::skewed("duration_rand", "Duration Randomness", 		"MainRandom"),
+	ParameterDef::skewed("density_rand", "Density Randomness", 		"MainRandom", 0, 1, 0, "", 0.3, false, "", "duration_rand"),
 	ParameterDef::skewed("skew_rand", "Skew Randomness",	 			    "MainRandom"),
 	ParameterDef::skewed("plateau_rand", "Plateau Randomness", 			"MainRandom"),
 	ParameterDef::skewed("pan_rand", "Pan Randomness",		 			"MainRandom", 0.0f, 1.0f, 0.5f),
@@ -439,13 +444,20 @@ inline std::vector<ParameterDef> ParameterRegistry::getParametersForSubGroup(Str
 	return params;
 }
 inline const ParameterDef& ParameterRegistry::getParameterByID(StringRef id) {
-	auto it = std::find_if(ALL_PARAMETERS.begin(), ALL_PARAMETERS.end(),
-	[id](ParameterDef const &pd){
-		return pd.ID.equalsIgnoreCase(id);
-	});
+	auto it = std::ranges::find_if(ALL_PARAMETERS,
+                                   [id](ParameterDef const &pd){
+                                       return pd.ID.equalsIgnoreCase(id);
+                                   });
 	if (it != ALL_PARAMETERS.end()){
 		return *it;
 	}
+    it = std::ranges::find_if(ALL_PARAMETERS,
+                               [id](ParameterDef const &pd){
+                                   return pd.deprecatedID.equalsIgnoreCase(id);
+                               });
+    if (it != ALL_PARAMETERS.end()){
+        return *it;
+    }
 	jassertfalse;
 	return ALL_PARAMETERS[0];	// just to avoid warning about not returning for all control paths
 }

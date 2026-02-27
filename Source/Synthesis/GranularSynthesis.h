@@ -86,7 +86,7 @@ struct GranularSynthSharedState {
     double _concertPitchHz { 440.0 };
     double _notesPerOctave { 12.0 };
 
-	juce::AudioProcessorValueTreeState& _apvts;
+	AudioProcessorValueTreeState& _apvts;
 };
 
 struct GranularVoiceSharedState {
@@ -96,9 +96,10 @@ struct GranularVoiceSharedState {
 	int _voice_id;
 	
 	float trigger;
+    double grain_rate_hz;
 
     struct Scanner {
-        nvs::lfo::simple_lfo<float> lfo;
+        lfo::simple_lfo<float> lfo;
         float shape {0.f};
     	float amount {0.f};
     } _scanner;
@@ -161,19 +162,19 @@ public:
 	static constexpr size_t getNumGrains(){
 		return N_GRAINS;
 	}
-	inline void noteOn(const noteNumber_t note, const velocity_t velocity){	// reassign to noteHolder
+	void noteOn(const noteNumber_t note, const velocity_t velocity){	// reassign to noteHolder
 		doNoteOn(note, velocity);
 	}
-	inline void noteOff(noteNumber_t note){						// remove from noteHolder
+	void noteOff(noteNumber_t note){						// remove from noteHolder
 		doNoteOff(note);
 	}
-	inline void updateNotes(/*enum noteDistribution_t?*/){
+	void updateNotes(/*enum noteDistribution_t?*/){
 		doUpdateNotes();
 	}
-	inline void clearNotes(){
+	void clearNotes(){
 		doClearNotes();
 	}
-	inline void shuffleIndices(){
+	void shuffleIndices(){
 		doShuffleIndices();
 	}
 	void setGrainsIdle();
@@ -214,8 +215,8 @@ private:
 
 	LatchedExponentialRandom_d _speed_ler; /*{_expo_rng, {1.f, 0.f}};*/
     
-    nvs::gen::history<float> _trigger_histo;
-    nvs::gen::ramp2trig<float> _ramp2trig;
+    gen::history<float> _trigger_histo;
+    gen::ramp2trig<float> _ramp2trig;
     
     NoteHolder _note_holder {};
 };
@@ -273,20 +274,21 @@ private:
 	bool firstPlaythroughOfVoicesNote { true };// the signal indicating that the currently set parameters, via latches/latched randoms, are invalid and thus the grain should be muted
 	
 	
-    nvs::gen::history<float> _busy_histo; // history of 'busy' boolean signal, goes to [switch 1 2]
-    nvs::gen::latch<float> _ratio_for_note_latch {1.f};
-    nvs::gen::latch<float> _amplitude_for_note_latch {0.f};
-	nvs::gen::latch<float> _scanner_for_position_latch {0.f};
-	nvs::gen::latch<float> _grain_weight_latch {1.f}; // the weight based on distance to target point
+    gen::history<float> _busy_histo; // history of 'busy' boolean signal, goes to [switch 1 2]
+    gen::latch<double> _grain_rate_latch {1.f};
+    gen::latch<float> _ratio_for_note_latch {1.f};
+    gen::latch<float> _amplitude_for_note_latch {0.f};
+	gen::latch<float> _scanner_for_position_latch {0.f};
+	gen::latch<float> _grain_weight_latch {1.f}; // the weight based on distance to target point
     
 	LatchedGaussianRandom_f 	_transpose_lgr;
 	LatchedGaussianRandom_d 	_position_lgr; // latches position from gate on, goes toward dest windowing
-	LatchedExponentialRandom_d 	_duration_ler; // latches duration from gate on, goes toward dest windowing
+	LatchedExponentialRandom_d 	_density_ler; // latches duration from gate on, goes toward dest windowing
 	LatchedGaussianRandom_f 	_skew_lgr;
 	LatchedGaussianRandom_f 	_plateau_lgr;
 	LatchedGaussianRandom_f 	_pan_lgr;
     
-    nvs::gen::accum<double> _accum; // accumulates samplewise and resets from gate on, goes to windowing and sample lookup!
+    gen::accum<double> _accum; // accumulates samplewise and resets from gate on, goes to windowing and sample lookup!
     
 	ReadBounds _normalized_read_bounds;// defaults to normalized read bounds. TSN variant can adjust effective read bounds (changing begin and end based on event positions/durations).
 	ReadBounds _upcoming_normalized_read_bounds;

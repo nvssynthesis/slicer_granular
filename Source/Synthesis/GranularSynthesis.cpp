@@ -205,8 +205,8 @@ void PolyGrain::doNoteOn(noteNumber_t note, velocity_t velocity){
 }
 void PolyGrain::doNoteOff(const noteNumber_t note){
 	// remove from noteHolder
-	_note_holder[note] = 0;
-	updateNotes();
+	// _note_holder[note] = 0;
+	// updateNotes();
 	_note_holder.erase(note);
 	updateNotes();
 }
@@ -274,8 +274,8 @@ std::array<float, 2> PolyGrain::doProcess(const float triggerIn){
 	std::array output {0.f, 0.f};
 	
 	// update phasor's frequency only if _triggerHisto.val is true
-	auto const freq_tmp = _speed_ler(static_cast<bool>(_trigger_histo.val)); // used to clamp by percentage of mu. should no longer be necessary.
-	_phasor_internal_trig.setFrequency(freq_tmp);
+	_voice_shared_state->grain_rate_hz = _speed_ler(static_cast<bool>(_trigger_histo.val)); // used to clamp by percentage of mu. should no longer be necessary.
+	_phasor_internal_trig.setFrequency(_voice_shared_state->grain_rate_hz);
 	++_phasor_internal_trig;
 	float trig = _ramp2trig(_phasor_internal_trig.getPhase());
 	_trigger_histo(trig);
@@ -286,14 +286,13 @@ std::array<float, 2> PolyGrain::doProcess(const float triggerIn){
 	std::array<Grain::outs, N_GRAINS> _outs;
 
 #pragma message("trying shuffle, may cause bugs (so far seems fine but keeping warning here until i can be completely sure)")
-	shuffleIndices();
+	shuffleIndices();   // since grains are assigned read bounds deterministically and relatively rarely, shuffle is needed to get a thorough mix of effective read position
 	
 	size_t idx = _grain_indices[0];
 	_outs[idx] = _grains[idx](trig);
 	float audio_out_L = _outs[idx].audio_L;
 	float audio_out_R = _outs[idx].audio_R;
 	float voices_active = _outs[idx].busy;
-	
 
 	for (size_t i = 1; i < N_GRAINS; ++i){
 		idx = _grain_indices[i];
@@ -330,8 +329,8 @@ void Grain::setParams(){
     _frequencyRandomizationMode = *apvts.getRawParameterValue(axiom::frequency_randomization_mode)
         == 0.f ? FrequencyRandomizationMode::Continuous : FrequencyRandomizationMode::Octaves;
 	_transpose_lgr.setSigma(24.0f * (*apvts.getRawParameterValue("transpose_rand")));
-	_duration_ler.setMu(*apvts.getRawParameterValue("duration"));
-	_duration_ler.setSigma(*apvts.getRawParameterValue("duration_rand"));
+	_density_ler.setMu(*apvts.getRawParameterValue("density"));
+	_density_ler.setSigma(*apvts.getRawParameterValue("density_rand"));
 	float const pos = *apvts.getRawParameterValue("position");
 	_position_lgr.setMu(pos);
 	_position_lgr.setSigma(*apvts.getRawParameterValue("position_rand"));
@@ -355,7 +354,7 @@ Grain::Grain(GranularSynthSharedState *const synth_shared_state,
     , _grain_id(newId)
     , _transpose_lgr(_voice_shared_state->_gaussian_rng, {0.f, 0.f})
     , _position_lgr(_voice_shared_state->_gaussian_rng, {0.0, 0.0})
-    , _duration_ler(_voice_shared_state->_expo_rng, {0.015f, 0.f})
+    , _density_ler(_voice_shared_state->_expo_rng, {0.015f, 0.f})
     , _skew_lgr(_voice_shared_state->_gaussian_rng, {0.5f, 0.f})
     , _plateau_lgr(_voice_shared_state->_gaussian_rng, {1.f, 0.f})
     , _pan_lgr(_voice_shared_state->_gaussian_rng, {0.5f, 0.23f})
@@ -573,8 +572,7 @@ Grain::outs Grain::operator()(float const trig_in){
 		wantsToDisableFirstPlaythroughOfVoicesNote = true;
 #endif
 	}
-	
-	
+
 	if (_normalized_read_bounds.end - _normalized_read_bounds.begin == 0.0){	// protection for initialization case
 		_window = 0.f;
 		writeAudioToOuts(0.f, 0.0, 0.f, _postProcessing, o);
@@ -591,13 +589,13 @@ Grain::outs Grain::operator()(float const trig_in){
 
 	size_t const compensatedLength = [&file_sr, &denormedReadBounds, buffLength, file_sample_rate_compensate_ratio]()
     {
-		size_t const event_length_samps = denormedReadBounds.end - denormedReadBounds.begin;
-	    constexpr double min_event_length_sec = 0.2;
-	    constexpr double max_event_length_sec = 2.0;
+		const double event_length_samps = denormedReadBounds.end - denormedReadBounds.begin;
+	    constexpr double min_event_length_sec = 0.1;
+	    constexpr double max_event_length_sec = min_event_length_sec * 16.0;
 	    const float clamped_event_length_sec =
 	        std::min(
 	        std::max(
-	            static_cast<double>(event_length_samps) / file_sr,
+	            event_length_samps / file_sr,
 	            min_event_length_sec),
 	        max_event_length_sec);
 	    const double clamped_event_length_samps = clamped_event_length_sec * file_sr;
@@ -606,9 +604,14 @@ Grain::outs Grain::operator()(float const trig_in){
 		return cLen;
 	}();
 
-	double const duration_in_samps = calculateDurationInSamples(_duration_ler(should_open_latches), compensatedLength,
-																playback_sr);	// take settings._center_position_at_env_peak as param to determine if it should clip normalized duration to 0-1?
-	assert (duration_in_samps <= compensatedLength);
+    const auto grain_rate_hz = _grain_rate_latch(_voice_shared_state->grain_rate_hz, should_open_latches);
+    assert(grain_rate_hz > 0.f);
+    const auto grain_base_dur = N_GRAINS / grain_rate_hz;
+	double const duration_in_samps = _density_ler(should_open_latches) * grain_base_dur * playback_sr;
+	    // calculateDurationInSamples(_density_ler(should_open_latches),
+	    //     compensatedLength,
+	    //     playback_sr);	// take settings._center_position_at_env_peak as param to determine if it should clip normalized duration to 0-1?
+	// assert (duration_in_samps <= compensatedLength);
 	float const latch_skew_result = memoryless::clamp(_skew_lgr(should_open_latches), 0.001f, 0.999f);
 	
 	float const duration_pitch_compensation_factor = getDurationPitchCompensationFactor(settings._duration_pitch_compensation, _waveform_read_rate);
