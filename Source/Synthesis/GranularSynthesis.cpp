@@ -32,21 +32,7 @@
 
 namespace nvs::gran {
 // NOLINTBEGIN(cppcoreguidelines-narrowing-conversions)
-template <typename float_t>
-float semitonesToRatio(float_t semitones){
-	constexpr auto semitoneRatio = static_cast<float_t>(1.059463094359295);
-	
-#if(pade)
-	float_t transpositionRatio = pow_fixed_base<float_t, semitoneRatio>(semitones);
-#else
-	float_t transpositionRatio = std::pow(semitoneRatio, semitones);
-#endif
-	
-	return transpositionRatio;
-}
-inline float fastSemitonesToRatio(const float semitones){
-	return nvs::util::semitonesRatioTable(semitones);
-}
+
 namespace {
 /**
  * Picks `numToPick` distinct bounds from `choices`, sampling each
@@ -75,13 +61,13 @@ std::vector<WeightedReadBounds> pickWeightedReadBoundsProbabilistically (const s
 		// --- WITHOUT replacement ---
 		for (int pick = 0; pick < numToPick; ++pick)
 		{
-			std::discrete_distribution<int> dist(weightArr.begin(), weightArr.end());
+			std::discrete_distribution dist(weightArr.begin(), weightArr.end());
 			int choice = dist(rng);
 			picked.emplace_back( choices[choice] );
 
 			// zero out that weight, then renormalize
 			weightArr[choice] = 0.0;
-			double sum = std::accumulate(weightArr.begin(), weightArr.end(), 0.0);
+			const double sum = std::accumulate(weightArr.begin(), weightArr.end(), 0.0);
 			if (sum <= 0.0) {
 				break;
 			}
@@ -93,10 +79,10 @@ std::vector<WeightedReadBounds> pickWeightedReadBoundsProbabilistically (const s
 	else {
 		// --- WITH replacement ---
 		// we keep the original weightArr intact
-		std::discrete_distribution<int> dist(weightArr.begin(), weightArr.end());
+		std::discrete_distribution dist(weightArr.begin(), weightArr.end());
 		for (int pick = 0; pick < numToPick; ++pick)
 		{
-			int choice = dist(rng);
+			const int choice = dist(rng);
 			picked.push_back( choices[choice] );
 			// note: weights are unchanged, so repeats are allowed
 		}
@@ -110,7 +96,7 @@ std::vector<WeightedReadBounds> pickWeightedReadBoundsProbabilistically (const s
 std::vector<WeightedReadBounds> pickWeightedReadBoundsEvenly (const std::vector<WeightedReadBounds> &choices, const int numToPick)
 {
 	
-	const int N = (int) choices.size();
+	const int N = static_cast<int>(choices.size());
 
 	jassert(N <= numToPick);
 
@@ -151,8 +137,8 @@ void PolyGrain::setSampleRate(const double sampleRate){
 	_synth_shared_state->_playback_sample_rate = sampleRate;
 }
 void PolyGrain::setReadBounds(const ReadBounds newReadBounds) {
-	assert ((newReadBounds.begin >= 0.0) && (newReadBounds.begin <= 1.0));
-	assert ((newReadBounds.end >= 0.0) && (newReadBounds.end <= 1.0));
+	assert (newReadBounds.begin >= 0.0 && newReadBounds.begin <= 1.0);
+	assert (newReadBounds.end >= 0.0 && newReadBounds.end <= 1.0);
 	
 	for (auto &g : _grains){
 		// for now, we will just have all grains use same read bounds.
@@ -181,15 +167,7 @@ float sqrtCached(const float x) {
 void PolyGrain::setMultiReadBounds(const std::vector<WeightedReadBounds> &newWeightedReadBounds) {
 	
 	auto pickedWeightedReadBounds = pickWeightedReadBoundsEvenly(newWeightedReadBounds, static_cast<int>(_grains.size()));
-	double w_sum = 0.0;
-	for (const auto &wrb : pickedWeightedReadBounds){
-		jassert(wrb.weight >= 0.0);
-		w_sum += wrb.weight;
-	}
-	if (w_sum == 0.0) {
-		w_sum = 1.0;
-	}
-	
+
 	std::ranges::sort(pickedWeightedReadBounds, [](auto a, auto b) { return a.weight < b.weight; });
 	for (size_t i = 0; i < _grains.size(); ++i){
 		// for now, we will just have all grains use same read bounds.
@@ -205,7 +183,7 @@ void PolyGrain::setMultiReadBounds(const std::vector<WeightedReadBounds> &newWei
 	}
 }
 
-void PolyGrain::setLogger(const std::function<void(const juce::String&)> &loggerFunction) const {
+void PolyGrain::setLogger(const std::function<void(const String&)> &loggerFunction) const {
 	assert(_synth_shared_state);
 	_synth_shared_state->_logger_func = loggerFunction;
 }
@@ -225,9 +203,8 @@ void PolyGrain::doNoteOn(noteNumber_t note, velocity_t velocity){
 	}
 #endif
 }
-void PolyGrain::doNoteOff(noteNumber_t note){
+void PolyGrain::doNoteOff(const noteNumber_t note){
 	// remove from noteHolder
-//	auto p = std::make_pair(note, 0);
 	_note_holder[note] = 0;
 	updateNotes();
 	_note_holder.erase(note);
@@ -235,19 +212,20 @@ void PolyGrain::doNoteOff(noteNumber_t note){
 }
 void PolyGrain::doUpdateNotes(){
 	const size_t num_notes = _note_holder.size();
-	float grainsPerNoteFloor = N_GRAINS / static_cast<float>(num_notes);
+	const float grainsPerNoteFloor = N_GRAINS / static_cast<float>(num_notes);
 
 	const auto begin = _grains.begin();
 	float fractional_right_side = 0.f;
-	for (auto e : _note_holder){
+	for (auto [note, vel] : _note_holder){
 		auto left = begin + static_cast<size_t>(fractional_right_side);
 		fractional_right_side += grainsPerNoteFloor;
 		auto right = begin + static_cast<size_t>(fractional_right_side);
 		for (; left != right; ++left){
-			const float note = e.first;
-			const float rat = fastSemitonesToRatio(note - 69);
+			const float rat = util::midiToFrequency(note-69.f,
+			    _synth_shared_state->_concertPitchHz,
+			    69.f,
+			    _synth_shared_state->_notesPerOctave);
 			(*left).setRatioBasedOnNote(rat);
-			const float vel = e.second;
 			const float amp = vel / static_cast<float>(100);
 			(*left).setAmplitudeBasedOnNote(amp);
 		}
@@ -288,12 +266,12 @@ void PolyGrain::setParams() {
 	}
 }
 
-std::array<float, 2> PolyGrain::operator()(float triggerIn){
+std::array<float, 2> PolyGrain::operator()(const float triggerIn){
 	return doProcess(triggerIn);
 }
 
-std::array<float, 2> PolyGrain::doProcess(float trigger_in){
-	std::array<float, 2> output {0.f, 0.f};
+std::array<float, 2> PolyGrain::doProcess(const float triggerIn){
+	std::array output {0.f, 0.f};
 	
 	// update phasor's frequency only if _triggerHisto.val is true
 	auto const freq_tmp = _speed_ler(static_cast<bool>(_trigger_histo.val)); // used to clamp by percentage of mu. should no longer be necessary.
@@ -301,7 +279,7 @@ std::array<float, 2> PolyGrain::doProcess(float trigger_in){
 	++_phasor_internal_trig;
 	float trig = _ramp2trig(_phasor_internal_trig.getPhase());
 	_trigger_histo(trig);
-	trig = (!trig && !trigger_in) ? 0.f : 1.f;
+	trig = !trig && !triggerIn ? 0.f : 1.f;
 	
 	_voice_shared_state->_scanner.lfo.phasor();	// increment scanner phase per sample
 
@@ -330,7 +308,7 @@ std::array<float, 2> PolyGrain::doProcess(float trigger_in){
 	output[0] = audio_out_L * _normalizer;
 	output[1] = audio_out_R * _normalizer;
 
-	if (nvs::util::checkNanOrInf(output)){
+	if (util::checkNanOrInf(output)){
 		return {};
 	}
 	return output;
@@ -349,8 +327,8 @@ std::vector<GrainDescription> PolyGrain::getGrainDescriptions() const {
 void Grain::setParams(){
 	auto const &apvts = _synth_shared_state->_apvts;
 	_transpose_lgr.setMu(*apvts.getRawParameterValue("transpose"));
-    _frequencyRandomizationMode = (*apvts.getRawParameterValue(nvs::axiom::frequency_randomization_mode))
-    == 0.f ? FrequencyRandomizationMode::Continuous : FrequencyRandomizationMode::Octaves;
+    _frequencyRandomizationMode = *apvts.getRawParameterValue(axiom::frequency_randomization_mode)
+        == 0.f ? FrequencyRandomizationMode::Continuous : FrequencyRandomizationMode::Octaves;
 	_transpose_lgr.setSigma(24.0f * (*apvts.getRawParameterValue("transpose_rand")));
 	_duration_ler.setMu(*apvts.getRawParameterValue("duration"));
 	_duration_ler.setSigma(*apvts.getRawParameterValue("duration_rand"));
@@ -371,38 +349,40 @@ void Grain::setParams(){
 
 Grain::Grain(GranularSynthSharedState *const synth_shared_state,
 					 GranularVoiceSharedState *const voice_shared_state,
-					 int newId)
-:	_synth_shared_state(synth_shared_state)
-,	_voice_shared_state(voice_shared_state)
-,	_grain_id(newId)
-,	_transpose_lgr(_voice_shared_state->_gaussian_rng, {0.f, 0.f})
-,	_position_lgr(_voice_shared_state->_gaussian_rng, {0.0, 0.0})
-,	_duration_ler(_voice_shared_state->_expo_rng, {0.015f, 0.f})
-,	_skew_lgr(_voice_shared_state->_gaussian_rng, {0.5f, 0.f})
-,	_plateau_lgr(_voice_shared_state->_gaussian_rng, {1.f, 0.f})
-,	_pan_lgr(_voice_shared_state->_gaussian_rng, {0.5f, 0.23f})
-,   _postProcessing(_synth_shared_state)
+					 int newId):
+    _synth_shared_state(synth_shared_state)
+    , _voice_shared_state(voice_shared_state)
+    , _grain_id(newId)
+    , _transpose_lgr(_voice_shared_state->_gaussian_rng, {0.f, 0.f})
+    , _position_lgr(_voice_shared_state->_gaussian_rng, {0.0, 0.0})
+    , _duration_ler(_voice_shared_state->_expo_rng, {0.015f, 0.f})
+    , _skew_lgr(_voice_shared_state->_gaussian_rng, {0.5f, 0.f})
+    , _plateau_lgr(_voice_shared_state->_gaussian_rng, {1.f, 0.f})
+    , _pan_lgr(_voice_shared_state->_gaussian_rng, {0.5f, 0.23f})
+    , _postProcessing(_synth_shared_state)
+    , _frequencyRandomizationMode()
 {
-//#ifdef DBG
-//	_timed_printer = std::make_unique<nvs::util::TimedPrinter>(100);
-//#endif
+    //#ifdef DBG
+    //	_timed_printer = std::make_unique<util::TimedPrinter>(100);
+    //#endif
 }
-void Grain::setRatioBasedOnNote(float ratioForNote){
+
+void Grain::setRatioBasedOnNote(const float ratioForNote){
 	_ratio_based_on_note = ratioForNote;
 }
-void Grain::setAmplitudeBasedOnNote(float velocity){
+void Grain::setAmplitudeBasedOnNote(const float velocity){
 	assert(velocity <= 2.f);
 	assert(velocity >= 0.f);
 	_amplitude_based_on_note = velocity;
 }
-void Grain::setId(int newId){
+void Grain::setId(const int newId){
 	_grain_id = newId;
 }
 
 float Grain::getBusyStatus() const {
 	return _busy_histo.val;
 }
-void Grain::setBusyStatus(bool newBusyStatus) {
+void Grain::setBusyStatus(const bool newBusyStatus) {
 	_busy_histo.val = static_cast<float>(newBusyStatus);
 }
 
@@ -413,7 +393,7 @@ GrainDescription Grain::getGrainDescription() const {
 	GrainDescription gd{};
 	gd.voice = _voice_shared_state->_voice_id;
 	gd.grain_id = _grain_id;
-	gd.position = nvs::gen::wrap01(_sample_index / N);
+	gd.position = gen::wrap01(_sample_index / N);
 	gd.sample_playback_rate = _waveform_read_rate;
 	gd.window = _window;
 	gd.pan = _pan / (std::numbers::pi * 0.5f);
@@ -430,8 +410,8 @@ namespace {	// anonymous namespace for local helper functions
 float calculateTransposeMultiplier(float const ratioBasedOnNote, float const ratioBasedOnTranspose){
 	return memoryless::clamp(ratioBasedOnNote * ratioBasedOnTranspose, 0.001f, 1000.f);
 }
-double calculateDurationInSamples(double latchedDuration, double compensatedLength, double sampleRate){
-	using nvs::memoryless::clamp;
+double calculateDurationInSamples(const double latchedDuration, const double compensatedLength, const double sampleRate){
+	using memoryless::clamp;
 #pragma message("this clamping of randomized duration should be improved")
 	auto const clippedNormalizedDuration = clamp(latchedDuration, 0.0, 1.0);
 	double constexpr maxLengthInSeconds = 20.0;
@@ -444,17 +424,17 @@ double calculateDurationInSamples(double latchedDuration, double compensatedLeng
 float calculateWindow(double const accum, double const duration, float const transpositionMultiplier, float const skew, float plateau){
 	assert(transpositionMultiplier > 0.f);
 	assert (duration > 0.0);
-	double const v = (accum / duration);
-	double const windowIdx = nvs::memoryless::clamp(v / transpositionMultiplier, 0.0, 1.0);
-	auto win = nvs::gen::triangle<float, false>(static_cast<float>(windowIdx), skew);
+	double const v = accum / duration;
+	double const windowIdx = memoryless::clamp(v / transpositionMultiplier, 0.0, 1.0);
+	auto win = gen::triangle<float, false>(static_cast<float>(windowIdx), skew);
 	
 	plateau = memoryless::clamp_low(plateau, 0.000001f);
 	win *= plateau;
-#define tanh nvs::util::tanh_pade_3_2
+#define tanh util::tanh_pade_3_2
 	win = gen::parzen(tanh(win)) / gen::parzen(tanh(plateau));
 	if (plateau < 1.0){
 #if pade
-		win = nvs::util::pow_pade(win, 1.f / plateau);
+		win = util::pow_pade(win, 1.f / plateau);
 #else
 		win = pow(win, 1.f / plateau);
 #endif
@@ -466,7 +446,7 @@ double calculateSampleReadRate(double const playback_sample_rate, double const f
 	assert(file_sample_rate > 0.0);
 	return file_sample_rate / playback_sample_rate;
 }
-float getDurationPitchCompensationFactor(float const duration_pitch_compensation_amount, float waveform_read_rate){
+float getDurationPitchCompensationFactor(float const duration_pitch_compensation_amount, const float waveform_read_rate){
 	assert (duration_pitch_compensation_amount >= 0.f);
 	assert (duration_pitch_compensation_amount <= 1.f);
 	return waveform_read_rate * duration_pitch_compensation_amount + (1.f - duration_pitch_compensation_amount);
@@ -490,7 +470,7 @@ double calculateSampleIndex(double const accum,
 	double const sample_index = sample_rate_compensate_ratio * (accum - center_of_env) + position_in_samps;
 	return sample_index;
 }
-float calculateSample(juce::dsp::AudioBlock<float> const wave_block, double const sample_index,
+float calculateSample(dsp::AudioBlock<float> const &wave_block, double const sample_index,
     float const win,
     float const velocity_amplitude)
 {
@@ -505,12 +485,14 @@ float calculateSample(juce::dsp::AudioBlock<float> const wave_block, double cons
 float calculatePan(float pan_latch_val){
 	return memoryless::clamp(pan_latch_val, 0.f, 1.f) * std::numbers::pi * 0.5f;
 }
-void writeAudioToOuts(float const sample, double fractionalIndex, float const pan_latch_val, GrainwisePostProcessing &postProcessing, Grain::outs &outs){
+void writeAudioToOuts(float const sample, double fractionalIndex, float const pan_latch_val,
+    const GrainwisePostProcessing &postProcessing, Grain::outs &outs)
+{
 	std::array<float, 2> const lr = postProcessing(gen::pol2car(sample, pan_latch_val), fractionalIndex);
 	outs.audio_L = lr[0];
 	outs.audio_R = lr[1];
 }
-void processBusyness(float const window, nvs::gen::history<float> &busyHistory, Grain::outs &outs){
+void processBusyness(float const window, gen::history<float> &busyHistory, Grain::outs &outs){
 	float const  busy_tmp = (window > 0.f);
 	outs.busy = busy_tmp;
 	busyHistory(busy_tmp);
@@ -534,7 +516,7 @@ float GrainwisePostProcessing::processChannel(float x, double t) const {
     // NEED TO WRAP t
     const double L = static_cast<double>(_synth_shared_state->_buffer._loudness_profile.size());
     t /= L;
-    t = nvs::memoryless::mspWrap(t);
+    t = memoryless::mspWrap(t);
     t *= L;
 
     const float signal_rms = _synth_shared_state->_buffer._loudness_profile[static_cast<size_t>(t)];
@@ -554,7 +536,7 @@ float GrainwisePostProcessing::processChannel(float x, double t) const {
 }
 Grain::outs Grain::operator()(float const trig_in){
 	assert(_synth_shared_state);
-	juce::dsp::AudioBlock<float> const wave_block = _synth_shared_state->_buffer._wave_block;
+	dsp::AudioBlock<float> const wave_block = _synth_shared_state->_buffer._wave_block;
 	auto const playback_sr = _synth_shared_state->_playback_sample_rate;
 	auto const file_sr = _synth_shared_state->_buffer._file_sample_rate;
 	auto const& settings = _synth_shared_state->_settings;
@@ -567,8 +549,12 @@ Grain::outs Grain::operator()(float const trig_in){
     static constexpr float twelfth = 1.f / 12.f;
 	const float randomSemitoneOffset = _frequencyRandomizationMode == FrequencyRandomizationMode::Continuous ? _transpose_lgr(should_open_latches)
 	    :   12.f * std::round( _transpose_lgr(should_open_latches) * twelfth );
+    const float randomPitchRatio = util::midiToFrequency(randomSemitoneOffset-69.f,
+        _synth_shared_state->_concertPitchHz,
+        69.f,
+        _synth_shared_state->_notesPerOctave);
 	_waveform_read_rate = calculateTransposeMultiplier(_ratio_for_note_latch(_ratio_based_on_note, should_open_latches),
-													   fastSemitonesToRatio(randomSemitoneOffset));
+													   randomPitchRatio);
 	_accum(_waveform_read_rate, should_open_latches);
 	
 	double const file_sample_rate_compensate_ratio = calculateSampleReadRate(playback_sr, file_sr);
@@ -603,12 +589,19 @@ Grain::outs Grain::operator()(float const trig_in){
 		assert (denormedReadBounds.end > denormedReadBounds.begin);
 	}
 
-	size_t const compensatedLength = [&settings, &denormedReadBounds, buffLength, file_sample_rate_compensate_ratio](){
-		float const dur_dep_on_read_bounds = settings._duration_dependence_on_read_bounds;
-		size_t const event_length = denormedReadBounds.end - denormedReadBounds.begin;
-		auto const cLen = static_cast<size_t>(nvs::memoryless::linterp(static_cast<float>(buffLength),
-		    static_cast<float>(event_length),
-		    dur_dep_on_read_bounds) / file_sample_rate_compensate_ratio);
+	size_t const compensatedLength = [&file_sr, &denormedReadBounds, buffLength, file_sample_rate_compensate_ratio]()
+    {
+		size_t const event_length_samps = denormedReadBounds.end - denormedReadBounds.begin;
+	    constexpr double min_event_length_sec = 0.2;
+	    constexpr double max_event_length_sec = 2.0;
+	    const float clamped_event_length_sec =
+	        std::min(
+	        std::max(
+	            static_cast<double>(event_length_samps) / file_sr,
+	            min_event_length_sec),
+	        max_event_length_sec);
+	    const double clamped_event_length_samps = clamped_event_length_sec * file_sr;
+		auto const cLen = static_cast<size_t>(clamped_event_length_samps / file_sample_rate_compensate_ratio);
 		assert (0 < cLen);
 		return cLen;
 	}();
@@ -627,7 +620,7 @@ Grain::outs Grain::operator()(float const trig_in){
 	    const auto &[lfo, shape, amount] = _voice_shared_state->_scanner;
 	    auto const phasorVal = (lfo.multi(shape * 4.0f) + 1) * 0.5f;
 		auto const scanner_pos = _scanner_for_position_latch(phasorVal * amount, should_open_latches);
-		np = nvs::memoryless::mspWrap(np + scanner_pos);
+		np = memoryless::mspWrap(np + scanner_pos);
 		assert (np >= 0.0);
 		assert (np <= 1.0);
 		return np;
@@ -646,7 +639,9 @@ Grain::outs Grain::operator()(float const trig_in){
 	}
 #endif
 
-	_sample_index = [this, norm_pos, duration_in_samps, latch_skew_result, duration_pitch_compensation_factor, file_sample_rate_compensate_ratio, &settings, &denormedReadBounds](){
+	_sample_index = [this, norm_pos, duration_in_samps, latch_skew_result, duration_pitch_compensation_factor,
+	    file_sample_rate_compensate_ratio, &settings, &denormedReadBounds]()
+    {
 		// double const normalized_position, double const sr_compensated_duration, float const skew, float const sample_playback_rate, bool const center_envelope_at_env_peak
 		auto const center_of_env = calculateCenterOfEnvelope(norm_pos,														// double const normalized_position
 															 duration_in_samps,												// double const sr_compensated_duration
@@ -663,7 +658,7 @@ Grain::outs Grain::operator()(float const trig_in){
 	}();
 	
 
-	float const sample = [&](){
+	float const sample = [this, &wave_block, should_open_latches](){
 		float const vel_amplitude = _amplitude_for_note_latch(_amplitude_based_on_note, should_open_latches)
 #ifdef TSN
 								* _grain_weight_latch(_grain_weight, should_open_latches);
@@ -677,7 +672,7 @@ Grain::outs Grain::operator()(float const trig_in){
 	
 	processBusyness(_window, _busy_histo, o);
 	
-	if (nvs::util::checkNanOrInf(std::array<float, 2>{o.audio_L, o.audio_R})){
+	if (util::checkNanOrInf(std::array<float, 2>{o.audio_L, o.audio_R})){
 		return {};
 	}
 	

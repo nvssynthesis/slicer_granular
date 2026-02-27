@@ -131,6 +131,12 @@ inline float_t pow_fixed_base(float_t expo){
     return exp_pade(lnx * expo);
 }
 
+static float midiToFrequency (const float midiNote,
+    const float concertPitchHz=440.f, const float rootNote=69.f, const float notesPerOctave=12.f)
+{
+    return concertPitchHz * std::pow(2.0f, ((midiNote - rootNote) / notesPerOctave));
+};
+
 template<int minSemitones, int maxSemitones, int reso>
 struct SemitonesRatioTable {
     constexpr static float semitoneRatio = static_cast<float>(1.059463094359295);
@@ -160,7 +166,7 @@ struct SemitonesRatioTable {
         return values[iidx];
     }
 };
-static SemitonesRatioTable<-60, 60, 240> semitonesRatioTable;
+// static SemitonesRatioTable<-60, 60, 240> semitonesRatioTable;
 
 inline void calculateSymmetricEnvelope(const juce::dsp::AudioBlock<float>& audioBlock,
                                 std::vector<float>& envelope,
