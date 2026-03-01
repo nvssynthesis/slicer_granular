@@ -93,10 +93,15 @@ std::vector<WeightedReadBounds> pickWeightedReadBoundsProbabilistically (const s
 /**
  This version simply evenly distributes the choices amongst the available grains.
  */
-std::vector<WeightedReadBounds> pickWeightedReadBoundsEvenly (const std::vector<WeightedReadBounds> &choices, const int numToPick)
+struct WeightedReadBoundsAndFrequency {
+    WeightedReadBounds wb;
+    float freq {0.f};
+};
+std::vector<WeightedReadBoundsAndFrequency> pickWeightedReadBoundsEvenly (const std::vector<WeightedReadBounds> &wrb, std::array<float, 3> fundamentals, const int numToPick)
 {
 	
-	const int N = static_cast<int>(choices.size());
+	constexpr int N = fundamentals.size();
+    jassert(wrb.size() == N);
 
 	jassert(N <= numToPick);
 
@@ -104,11 +109,14 @@ std::vector<WeightedReadBounds> pickWeightedReadBoundsEvenly (const std::vector<
 		return {};
 	}
 
-	std::vector<WeightedReadBounds> picked;
+	std::vector<WeightedReadBoundsAndFrequency> picked;
 	picked.reserve(numToPick);
 
 	for (int i = 0; i < numToPick; ++i){
-		picked.push_back(choices[i % N]);
+		picked.push_back(WeightedReadBoundsAndFrequency {
+		    .wb = wrb[i % N],
+		    .freq = fundamentals[i % N]
+		});
 	}
 
 	return picked;
@@ -164,22 +172,23 @@ float sqrtCached(const float x) {
 
     return answer;
 }
-void PolyGrain::setMultiReadBounds(const std::vector<WeightedReadBounds> &newWeightedReadBounds) {
-	
-	auto pickedWeightedReadBounds = pickWeightedReadBoundsEvenly(newWeightedReadBounds, static_cast<int>(_grains.size()));
+void PolyGrain::setEvents(const std::vector<WeightedReadBounds> &newWeightedReadBounds, const std::array<float, 3> &fundamental_frequencies) {
+	auto picked = pickWeightedReadBoundsEvenly(newWeightedReadBounds, fundamental_frequencies, static_cast<int>(_grains.size()));
 
-	std::ranges::sort(pickedWeightedReadBounds, [](auto a, auto b) { return a.weight < b.weight; });
+	std::ranges::sort(picked, [](auto a, auto b) { return a.wb.weight < b.wb.weight; });
 	for (size_t i = 0; i < _grains.size(); ++i){
 		// for now, we will just have all grains use same read bounds.
 		// however, we may want to have some proportions of grains using different readbounds in the future.
-		const auto &b = pickedWeightedReadBounds[i];
-        assert (b.bounds.begin >= 0.0 && b.bounds.begin <= 1.0);
-        assert (b.bounds.end >= 0.0 && b.bounds.end <= 1.0);
-		
-		_grains[i].setReadBounds(b.bounds);
-		auto w = b.weight;
+		const auto &b = picked[i];
+        assert (b.wb.bounds.begin >= 0.0 && b.wb.bounds.begin <= 1.0);
+        assert ( b.wb.bounds.end  >= 0.0 &&  b.wb.bounds.end  <= 1.0);
+
+
+		_grains[i].setReadBounds(b.wb.bounds);
+		auto w = b.wb.weight;
 		w *= w;
 		_grains[i].setWeight(sqrtCached(w));
+	    _grains[i].setUnderlyingFundamentalFrequency(b.freq);
 	}
 }
 
@@ -348,7 +357,7 @@ void Grain::setParams(){
 
 Grain::Grain(GranularSynthSharedState *const synth_shared_state,
 					 GranularVoiceSharedState *const voice_shared_state,
-					 int newId):
+					 const int newId):
     _synth_shared_state(synth_shared_state)
     , _voice_shared_state(voice_shared_state)
     , _grain_id(newId)
@@ -406,8 +415,8 @@ GrainDescription Grain::getGrainDescription() const {
 }
 
 namespace {	// anonymous namespace for local helper functions
-float calculateTransposeMultiplier(float const ratioBasedOnNote, float const ratioBasedOnTranspose){
-	return memoryless::clamp(ratioBasedOnNote * ratioBasedOnTranspose, 0.001f, 1000.f);
+float calculateTransposeMultiplier(float const ratioBasedOnNote, float const ratioBasedOnTranspose, float const ratioBasedOnUnderlyingF0){
+	return memoryless::clamp(ratioBasedOnNote * ratioBasedOnTranspose * ratioBasedOnUnderlyingF0, 0.001f, 1000.f);
 }
 double calculateDurationInSamples(const double latchedDuration, const double compensatedLength, const double sampleRate){
 	using memoryless::clamp;
@@ -533,6 +542,14 @@ float GrainwisePostProcessing::processChannel(float x, double t) const {
 	retval *= _makeup_gain;
 	return retval;
 }
+void Grain::setUnderlyingFundamentalFrequency(const float midi_f0) {
+    _underlying_f0 = midi_f0 <= 0 ? 0 :
+        util::midiToFrequency(midi_f0,
+            _synth_shared_state->_concertPitchHz,
+            69.f,
+            12);
+}
+
 Grain::outs Grain::operator()(float const trig_in){
 	assert(_synth_shared_state);
 	dsp::AudioBlock<float> const wave_block = _synth_shared_state->_buffer._wave_block;
@@ -545,6 +562,13 @@ Grain::outs Grain::operator()(float const trig_in){
 	
 	bool const should_open_latches = _busy_histo.val ? false : static_cast<bool>(trig_in);
 
+    const auto f0_compensation_ratio =
+        _underlying_f0_latch(
+            _underlying_f0 > 0 ?
+                _synth_shared_state->_concertPitchHz / _underlying_f0  :
+                    1.f,
+            should_open_latches);
+
     static constexpr float twelfth = 1.f / 12.f;
 	const float randomSemitoneOffset = _frequencyRandomizationMode == FrequencyRandomizationMode::Continuous ? _transpose_lgr(should_open_latches)
 	    :   12.f * std::round( _transpose_lgr(should_open_latches) * twelfth );
@@ -552,8 +576,10 @@ Grain::outs Grain::operator()(float const trig_in){
         _synth_shared_state->_concertPitchHz,
         69.f,
         _synth_shared_state->_notesPerOctave);
-	_waveform_read_rate = calculateTransposeMultiplier(_ratio_for_note_latch(_ratio_based_on_note, should_open_latches),
-													   randomPitchRatio);
+	_waveform_read_rate = calculateTransposeMultiplier(
+	    _ratio_for_note_latch(_ratio_based_on_note, should_open_latches),
+	    randomPitchRatio,
+	    f0_compensation_ratio);
 	_accum(_waveform_read_rate, should_open_latches);
 	
 	double const file_sample_rate_compensate_ratio = calculateSampleReadRate(playback_sr, file_sr);

@@ -187,7 +187,7 @@ public:
 		double weight;
 		WeightedReadBounds(ReadBounds b, double w)	:	bounds(b), weight(w) {}
 	};
-	void setMultiReadBounds(const std::vector<WeightedReadBounds> &newWeightedReadBounds) ;
+	void setEvents(const std::vector<WeightedReadBounds> &newWeightedReadBounds, const std::array<float, 3> &fundamental_frequencies) ;
 	std::vector<GrainDescription> getGrainDescriptions() const;
 	void setLogger(const std::function<void(const juce::String&)> &loggerFunction) const;
 	
@@ -246,6 +246,7 @@ public:
 	void setWeight(const double w) {
 		_grain_weight = static_cast<float>(w);
 	}
+    void setUnderlyingFundamentalFrequency(float midi_f0);
 	outs operator()(float trig_in);
 	
 	GrainDescription getGrainDescription() const;
@@ -280,6 +281,7 @@ private:
     gen::latch<float> _amplitude_for_note_latch {0.f};
 	gen::latch<float> _scanner_for_position_latch {0.f};
 	gen::latch<float> _grain_weight_latch {1.f}; // the weight based on distance to target point
+    gen::latch<float> _underlying_f0_latch {0.f};   // for pitch compensation. if non-positive, it will have no effect.
     
 	LatchedGaussianRandom_f 	_transpose_lgr;
 	LatchedGaussianRandom_d 	_position_lgr; // latches position from gate on, goes toward dest windowing
@@ -312,6 +314,8 @@ private:
     float _grain_normalize_amount {0.f};    // works as lerp between no normalization to full normalization
 	float _grain_drive {1.0f};
 	float _grain_makeup_gain {1.0f};
+
+    float _underlying_f0 {0.f};
 };
 
 } // namespace nvs::gran
