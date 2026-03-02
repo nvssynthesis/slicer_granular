@@ -6,7 +6,7 @@
 #include <JuceHeader.h>
 #include "Synthesis/GranularSynthesis.h"
 #include "Synthesis/GranularSynthesizer.h"
-#include "misc_util_juce.h"
+#include "utils/misc_util_juce.h"
 #include "juce_utils.h"
 #include "Params/params.h"
 #include "Service/PresetManager.h"

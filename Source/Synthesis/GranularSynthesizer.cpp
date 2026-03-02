@@ -10,7 +10,7 @@
 
 #include "GranularSynthesizer.h"
 #include "./GranularSound.h"
-#include "dsp_util.h"
+#include "../utils/dsp_util.h"
 
 namespace nvs::gran {
 GranularSynthesizer::GranularSynthesizer(juce::AudioProcessorValueTreeState &apvts)

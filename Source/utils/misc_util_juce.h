@@ -4,7 +4,7 @@
 
 #pragma once
 #include <JuceHeader.h>
-#include "Synthesis/GrainDescription.h"
+#include "../Synthesis/GrainDescription.h"
 
 namespace nvs::util {
 

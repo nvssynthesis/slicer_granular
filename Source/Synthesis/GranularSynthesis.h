@@ -16,8 +16,8 @@
 
 #include "GrainDescription.h"
 #include "VoicesXGrains.h"
-#include "../LatchedRandom.h"
-#include "../misc_util.h"
+#include "../Random/LatchedRandom.h"
+#include "../utils/misc_util.h"
 #include "../../nvs_libraries/nvs_libraries/include/nvs_gen.h"
 #include "../../nvs_libraries/nvs_libraries/include/nvs_LFO.h"
 

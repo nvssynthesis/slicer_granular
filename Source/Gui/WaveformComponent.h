@@ -19,7 +19,7 @@ TODO:
 #include <atomic>
 #include "AttachedSlider.h"
 #include "../Synthesis/GrainDescription.h"
-#include "../misc_util.h"
+#include "../utils/misc_util.h"
 #include "IndexTypes.h"
 
 class SlicerGranularAudioProcessor;

@@ -3,7 +3,7 @@
 //
 
 #include "misc_util_juce.h"
-#include "StringAxiom.h"
+#include "../StringAxiom.h"
 
 namespace nvs::util
 {

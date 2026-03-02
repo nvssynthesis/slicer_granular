@@ -17,8 +17,8 @@
  */
 
 #include "GranularSynthesis.h"
-#include "../dsp_util.h"
-#include "../algo_util.h"
+#include "../utils/dsp_util.h"
+#include "../utils/algo_util.h"
 #include <numbers>
 #include <random>
 #include <span>

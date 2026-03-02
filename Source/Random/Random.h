@@ -27,47 +27,6 @@ private:
 	XoshiroCpp::Xoshiro256Plus xosh;
 };
 
-class ExponentialRandomNumberGenerator {
-public:
-	explicit ExponentialRandomNumberGenerator(const unsigned long seed = 1234567890UL)
-		: rng(seed) {}
-
-	double operator()(const double lambda) {
-		double uniformRandom = rng();
-		if (uniformRandom == 0.0) {
-			uniformRandom = std::numeric_limits<double>::min(); // Smallest positive double
-		}
-		
-		// Inverse transform sampling to get exponentially distributed random number
-		const double expRandom = -std::log(1.0 - uniformRandom) / lambda;
-		
-		return expRandom;
-	}
-
-	XoshiroCpp::Xoshiro256Plus &getGenerator() {
-		return rng.getGenerator();
-	}
-
-private:
-	RandomNumberGenerator rng;  // Underlying uniform RNG
-};
-
-class ExponentialRandomNumberGeneratorWithVariance {
-public:
-	explicit ExponentialRandomNumberGeneratorWithVariance(const unsigned long seed = 1234567890UL)
-	: rng(seed) {}
-	double operator()(const double mu, const double variance) {
-		auto const lambda = 1.0 / mu;
-		auto const expRandom = rng(lambda);
-		return variance*expRandom + (1.0 - variance)*mu;
-	}
-	XoshiroCpp::Xoshiro256Plus &getGenerator() {
-		return rng.getGenerator();
-	}
-private:
-	ExponentialRandomNumberGenerator rng;
-};
-
 class BoxMuller {
 public:
 	explicit BoxMuller(const unsigned long seed = 1234567890UL)
@@ -142,5 +101,48 @@ private:
 		return std::make_pair(z0, z1);
 	}
 };
+
+
+class ExponentialRandomNumberGenerator {
+public:
+    explicit ExponentialRandomNumberGenerator(const unsigned long seed = 1234567890UL)
+        : rng(seed) {}
+
+    double operator()(const double lambda) {
+        double uniformRandom = rng();
+        if (uniformRandom == 0.0) {
+            uniformRandom = std::numeric_limits<double>::min(); // Smallest positive double
+        }
+
+        // Inverse transform sampling to get exponentially distributed random number
+        const double expRandom = -std::log(1.0 - uniformRandom) / lambda;
+
+        return expRandom;
+    }
+
+    XoshiroCpp::Xoshiro256Plus &getGenerator() {
+        return rng.getGenerator();
+    }
+
+private:
+    RandomNumberGenerator rng;  // Underlying uniform RNG
+};
+
+class ExponentialRandomNumberGeneratorWithVariance {
+public:
+    explicit ExponentialRandomNumberGeneratorWithVariance(const unsigned long seed = 1234567890UL)
+    : rng(seed) {}
+    double operator()(const double mu, const double variance) {
+        auto const lambda = 1.0 / mu;
+        auto const expRandom = rng(lambda);
+        return variance*expRandom + (1.0 - variance)*mu;
+    }
+    XoshiroCpp::Xoshiro256Plus &getGenerator() {
+        return rng.getGenerator();
+    }
+private:
+    ExponentialRandomNumberGenerator rng;
+};
+
 
 }	// namespace nvs::rand

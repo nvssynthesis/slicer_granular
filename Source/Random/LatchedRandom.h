@@ -9,7 +9,7 @@
 */
 
 #pragma once
-#include "./Random.h"
+#include "Random.h"
 #include <concepts>
 #include <type_traits>
 
