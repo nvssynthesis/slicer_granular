@@ -3,8 +3,6 @@
 //
 
 #pragma once
-#include <JuceHeader.h>
-#include <StringAxiom.h>
 
 namespace nvs::axiom {
 #ifndef STRAXIOMIZE
