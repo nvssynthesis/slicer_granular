@@ -12,12 +12,12 @@
 #include "XoshiroCpp.hpp"
 namespace nvs::rand {
 
-struct RandomNumberGenerator {
+class RandomNumberGenerator {
 public:
-	RandomNumberGenerator(unsigned long seed = 1234567890UL)	:	xosh(seed){}
+	explicit RandomNumberGenerator(const unsigned long seed = 1234567890UL)	:	xosh(seed){}
 	double operator()(){
-		std::uint64_t randomBits = xosh();
-		double randomDouble = XoshiroCpp::DoubleFromBits(randomBits);
+		const std::uint64_t randomBits = xosh();
+		const double randomDouble = XoshiroCpp::DoubleFromBits(randomBits);
 		return randomDouble;
 	}
 	XoshiroCpp::Xoshiro256Plus &getGenerator() {
@@ -27,19 +27,19 @@ private:
 	XoshiroCpp::Xoshiro256Plus xosh;
 };
 
-struct ExponentialRandomNumberGenerator {
+class ExponentialRandomNumberGenerator {
 public:
-	ExponentialRandomNumberGenerator(unsigned long seed = 1234567890UL)
+	explicit ExponentialRandomNumberGenerator(const unsigned long seed = 1234567890UL)
 		: rng(seed) {}
 
-	double operator()(double lambda) {
+	double operator()(const double lambda) {
 		double uniformRandom = rng();
 		if (uniformRandom == 0.0) {
 			uniformRandom = std::numeric_limits<double>::min(); // Smallest positive double
 		}
 		
 		// Inverse transform sampling to get exponentially distributed random number
-		double expRandom = -std::log(1.0 - uniformRandom) / lambda;
+		const double expRandom = -std::log(1.0 - uniformRandom) / lambda;
 		
 		return expRandom;
 	}
@@ -52,14 +52,14 @@ private:
 	RandomNumberGenerator rng;  // Underlying uniform RNG
 };
 
-struct ExponentialRandomNumberGeneratorWithVariance {
+class ExponentialRandomNumberGeneratorWithVariance {
 public:
-	ExponentialRandomNumberGeneratorWithVariance(unsigned long seed = 1234567890UL)
+	explicit ExponentialRandomNumberGeneratorWithVariance(const unsigned long seed = 1234567890UL)
 	: rng(seed) {}
-	double operator()(double mu, double variance) {
+	double operator()(const double mu, const double variance) {
 		auto const lambda = 1.0 / mu;
 		auto const expRandom = rng(lambda);
-		return (variance * expRandom) + ((1.0 - variance) * mu);
+		return variance*expRandom + (1.0 - variance)*mu;
 	}
 	XoshiroCpp::Xoshiro256Plus &getGenerator() {
 		return rng.getGenerator();
@@ -68,10 +68,11 @@ private:
 	ExponentialRandomNumberGenerator rng;
 };
 
-struct BoxMuller {
-	BoxMuller(unsigned long seed = 1234567890UL)
+class BoxMuller {
+public:
+	explicit BoxMuller(const unsigned long seed = 1234567890UL)
 	:	rng(seed){}
-	double operator()(double mu, double sigma){
+	double operator()(const double mu, const double sigma){
 		return polar(mu, sigma).first;
 //		return nowaste_pol(mu, sigma);
 	}
@@ -79,49 +80,45 @@ struct BoxMuller {
 		return rng.getGenerator();
 	}
 	// faster (~20%)
-	double nowaste_pol(double mu, double sigma){
+	double nowaste_pol(const double mu, const double sigma){
 		if (count == 0){
 			++count;
-			std::pair <double, double> vals = polar(mu, sigma);
-			next = vals.first;
-			return vals.second;
+			const auto [curr, _next] = polar(mu, sigma);
+			next = _next;
+			return curr;
 		}
-		else {
-			count = 0;
-			return next;
-		}
+		count = 0;
+		return next;
 	}
 	// slower
-	double nowaste_st(double mu, double sigma){
+	double nowaste_st(const double mu, const double sigma){
 		if (count == 0){
 			++count;
-			std::pair <double, double> vals = standard(mu, sigma);
-			next = vals.first;
-			return vals.second;
+			const auto [curr, _next] = standard(mu, sigma);
+			next = _next;
+			return curr;
 		}
-		else {
-			count = 0;
-			return next;
-		}
+		count = 0;
+		return next;
 	}
 	// may be useful e.g. for setting to mu
-	void setNext(double d){
+	void setNext(const double d){
 		next = d;
 	}
 private:
 	RandomNumberGenerator rng;
 	unsigned int count {0};
-	double next;
+	double next{};
 	
-	std::pair<double, double> standard(double mu, double sigma){
+	std::pair<double, double> standard(const double mu, const double sigma){
 		constexpr double eps = std::numeric_limits<double>::epsilon();
 		
-		double u1, u2;
+		double u1;
 		do {
 			u1 = rng();
 		} while (u1 <= eps); // don't want to take log of less than eps
 		
-		u2 = rng();
+		const double u2 = rng();
 		
 		auto const mag = std::sqrt(-2.0 * std::log(u1)) * sigma;
 		
@@ -130,15 +127,15 @@ private:
 		
 		return std::make_pair(z0, z1);
 	}
-	std::pair<double, double> polar(double mu, double sigma){
+	std::pair<double, double> polar(const double mu, const double sigma){
 		double u1, u2, s;
 		do {
 			u1 = rng() * 2.0 - 1.0;
 			u2 = rng() * 2.0 - 1.0;
 			s = u1*u1 + u2*u2;
-		} while ((s == 0.0) || (s >= 1.0));
+		} while (s == 0.0 || s >= 1.0);
 		
-		auto const mag = std::sqrt((-2.0 * std::log(s)) / s) * sigma;
+		auto const mag = std::sqrt(-2.0 * std::log(s) / s) * sigma;
 		auto const z0 = u1 * mag + mu;
 		auto const z1 = u2 * mag + mu;
 		
