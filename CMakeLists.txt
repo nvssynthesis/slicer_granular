@@ -143,6 +143,10 @@ target_include_directories(slicer-granular
         juce_utils
 )
 
+if(NOT TARGET juce_utils)
+    add_subdirectory(juce_utils)
+endif()
+
 # Link JUCE modules
 target_link_libraries(slicer-granular
     PRIVATE
