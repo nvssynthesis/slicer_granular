@@ -10,7 +10,6 @@
 
 #include "WaveformComponent.h"
 #include "../SlicerGranularPluginProcessor.h"
-#include "../slicer_granular/Source/StringAxiom.h"
 #include <ranges>
 
 WaveformComponent::WaveformComponent(SlicerGranularAudioProcessor &proc, const int sourceSamplesPerThumbnailSample)
@@ -20,7 +19,7 @@ WaveformComponent::WaveformComponent(SlicerGranularAudioProcessor &proc, const i
 	thumbnail.addChangeListener(this);	// thumbnail is a ChangeBroadcaster
 }
 
-void WaveformComponent::changeListenerCallback (juce::ChangeBroadcaster* source)
+void WaveformComponent::changeListenerCallback (ChangeBroadcaster* source)
 {
     if (source == &thumbnail){
         thumbnailChanged();
@@ -62,7 +61,7 @@ void WaveformComponent::removeMarkers(const MarkerType markerType) {
 		assert(markerList->empty());
 	}, markerListVariant);
 }
-void WaveformComponent::drawMarkers(juce::Graphics& g, const MarkerType markerType){
+void WaveformComponent::drawMarkers(Graphics& g, const MarkerType markerType){
 	auto const &markerListVariant = markerListMap.at(markerType);
 	std::visit([&](auto const& markerList) {
 		for (auto const& marker : *markerList) {
@@ -71,11 +70,11 @@ void WaveformComponent::drawMarkers(juce::Graphics& g, const MarkerType markerTy
 	}, markerListVariant);
 }
 namespace {
-void processLine(juce::Graphics& g, juce::Line<float> &, WaveformComponent::OnsetMarker const &){
-	g.setColour(juce::Colour(juce::Colours::blue).withMultipliedAlpha(0.1f));
+void processLine(Graphics& g, Line<float> &, WaveformComponent::OnsetMarker const &){
+	g.setColour(Colour(Colours::blue).withMultipliedAlpha(0.1f));
 #pragma message("alpha should depend on neighboring onset density")
 }
-void processLine(juce::Graphics& g, juce::Line<float> &l, WaveformComponent::PositionMarker const &marker){
+void processLine(Graphics& g, Line<float> &l, WaveformComponent::PositionMarker const &marker){
 	auto const regionHeight = l.getLength();
 	[[maybe_unused]] int const g_id = marker.grain_id;
 	auto const r = marker.sample_playback_rate;
@@ -86,7 +85,7 @@ void processLine(juce::Graphics& g, juce::Line<float> &l, WaveformComponent::Pos
 	if (!busy){
 		assert (w == 0.f);
 	}
-	juce::Colour colour = busy ? juce::Colour(juce::Colours::lightgreen).withMultipliedBrightness(1.1f) : juce::Colour(juce::Colours::grey).withMultipliedLightness(0.9f);
+	Colour colour = busy ? Colour(Colours::lightgreen).withMultipliedBrightness(1.1f) : Colour(Colours::grey).withMultipliedLightness(0.9f);
 
 	if (!first_playthrough){
 		colour = colour.withRotatedHue(log2(r) / 20.f);									// pitch affects hue
@@ -97,11 +96,11 @@ void processLine(juce::Graphics& g, juce::Line<float> &l, WaveformComponent::Pos
 		colour = colour.withAlpha(0.f);
 		g.setColour(colour);
 	}
-	l.applyTransform(juce::AffineTransform::translation(0.0f, p * (regionHeight)));	// panning affects y position
-	l.applyTransform(juce::AffineTransform::scale(1.f, 0.5f));						// make line take up just 1 channel's worth of space (half the height)
+	l.applyTransform(AffineTransform::translation(0.0f, p * (regionHeight)));	// panning affects y position
+	l.applyTransform(AffineTransform::scale(1.f, 0.5f));						// make line take up just 1 channel's worth of space (half the height)
 }
 }
-void WaveformComponent::drawMarker(juce::Graphics& g, MarkerVariant marker)
+void WaveformComponent::drawMarker(Graphics& g, MarkerVariant marker)
 {
 	auto const line = [&]
 	{
@@ -109,10 +108,10 @@ void WaveformComponent::drawMarker(juce::Graphics& g, MarkerVariant marker)
 			return marker.position; // position is a common member to all alternatives
 		}, marker);
 		float const xPos = getWidth() * position;
-		const float y0 = getLocalBounds().getY();
-		const float y1 = getLocalBounds().getBottom();
+		const float y0 = waveformBounds.getY();
+		const float y1 = waveformBounds.getBottom();
 		assert (y1 > y0);
-		auto l = juce::Line<float>(juce::Point<float>{xPos, y0}, juce::Point<float>{xPos, y1});
+		auto l = Line<float>(Point<float>{xPos, y0}, Point<float>{xPos, y1});
 		std::visit([&](const auto &m) {
 			processLine(g, l, m);
 		}, marker);
@@ -121,11 +120,16 @@ void WaveformComponent::drawMarker(juce::Graphics& g, MarkerVariant marker)
 	
 	g.drawLine(line, 1.f);
 }
-void WaveformComponent::paint(juce::Graphics& g)
+
+void WaveformComponent::resized() {
+	waveformBounds = getLocalBounds();
+}
+
+void WaveformComponent::paint(Graphics& g)
 {
-	g.setColour (juce::Colours::darkgrey);
-	auto const bounds = getLocalBounds();
-	g.drawRect(bounds);
+	g.setColour (Colours::darkgrey);
+	auto const &b = waveformBounds;
+	g.drawRect(b);
 	
 	if (thumbnail.getNumChannels() == 0) {
 		paintContentsIfNoFileLoaded (g);
@@ -136,12 +140,11 @@ void WaveformComponent::paint(juce::Graphics& g)
 	drawMarkers(g, MarkerType::Onset);
 	drawMarkers(g, MarkerType::CurrentPosition);
 	
-	auto const b = getBounds();
-	
+
 	if (highlightedRange.has_value()){
 		for (const auto &[low, high] : *highlightedRange){
 			float const w = b.getWidth();
-			g.setColour(juce::Colour(juce::Colours::whitesmoke).withAlpha(0.5f));
+			g.setColour(Colour(Colours::whitesmoke).withAlpha(0.5f));
 			if (low < high){
 				float const p0 = b.getX() + low * w;
 				float const newWidth = (high - low) * w ;
@@ -160,18 +163,18 @@ void WaveformComponent::paint(juce::Graphics& g)
 		}
 	}
 	if (isMouseOver(true)){
-		g.setColour(juce::Colours::whitesmoke.withMultipliedAlpha(0.15));
-		g.fillAll();
-		g.setColour(juce::Colours::whitesmoke.withMultipliedAlpha(0.76));
+		g.setColour(Colours::whitesmoke.withMultipliedAlpha(0.15));
+		g.fillRect(waveformBounds);
+		g.setColour(Colours::whitesmoke.withMultipliedAlpha(0.76));
 		
-		g.setFont(juce::FontOptions("Arial", 14.f, juce::Font::FontStyleFlags::plain));
-		auto const f = juce::File(_proc.getSampleFilePath());
+		g.setFont(FontOptions("Arial", 14.f, Font::FontStyleFlags::plain));
+		auto const f = File(_proc.getSampleFilePath());
 		auto const s = f.existsAsFile() ? f.getFileName() : "Right click or drag to load file";
 		auto const textBounds = b.withTrimmedBottom(6).withTrimmedLeft(4);
-		g.drawFittedText(s, textBounds, juce::Justification::bottomLeft, 1);
+		g.drawFittedText(s, textBounds, Justification::bottomLeft, 1);
 	}
 	else {
-//		g.setColour(juce::Colours::whitesmoke.withMultipliedAlpha(0.35));
+//		g.setColour(Colours::whitesmoke.withMultipliedAlpha(0.35));
 	}
 }
 
@@ -210,20 +213,20 @@ void WaveformComponent::highlightOnsets(std::vector<nvs::timbrespace::WeightedId
 	repaint();
 }
 
-void WaveformComponent::mouseUp(juce::MouseEvent const &e) {
+void WaveformComponent::mouseUp(MouseEvent const &e) {
 	if (e.mods.isPopupMenu()) {
-		juce::PopupMenu menu;
+		PopupMenu menu;
 		
 		menu.addItem(1, "Load Audio File...");
 		menu.addItem(2, "Reveal current file directory");
 		
-		menu.showMenuAsync(juce::PopupMenu::Options{},
+		menu.showMenuAsync(PopupMenu::Options{},
 										[this](int result)
 		  {
 			if (result == 1) {
-				auto chooser = std::make_shared<juce::FileChooser>("Select Audio File", juce::File{}, "*.wav;*.aiff;*.aif;*.mp3;*.flac;*.ogg");
-				chooser->launchAsync(juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
-									 [this, chooser](juce::FileChooser const &fc){
+				auto chooser = std::make_shared<FileChooser>("Select Audio File", File{}, "*.wav;*.aiff;*.aif;*.mp3;*.flac;*.ogg");
+				chooser->launchAsync(FileBrowserComponent::openMode | FileBrowserComponent::canSelectFiles,
+									 [this, chooser](FileChooser const &fc){
 					auto file = fc.getResult();
 					if (file.existsAsFile()){
 						_proc.loadAudioFileAndUpdateState(file, true);
@@ -233,7 +236,7 @@ void WaveformComponent::mouseUp(juce::MouseEvent const &e) {
 			else if (result == 2) {
 				// https://forum.juce.com/t/how-to-implement-reveal-in-finder/4373/2
 				auto const path = _proc.getSampleFilePath();
-				auto const file = juce::File(path);
+				auto const file = File(path);
 				if (file.existsAsFile()){
 					file.revealToUser();
 				}
@@ -246,7 +249,7 @@ void WaveformComponent::mouseUp(juce::MouseEvent const &e) {
 }
 
 
-bool WaveformComponent::isInterestedInFileDrag (const juce::StringArray& files)
+bool WaveformComponent::isInterestedInFileDrag (const StringArray& files)
 {
 	for (const auto& file : files)
 	{
@@ -257,19 +260,19 @@ bool WaveformComponent::isInterestedInFileDrag (const juce::StringArray& files)
 	}
 	return false;
 }
-void WaveformComponent::fileDragEnter (const juce::StringArray&, int, int)
+void WaveformComponent::fileDragEnter (const StringArray&, int, int)
 {
 	isDragOver = true;
 	repaint();
 }
 
-void WaveformComponent::fileDragExit (const juce::StringArray&)
+void WaveformComponent::fileDragExit (const StringArray&)
 {
 	isDragOver = false;
 	repaint();
 }
 
-void WaveformComponent::filesDropped (const juce::StringArray& files, int, int)
+void WaveformComponent::filesDropped (const StringArray& files, int, int)
 {
 	isDragOver = false;
 	if (files.size() > 0) {
@@ -277,23 +280,23 @@ void WaveformComponent::filesDropped (const juce::StringArray& files, int, int)
 	}
 	repaint();
 }
-void WaveformComponent::setThumbnailSource (const juce::AudioBuffer<float> *newSource, const double sampleRate, const juce::int64 hashCode){
+void WaveformComponent::setThumbnailSource (const AudioBuffer<float> *newSource, const double sampleRate, const int64 hashCode){
 	thumbnail.setSource(newSource, sampleRate, hashCode);
 }
-juce::int64 WaveformComponent::getHashCode() const {
+int64 WaveformComponent::getHashCode() const {
     return thumbnail.getHashCode();
 }
 
-void WaveformComponent::paintContentsIfNoFileLoaded (juce::Graphics& g)
+void WaveformComponent::paintContentsIfNoFileLoaded (Graphics& g)
 {
-	g.setColour (juce::Colours::darkgrey);
-	g.drawFittedText ("No File Loaded", getLocalBounds(), juce::Justification::centred, 1);
+	g.setColour (Colours::darkgrey);
+	g.drawFittedText ("No File Loaded", waveformBounds, Justification::centred, 1);
 }
-void WaveformComponent::paintContentsIfFileLoaded (juce::Graphics& g)
+void WaveformComponent::paintContentsIfFileLoaded (Graphics& g)
 {
-	g.setColour (juce::Colours::black);
+	g.setColour (Colours::black);
 	thumbnail.drawChannels (g,
-							getLocalBounds(),
+							waveformBounds.withTrimmedRight(1),
 							0.0,                                    // start time
 							thumbnail.getTotalLength(),             // end time
 							1.0f);                   // vertical zoom
@@ -307,7 +310,7 @@ void WaveformComponent::paintContentsIfFileLoaded (juce::Graphics& g)
 
 WaveformAndPositionComponent::WaveformAndPositionComponent(SlicerGranularAudioProcessor &proc, int sourceSamplesPerThumbnailSample)
 :	WaveformComponent(proc, sourceSamplesPerThumbnailSample)
-,	positionSlider(proc.getAPVTS(), nvs::param::ParameterRegistry::getParameterByID(nvs::axiom::position), juce::Slider::SliderStyle::LinearHorizontal, juce::Slider::NoTextBox)
+,	positionSlider(proc.getAPVTS(), nvs::param::ParameterRegistry::getParameterByID(nvs::axiom::position), Slider::SliderStyle::LinearHorizontal, Slider::NoTextBox)
 {
 	addAndMakeVisible(&positionSlider._slider);
 }
@@ -326,7 +329,7 @@ void WaveformAndPositionComponent::resized()
 
 	bool const sliderVisible = positionSlider._slider.isVisible();
 	
-	juce::Rectangle<int> const wcRect = [&]{	// limit scope via instantly-called lambda
+	{
 		auto const heightDiff = totalHeight - reservedHeight;
 		auto const waveformY = localBounds.getY() + (heightDiff * 0.5);
 		auto const waveformHeight = sliderVisible ? reservedHeight * 0.8f : reservedHeight;
@@ -335,20 +338,22 @@ void WaveformAndPositionComponent::resized()
 		auto const waveformWidthDiff = localBounds.getWidth() - waveformWidth;
 		auto const waveformX = localBounds.getX() + (waveformWidthDiff * 0.5);
 
-		auto const wcBounds = juce::Rectangle(waveformX, waveformY, waveformWidth, waveformHeight).toNearestInt();
-	    WaveformComponent::setBounds(wcBounds);
-		return wcBounds;	// return rectangle as that's all we need from this scope
-	}();
+		waveformBounds = Rectangle(waveformX, waveformY, waveformWidth, waveformHeight).toNearestInt();
+	}
 
 	if (sliderVisible)
 	{
-		auto const sliderHeight = static_cast<int>(reservedHeight) - wcRect.getHeight();
+		auto const sliderHeight = static_cast<int>(reservedHeight) - waveformBounds.getHeight();
         constexpr int widthIncrease = 14;
-		auto const sliderWidth = wcRect.getWidth() + widthIncrease;
-		auto const sliderX = wcRect.getX() - (widthIncrease / 2);
-		auto const sliderY = wcRect.getBottom();
-		auto const sliderRect = juce::Rectangle(sliderX, sliderY, sliderWidth, sliderHeight);
+		auto const sliderWidth = waveformBounds.getWidth() + widthIncrease;
+		auto const sliderX = waveformBounds.getX() - (widthIncrease / 2);
+		auto const sliderY = waveformBounds.getBottom();
+		auto const sliderRect = Rectangle(sliderX, sliderY, sliderWidth, sliderHeight);
 		positionSlider._slider.setBounds(sliderRect);
 	}
 }
+
+// void WaveformAndPositionComponent::paint (Graphics& g) {
+//
+// }
 
