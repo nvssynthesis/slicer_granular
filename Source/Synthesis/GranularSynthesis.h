@@ -51,31 +51,33 @@ inline double millisecondsToFreqSamps(double ms, double sampleRate) {
 /**
  Making use of concepts to guarantee common interface between latched random number generator types without inheritance (thus without virtual function calls)
 */
-using MuSigmaPair_f  = nvs::rand::MuSigmaPair<float>;
-using MuSigmaPair_d  = nvs::rand::MuSigmaPair<double>;
-using BoxMuller = nvs::rand::BoxMuller;
-using ExponentialRandomNumberGenerator = nvs::rand::ExponentialRandomNumberGeneratorWithVariance;
+using MuSigmaPair_f  = rand::MuSigmaPair<float>;
+using MuSigmaPair_d  = rand::MuSigmaPair<double>;
+using BoxMuller = rand::BoxMuller;
+using ExponentialRandomNumberGenerator = rand::ExponentialRandomNumberGeneratorWithVariance;
 using LatchedGaussianRandom_f = decltype(createLatchedGaussianRandom(std::declval<BoxMuller&>(), std::declval<MuSigmaPair_f>()));
 using LatchedGaussianRandom_d = decltype(createLatchedGaussianRandom(std::declval<BoxMuller&>(), std::declval<MuSigmaPair_d>()));
+using LatchedLogNormalRandom_f = decltype(createLatchedLogNormalRandom(std::declval<BoxMuller&>(), std::declval<MuSigmaPair_f>()));
+using LatchedLogNormalRandom_d = decltype(createLatchedLogNormalRandom(std::declval<BoxMuller&>(), std::declval<MuSigmaPair_d>()));
 using LatchedExponentialRandom_f = decltype(createLatchedExponentialRandom(std::declval<ExponentialRandomNumberGenerator&>(), std::declval<MuSigmaPair_f>()));
 using LatchedExponentialRandom_d = decltype(createLatchedExponentialRandom(std::declval<ExponentialRandomNumberGenerator&>(), std::declval<MuSigmaPair_d>()));
 //========================================================================================================================================
 struct GranularSynthSharedState {
-	explicit GranularSynthSharedState(juce::AudioProcessorValueTreeState &apvts) :
+	explicit GranularSynthSharedState(AudioProcessorValueTreeState &apvts) :
         _buffer(), _apvts(apvts) {
     }
 
 	double _playback_sample_rate {0.0};
 	
 	struct Buffer {
-		juce::dsp::AudioBlock<float> _wave_block;
+		juce::dsp::AudioBlock<float> _wave_block;   // NOLINT
 	    std::vector<float> _loudness_profile;
 		double _file_sample_rate {0.0};
-		juce::int64 _audio_hash {0};
+		juce::int64 _audio_hash {0};                // NOLINT
 	};
 	Buffer _buffer;
 
-	std::function<void(const juce::String&)> _logger_func {nullptr};
+	std::function<void(const juce::String&)> _logger_func {nullptr};   // NOLINT
 	
 	struct Settings {
 	    bool _center_position_at_env_peak { true };
@@ -189,7 +191,7 @@ public:
 	};
 	void setEvents(const std::vector<WeightedReadBounds> &newWeightedReadBounds, const std::array<float, 3> &fundamental_frequencies) ;
 	std::vector<GrainDescription> getGrainDescriptions() const;
-	void setLogger(const std::function<void(const juce::String&)> &loggerFunction) const;
+	void setLogger(const std::function<void(const String&)> &loggerFunction) const;
 	
 	void setParams();
 protected:
@@ -213,7 +215,7 @@ private:
     std::vector<size_t> _grain_indices;	// used to index grains in random order
     gen::phasor<double> _phasor_internal_trig;
 
-	LatchedExponentialRandom_d _speed_ler; /*{_expo_rng, {1.f, 0.f}};*/
+	LatchedLogNormalRandom_d _speed_lnr; /*{_expo_rng, {1.f, 0.f}};*/
     
     gen::history<float> _trigger_histo;
     gen::ramp2trig<float> _ramp2trig;

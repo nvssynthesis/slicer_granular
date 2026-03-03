@@ -129,7 +129,7 @@ _synth_shared_state { synth_shared_state },
 _voice_shared_state(voice_shared_state),
 _normalizer(1.f / std::sqrt(static_cast<float>(std::clamp(N_GRAINS, 1UL, 10000UL)))),
 _grain_indices(N_GRAINS),
-_speed_ler(_voice_shared_state->_expo_rng,  {10.f, 0.f})
+_speed_lnr(_voice_shared_state->_gaussian_rng,  {1.0, 0.0})
 {
 	assert (_grains.empty());
 	_grains.reserve(N_GRAINS);
@@ -263,8 +263,8 @@ void PolyGrain::setGrainsIdle() {
 
 void PolyGrain::setParams() {
 	auto const &apvts = _synth_shared_state->_apvts;
-	_speed_ler.setMu(*apvts.getRawParameterValue("speed"));
-	_speed_ler.setSigma(*apvts.getRawParameterValue("speed_rand"));
+	_speed_lnr.setMu(*apvts.getRawParameterValue("speed"));
+	_speed_lnr.setSigma(*apvts.getRawParameterValue("speed_rand"));
 
 	_voice_shared_state->_scanner.lfo._freq = *apvts.getRawParameterValue("scanner_rate");
 	_voice_shared_state->_scanner.amount = *apvts.getRawParameterValue("scanner_amount");
@@ -283,7 +283,7 @@ std::array<float, 2> PolyGrain::doProcess(const float triggerIn){
 	std::array output {0.f, 0.f};
 	
 	// update phasor's frequency only if _triggerHisto.val is true
-	_voice_shared_state->grain_rate_hz = _speed_ler(static_cast<bool>(_trigger_histo.val)); // used to clamp by percentage of mu. should no longer be necessary.
+	_voice_shared_state->grain_rate_hz = _speed_lnr(static_cast<bool>(_trigger_histo.val)); // used to clamp by percentage of mu. should no longer be necessary.
 	_phasor_internal_trig.setFrequency(_voice_shared_state->grain_rate_hz);
 	++_phasor_internal_trig;
 	float trig = _ramp2trig(_phasor_internal_trig.getPhase());
