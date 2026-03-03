@@ -42,10 +42,6 @@ cd slicer_granular
 git submodule update --init --recursive
 
 # Point to your JUCE installation
-ln -s /Applications/JUCE ./JUCE
-
-
-# Or if JUCE is installed elsewhere:
 ln -s /path/to/your/JUCE ./JUCE
 
 mkdir build
@@ -91,7 +87,7 @@ Delete build directory and rebuild:
 rm -rf build && mkdir build && cd build && cmake ..
 ```
 
-### "nvs_libraries not found"
+### "nvs_libraries not found" or "juce_utils not found"
 
 Initialize submodules: 
 
