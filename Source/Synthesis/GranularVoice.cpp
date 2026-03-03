@@ -11,16 +11,15 @@
 #include "GranularVoice.h"
 
 namespace nvs::gran {
-GranularVoice::GranularVoice(nvs::gran::GranularSynthSharedState  *const synth_shared_state, const unsigned long seed, const int voice_id)
+GranularVoice::GranularVoice(GranularSynthSharedState  *const synth_shared_state, const unsigned long seed, const int voice_id)
 :	_synth_shared_state(synth_shared_state)
 ,	_voice_shared_state {
-    ._gaussian_rng {seed},
-    ._expo_rng {seed + 123456789UL},
+    ._gaussian_rng {BoxMuller(seed)},
     ._voice_id = voice_id
 }
 {}
 
-void GranularVoice::setLogger(const std::function<void(const juce::String&)>& loggerFunction)
+void GranularVoice::setLogger(const std::function<void(const String&)>& loggerFunction)
 {
     logger = loggerFunction;
     granularSynthGuts->setLogger(loggerFunction);
@@ -33,10 +32,10 @@ void GranularVoice::setCurrentPlaybackSampleRate(const double sampleRate){
 }
 void GranularVoice::prepareToPlay(const double sampleRate, int samplesPerBlock)
 {
-    juce::ignoreUnused(samplesPerBlock);
+    ignoreUnused(samplesPerBlock);
     setCurrentPlaybackSampleRate(sampleRate);
 }
-void GranularVoice::startNote (const int midiNoteNumber, const float velocity, juce::SynthesiserSound *sound, int currentPitchWheelPosition)
+void GranularVoice::startNote (const int midiNoteNumber, const float velocity, SynthesiserSound *sound, int currentPitchWheelPosition)
 {
     (void)sound;
 
@@ -51,7 +50,7 @@ void GranularVoice::startNote (const int midiNoteNumber, const float velocity, j
 
     {
         const auto &apvts = _synth_shared_state->_apvts;
-        adsr.setParameters(juce::ADSR::Parameters (
+        adsr.setParameters(ADSR::Parameters (
             *apvts.getRawParameterValue("amp_env_attack"),
             *apvts.getRawParameterValue("amp_env_decay"),
             *apvts.getRawParameterValue("amp_env_sustain"),
@@ -79,10 +78,10 @@ void GranularVoice::stopNote (const float velocity, const bool allowTailOff)
 bool GranularVoice::isVoiceActive() const {
     return adsr.isActive();
 }
-std::vector<nvs::gran::GrainDescription> GranularVoice::getGrainDescriptions() const {
+std::vector<GrainDescription> GranularVoice::getGrainDescriptions() const {
     return _grainDescriptions;
 }
-void GranularVoice::renderNextBlock (juce::AudioBuffer< float > &outputBuffer, const int startSample, const int numSamples)
+void GranularVoice::renderNextBlock (AudioBuffer< float > &outputBuffer, const int startSample, const int numSamples)
 {
     if (!isVoiceActive()){
         granularSynthGuts->clearNotes();
@@ -130,7 +129,7 @@ void GranularVoice::pitchWheelMoved (int newPitchWheelValue) {
 void GranularVoice::controllerMoved (int controllerNumber, int newControllerValue) {
     // apply (CC aspects of) modulation matrix?
 }
-bool GranularVoice::canPlaySound (juce::SynthesiserSound *)
+bool GranularVoice::canPlaySound (SynthesiserSound *)
 {
     return true;
 }

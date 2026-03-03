@@ -338,8 +338,8 @@ void Grain::setParams(){
     _frequencyRandomizationMode = *apvts.getRawParameterValue(axiom::frequency_randomization_mode)
         == 0.f ? FrequencyRandomizationMode::Continuous : FrequencyRandomizationMode::Octaves;
 	_transpose_lgr.setSigma(24.0f * (*apvts.getRawParameterValue("transpose_rand")));
-	_density_ler.setMu(*apvts.getRawParameterValue("density"));
-	_density_ler.setSigma(*apvts.getRawParameterValue("density_rand"));
+	_density_lnr.setMu(*apvts.getRawParameterValue("density"));
+	_density_lnr.setSigma(*apvts.getRawParameterValue("density_rand"));
 	float const pos = *apvts.getRawParameterValue("position");
 	_position_lgr.setMu(pos);
 	_position_lgr.setSigma(*apvts.getRawParameterValue("position_rand"));
@@ -363,7 +363,7 @@ Grain::Grain(GranularSynthSharedState *const synth_shared_state,
     , _grain_id(newId)
     , _transpose_lgr(_voice_shared_state->_gaussian_rng, {0.f, 0.f})
     , _position_lgr(_voice_shared_state->_gaussian_rng, {0.0, 0.0})
-    , _density_ler(_voice_shared_state->_expo_rng, {0.015f, 0.f})
+    , _density_lnr(_voice_shared_state->_gaussian_rng, {0.015f, 0.f})
     , _skew_lgr(_voice_shared_state->_gaussian_rng, {0.5f, 0.f})
     , _plateau_lgr(_voice_shared_state->_gaussian_rng, {1.f, 0.f})
     , _pan_lgr(_voice_shared_state->_gaussian_rng, {0.5f, 0.23f})
@@ -633,8 +633,8 @@ Grain::outs Grain::operator()(float const trig_in){
     const auto grain_rate_hz = _grain_rate_latch(_voice_shared_state->grain_rate_hz, should_open_latches);
     assert(grain_rate_hz > 0.f);
     const auto grain_base_dur = N_GRAINS / grain_rate_hz;
-	double const duration_in_samps = _density_ler(should_open_latches) * grain_base_dur * playback_sr;
-	    // calculateDurationInSamples(_density_ler(should_open_latches),
+	double const duration_in_samps = _density_lnr(should_open_latches) * grain_base_dur * playback_sr;
+	    // calculateDurationInSamples(_density_lnr(should_open_latches),
 	    //     compensatedLength,
 	    //     playback_sr);	// take settings._center_position_at_env_peak as param to determine if it should clip normalized duration to 0-1?
 	// assert (duration_in_samps <= compensatedLength);

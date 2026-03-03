@@ -94,7 +94,6 @@ struct GranularSynthSharedState {
 struct GranularVoiceSharedState {
 	// random generators are uniquely seeded per voice.
 	BoxMuller _gaussian_rng;
-	ExponentialRandomNumberGenerator _expo_rng;
 	int _voice_id;
 	
 	float trigger;
@@ -287,7 +286,7 @@ private:
     
 	LatchedGaussianRandom_f 	_transpose_lgr;
 	LatchedGaussianRandom_d 	_position_lgr; // latches position from gate on, goes toward dest windowing
-	LatchedExponentialRandom_d 	_density_ler; // latches duration from gate on, goes toward dest windowing
+	LatchedLogNormalRandom_d 	_density_lnr; // latches duration from gate on, goes toward dest windowing
 	LatchedGaussianRandom_f 	_skew_lgr;
 	LatchedGaussianRandom_f 	_plateau_lgr;
 	LatchedGaussianRandom_f 	_pan_lgr;
