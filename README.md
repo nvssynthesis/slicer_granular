@@ -15,7 +15,7 @@ parameters:
 <li>transpose + randomness amount</li>
 <li>position + randomness amount</li>
 <li>speed + randomness amount</li>
-<li>duration + randomness amount</li>
+<li>density + randomness amount</li>
 <li>skew + randomness amount</li>
 <li>pan + randomness amount</li>
 </ul>
