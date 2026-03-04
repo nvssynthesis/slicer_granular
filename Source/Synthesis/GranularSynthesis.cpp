@@ -34,62 +34,9 @@ namespace nvs::gran {
 // NOLINTBEGIN(cppcoreguidelines-narrowing-conversions)
 
 namespace {
-/**
- * Picks `numToPick` distinct bounds from `choices`, sampling each
- * with probability ∝ its `weight`.  If `numToPick` >= choices.size(),
- * returns all of them in arbitrary (but weighted) order.
- */
+
 using WeightedReadBounds = PolyGrain::WeightedReadBounds;
-std::vector<WeightedReadBounds> pickWeightedReadBoundsProbabilistically (const std::vector<WeightedReadBounds> &choices, const int numToPick)
-{
-	const int N = static_cast<int>(choices.size());
-	if (N == 0 || numToPick <= 0){
-		return {};
-	}
-	// 1) Extract weights into their own array:
-	std::vector<double> weightArr;
-	weightArr.reserve(N);
-	for (auto& wrb : choices)
-		weightArr.push_back(wrb.weight);
 
-	std::mt19937 rng{ std::random_device{}() };
-	std::vector<WeightedReadBounds> picked;
-	picked.reserve(numToPick);
-
-	if (numToPick <= N)
-	{
-		// --- WITHOUT replacement ---
-		for (int pick = 0; pick < numToPick; ++pick)
-		{
-			std::discrete_distribution dist(weightArr.begin(), weightArr.end());
-			int choice = dist(rng);
-			picked.emplace_back( choices[choice] );
-
-			// zero out that weight, then renormalize
-			weightArr[choice] = 0.0;
-			const double sum = std::accumulate(weightArr.begin(), weightArr.end(), 0.0);
-			if (sum <= 0.0) {
-				break;
-			}
-			for (auto& w : weightArr) {
-				w /= sum;
-			}
-		}
-	}
-	else {
-		// --- WITH replacement ---
-		// we keep the original weightArr intact
-		std::discrete_distribution dist(weightArr.begin(), weightArr.end());
-		for (int pick = 0; pick < numToPick; ++pick)
-		{
-			const int choice = dist(rng);
-			picked.push_back( choices[choice] );
-			// note: weights are unchanged, so repeats are allowed
-		}
-	}
-
-	return picked;
-}
 /**
  This version simply evenly distributes the choices amongst the available grains.
  */
@@ -97,7 +44,7 @@ struct WeightedReadBoundsAndFrequency {
     WeightedReadBounds wb;
     float freq {0.f};
 };
-std::vector<WeightedReadBoundsAndFrequency> pickWeightedReadBoundsEvenly (const std::vector<WeightedReadBounds> &wrb, std::array<float, 3> fundamentals, const int numToPick)
+std::vector<WeightedReadBoundsAndFrequency> pickWeightedReadBoundsEvenly (const std::vector<WeightedReadBounds> &wrb, const std::array<float, 3> fundamentals, const int numToPick)
 {
 	
 	constexpr int N = fundamentals.size();
@@ -105,7 +52,7 @@ std::vector<WeightedReadBoundsAndFrequency> pickWeightedReadBoundsEvenly (const 
 
 	jassert(N <= numToPick);
 
-	if (N == 0 || numToPick <= 0){
+	if (numToPick <= 0){
 		return {};
 	}
 
@@ -121,7 +68,65 @@ std::vector<WeightedReadBoundsAndFrequency> pickWeightedReadBoundsEvenly (const 
 
 	return picked;
 }
+[[maybe_unused]] std::vector<WeightedReadBounds> pickWeightedReadBoundsProbabilistically (const std::vector<WeightedReadBounds> &choices, const int numToPick)
+	/**
+	 * Picks `numToPick` distinct bounds from `choices`, sampling each
+	 * with probability ∝ its `weight`.  If `numToPick` >= choices.size(),
+	 * returns all of them in arbitrary (but weighted) order.
+	 */
+{
+    const int N = static_cast<int>(choices.size());
+    if (N == 0 || numToPick <= 0){
+	    return {};
+    }
+    // 1) Extract weights into their own array:
+    std::vector<double> weightArr;
+    weightArr.reserve(N);
+    for (auto& wrb : choices) {
+	    weightArr.push_back(wrb.weight);
+    }
+
+    std::mt19937 rng{ std::random_device{}() };
+    std::vector<WeightedReadBounds> picked;
+    picked.reserve(numToPick);
+
+    if (numToPick <= N)
+    {
+	    // --- WITHOUT replacement ---
+	    for (int pick = 0; pick < numToPick; ++pick)
+	    {
+		    std::discrete_distribution dist(weightArr.begin(), weightArr.end());
+		    int choice = dist(rng);
+		    picked.emplace_back( choices[choice] );
+
+		    // zero out that weight, then renormalize
+		    weightArr[choice] = 0.0;
+		    const double sum = std::accumulate(weightArr.begin(), weightArr.end(), 0.0);
+		    if (sum <= 0.0) {
+			    break;
+		    }
+		    for (auto& w : weightArr) {
+			    w /= sum;
+		    }
+	    }
+    }
+    else {
+	    // --- WITH replacement ---
+	    // we keep the original weightArr intact
+	    std::discrete_distribution dist(weightArr.begin(), weightArr.end());
+	    for (int pick = 0; pick < numToPick; ++pick)
+	    {
+		    const int choice = dist(rng);
+		    picked.push_back( choices[choice] );
+		    // note: weights are unchanged, so repeats are allowed
+	    }
+    }
+
+    return picked;
 }
+
+}   // anonymous namespace
+
 PolyGrain::PolyGrain(GranularSynthSharedState *const synth_shared_state,
 					 GranularVoiceSharedState *const voice_shared_state)
 :
@@ -179,16 +184,16 @@ void PolyGrain::setEvents(const std::vector<WeightedReadBounds> &newWeightedRead
 	for (size_t i = 0; i < _grains.size(); ++i){
 		// for now, we will just have all grains use same read bounds.
 		// however, we may want to have some proportions of grains using different readbounds in the future.
-		const auto &b = picked[i];
-        assert (b.wb.bounds.begin >= 0.0 && b.wb.bounds.begin <= 1.0);
-        assert ( b.wb.bounds.end  >= 0.0 &&  b.wb.bounds.end  <= 1.0);
+		const auto &[wb, freq] = picked[i];
+        assert (wb.bounds.begin >= 0.0 && wb.bounds.begin <= 1.0);
+        assert ( wb.bounds.end  >= 0.0 &&  wb.bounds.end  <= 1.0);
 
 
-		_grains[i].setReadBounds(b.wb.bounds);
-		auto w = b.wb.weight;
+		_grains[i].setReadBounds(wb.bounds);
+		auto w = wb.weight;
 		w *= w;
 		_grains[i].setWeight(sqrtCached(w));
-	    _grains[i].setUnderlyingFundamentalFrequency(b.freq);
+	    _grains[i].setUnderlyingFundamentalFrequency(freq);
 	}
 }
 
@@ -337,7 +342,7 @@ void Grain::setParams(){
 	_transpose_lgr.setMu(*apvts.getRawParameterValue("transpose"));
     _frequencyRandomizationMode = *apvts.getRawParameterValue(axiom::frequency_randomization_mode)
         == 0.f ? FrequencyRandomizationMode::Continuous : FrequencyRandomizationMode::Octaves;
-	_transpose_lgr.setSigma(24.0f * (*apvts.getRawParameterValue("transpose_rand")));
+	_transpose_lgr.setSigma(*apvts.getRawParameterValue("transpose_rand") * 24.0f);
 	_density_lnr.setMu(*apvts.getRawParameterValue("density"));
 	_density_lnr.setSigma(*apvts.getRawParameterValue("density_rand"));
 	const float pos = *apvts.getRawParameterValue("position");
@@ -418,17 +423,7 @@ namespace {	// anonymous namespace for local helper functions
 float calculateTransposeMultiplier(const float ratioBasedOnNote, const float ratioBasedOnTranspose, const float ratioBasedOnUnderlyingF0){
 	return memoryless::clamp(ratioBasedOnNote * ratioBasedOnTranspose * ratioBasedOnUnderlyingF0, 0.001f, 1000.f);
 }
-double calculateDurationInSamples(const double latchedDuration, const double compensatedLength, const double sampleRate){
-	using memoryless::clamp;
-#pragma message("this clamping of randomized duration should be improved")
-	const auto clippedNormalizedDuration = clamp(latchedDuration, 0.0, 1.0);
-	double constexpr maxLengthInSeconds = 20.0;
-	double constexpr minLengthInSeconds = 0.001;	// 1 ms
-	const double maxLengthInSamples = maxLengthInSeconds * sampleRate;
-	const double minLengthInSamples = minLengthInSeconds * sampleRate;
-//	const auto clippedLength = clamp(compensatedLength, minLengthInSamples, maxLengthInSamples);
-	return clamp(clippedNormalizedDuration * compensatedLength, minLengthInSamples, maxLengthInSamples);
-}
+
 float calculateWindow(const double accum, const double duration, const float transpositionMultiplier, const float skew, float plateau){
 	assert(transpositionMultiplier > 0.f);
 	assert (duration > 0.0);
@@ -490,7 +485,7 @@ float calculateSample(const dsp::AudioBlock<float> &wave_block, const double sam
 						>(wave_block.getChannelPointer(0), sample_index, wave_block.getNumSamples());
 	return win * velocity_amplitude * samp;
 }
-float calculatePan(float pan_latch_val){
+float calculatePan(const float pan_latch_val){
 	return memoryless::clamp(pan_latch_val, 0.f, 1.f) * std::numbers::pi * 0.5f;
 }
 void writeAudioToOuts(const float sample, const double fractionalIndex, const float pan_latch_val,
@@ -614,31 +609,14 @@ Grain::outs Grain::operator()(const float trig_in){
 		assert (denormedReadBounds.end > denormedReadBounds.begin);
 	}
 
-	size_t const compensatedLength = [&file_sr, &denormedReadBounds, buffLength, file_sample_rate_compensate_ratio]()
-    {
-		const double event_length_samps = denormedReadBounds.end - denormedReadBounds.begin;
-	    constexpr double min_event_length_sec = 0.1;
-	    constexpr double max_event_length_sec = min_event_length_sec * 16.0;
-	    const float clamped_event_length_sec =
-	        std::min(
-	        std::max(
-	            event_length_samps / file_sr,
-	            min_event_length_sec),
-	        max_event_length_sec);
-	    const double clamped_event_length_samps = clamped_event_length_sec * file_sr;
-		const auto cLen = static_cast<size_t>(clamped_event_length_samps / file_sample_rate_compensate_ratio);
-		assert (0 < cLen);
-		return cLen;
+	const double duration_in_samps = [this, should_open_latches, playback_sr]()
+	{
+		const auto grain_rate_hz = _grain_rate_latch(_voice_shared_state->grain_rate_hz, should_open_latches);
+		assert(grain_rate_hz > 0.f);
+		const auto grain_base_dur = N_GRAINS / grain_rate_hz;
+		return _density_lnr(should_open_latches) * grain_base_dur * playback_sr;
 	}();
 
-    const auto grain_rate_hz = _grain_rate_latch(_voice_shared_state->grain_rate_hz, should_open_latches);
-    assert(grain_rate_hz > 0.f);
-    const auto grain_base_dur = N_GRAINS / grain_rate_hz;
-	const double duration_in_samps = _density_lnr(should_open_latches) * grain_base_dur * playback_sr;
-	    // calculateDurationInSamples(_density_lnr(should_open_latches),
-	    //     compensatedLength,
-	    //     playback_sr);	// take settings._center_position_at_env_peak as param to determine if it should clip normalized duration to 0-1?
-	// assert (duration_in_samps <= compensatedLength);
 	const float latch_skew_result = memoryless::clamp(_skew_lgr(should_open_latches), 0.001f, 0.999f);
 	
 	const float duration_pitch_compensation_factor = getDurationPitchCompensationFactor(settings._duration_pitch_compensation, _waveform_read_rate);
@@ -702,7 +680,7 @@ Grain::outs Grain::operator()(const float trig_in){
 	
 	processBusyness(_window, _busy_histo, o);
 	
-	if (util::checkNanOrInf(std::array<float, 2>{o.audio_L, o.audio_R})){
+	if (util::checkNanOrInf(std::array { o.audio_L, o.audio_R })){
 		return {};
 	}
 	
