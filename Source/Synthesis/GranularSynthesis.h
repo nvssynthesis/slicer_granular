@@ -95,8 +95,10 @@ struct GranularVoiceSharedState {
 	// random generators are uniquely seeded per voice.
 	BoxMuller _gaussian_rng;
 	int _voice_id;
-	
-	float trigger;
+
+    // without this, the grain params won't update upon noteOn messages, leading to e.g. repeat of last note's pitch at beginning of note.
+	bool forceGrainTrigger; // set to true on startNote, re-set to false after all grains are processed once.
+
     double grain_rate_hz;
 
     struct Scanner {

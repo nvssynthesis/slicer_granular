@@ -318,6 +318,8 @@ std::array<float, 2> PolyGrain::doProcess(const float triggerIn){
 		audio_out_R += _outs[idx].audio_R;
 		voices_active += _outs[idx].busy;
 	}
+    _voice_shared_state->forceGrainTrigger = false;
+
 	output[0] = audio_out_L * _normalizer;
 	output[1] = audio_out_R * _normalizer;
 
@@ -554,9 +556,9 @@ Grain::outs Grain::operator()(const float trig_in){
 	
 	outs o;
 	o.next = _busy_histo.val ? trig_in : 0.f;
-	
-	const bool should_open_latches = _busy_histo.val ? false : static_cast<bool>(trig_in);
-	
+
+    const bool should_reset_accum = _busy_histo.val ? false : static_cast<bool>(trig_in);
+    const bool should_open_latches = should_reset_accum || _voice_shared_state->forceGrainTrigger;
 
     const auto f0_compensation_ratio =
         _underlying_f0_latch(
@@ -576,7 +578,7 @@ Grain::outs Grain::operator()(const float trig_in){
 	    _ratio_for_note_latch(_ratio_based_on_note, should_open_latches),
 	    randomPitchRatio,
 	    f0_compensation_ratio);
-	_accum(_waveform_read_rate, should_open_latches);
+	_accum(_waveform_read_rate, should_reset_accum);
 	
 	const double file_sample_rate_compensate_ratio = calculateSampleReadRate(playback_sr, file_sr);
 

@@ -46,6 +46,7 @@ void GranularVoice::startNote (const int midiNoteNumber, const float velocity, S
     else {
         granularSynthGuts->clearNotes();
         granularSynthGuts->noteOn(midiNoteNumber, velIntegral);
+        _voice_shared_state.forceGrainTrigger = true;
     }
 
     {
