@@ -48,8 +48,8 @@ void WaveformComponent::addMarker(const double onsetPosition) {
 }
 void WaveformComponent::addMarker(nvs::gran::GrainDescription const &gd){
 	const auto it = std::lower_bound(currentPositionMarkerList.begin(), currentPositionMarkerList.end(), gd,
-							   [](const PositionMarker& marker, nvs::gran::GrainDescription gd) {
-									return marker.position < gd.position;
+							   [](const PositionMarker& marker, const nvs::gran::GrainDescription &gd_) {
+									return marker.position < gd_.position;
 							   });
 	currentPositionMarkerList.insert(it, PositionMarker::fromGrainDescription(gd));
 }
@@ -81,22 +81,16 @@ void processLine(Graphics& g, Line<float> &l, WaveformComponent::PositionMarker 
 	auto const p = marker.pan;
 	auto const w = marker.window;
 	auto const busy = marker.busy;
-	auto const first_playthrough = marker.first_playthrough;
 	if (!busy){
 		assert (w == 0.f);
 	}
 	Colour colour = busy ? Colour(Colours::lightgreen).withMultipliedBrightness(1.1f) : Colour(Colours::grey).withMultipliedLightness(0.9f);
 
-	if (!first_playthrough){
-		colour = colour.withRotatedHue(log2(r) / 20.f);									// pitch affects hue
-		g.setColour(colour);
-		g.setOpacity(sqrt(w));															// envelope (window) affects opacity
-	}
-	else {
-		colour = colour.withAlpha(0.f);
-		g.setColour(colour);
-	}
-	l.applyTransform(AffineTransform::translation(0.0f, p * (regionHeight)));	// panning affects y position
+	colour = colour.withRotatedHue(log2(static_cast<float>(r)) / 20.f);	// pitch affects hue
+	g.setColour(colour);
+	g.setOpacity(sqrt(w));						// envelope (window) affects opacity
+
+	l.applyTransform(AffineTransform::translation(0.0f, p * regionHeight));	// panning affects y position
 	l.applyTransform(AffineTransform::scale(1.f, 0.5f));						// make line take up just 1 channel's worth of space (half the height)
 }
 }
@@ -104,14 +98,14 @@ void WaveformComponent::drawMarker(Graphics& g, MarkerVariant marker)
 {
 	auto const line = [&]
 	{
-		double position = std::visit([](const auto& marker) {
-			return marker.position; // position is a common member to all alternatives
+		const double position = std::visit([](const auto& m) {
+			return m.position; // position is a common member to all alternatives
 		}, marker);
-		float const xPos = getWidth() * position;
-		const float y0 = waveformBounds.getY();
-		const float y1 = waveformBounds.getBottom();
+		const float xPos = getWidth() * position;
+		const auto y0 = static_cast<float>(waveformBounds.getY());
+		const auto y1 = static_cast<float>(waveformBounds.getBottom());
 		assert (y1 > y0);
-		auto l = Line<float>(Point<float>{xPos, y0}, Point<float>{xPos, y1});
+		auto l = Line(Point{xPos, y0}, Point{xPos, y1});
 		std::visit([&](const auto &m) {
 			processLine(g, l, m);
 		}, marker);
@@ -188,7 +182,7 @@ void WaveformComponent::highlightOnsets(std::vector<nvs::timbrespace::WeightedId
     std::vector<std::pair<double, double>> ranges;
     ranges.reserve(currentIndices.size());
 
-    auto near_eq = [](double a, double b) {
+    auto near_eq = [](const double a, const double b) {
         if (constexpr auto eps = std::numeric_limits<double>::lowest() * 10.0;
             std::abs(a - b) < eps){
             return true;
@@ -207,7 +201,7 @@ void WaveformComponent::highlightOnsets(std::vector<nvs::timbrespace::WeightedId
 
         jassert (!near_eq(startPos, endPos));
 
-        ranges.push_back(std::make_pair(startPos, endPos));
+        ranges.emplace_back(std::make_pair(startPos, endPos));
     }
 	highlightedRange = ranges;
 	repaint();
@@ -221,17 +215,18 @@ void WaveformComponent::mouseUp(MouseEvent const &e) {
 		menu.addItem(2, "Reveal current file directory");
 		
 		menu.showMenuAsync(PopupMenu::Options{},
-										[this](int result)
+										[this](const int result)
 		  {
 			if (result == 1) {
 				auto chooser = std::make_shared<FileChooser>("Select Audio File", File{}, "*.wav;*.aiff;*.aif;*.mp3;*.flac;*.ogg");
 				chooser->launchAsync(FileBrowserComponent::openMode | FileBrowserComponent::canSelectFiles,
-									 [this, chooser](FileChooser const &fc){
-					auto file = fc.getResult();
-					if (file.existsAsFile()){
-						_proc.loadAudioFileAndUpdateState(file, true);
-					}
-				});
+								[this, chooser](FileChooser const &fc)
+								{
+                                    if (const auto file = fc.getResult(); file.existsAsFile())
+                                    {
+						                _proc.loadAudioFileAndUpdateState(file, true);
+					                }
+				                });
 			}
 			else if (result == 2) {
 				// https://forum.juce.com/t/how-to-implement-reveal-in-finder/4373/2
@@ -331,12 +326,12 @@ void WaveformAndPositionComponent::resized()
 	
 	{
 		auto const heightDiff = totalHeight - reservedHeight;
-		auto const waveformY = localBounds.getY() + (heightDiff * 0.5);
+		auto const waveformY = localBounds.getY() + 0.5*heightDiff;
 		auto const waveformHeight = sliderVisible ? reservedHeight * 0.8f : reservedHeight;
 		
 		auto const waveformWidth = localBounds.getWidth() * 1.0;
 		auto const waveformWidthDiff = localBounds.getWidth() - waveformWidth;
-		auto const waveformX = localBounds.getX() + (waveformWidthDiff * 0.5);
+		auto const waveformX = localBounds.getX() + 0.5*waveformWidthDiff;
 
 		waveformBounds = Rectangle(waveformX, waveformY, waveformWidth, waveformHeight).toNearestInt();
 	}
@@ -346,14 +341,10 @@ void WaveformAndPositionComponent::resized()
 		auto const sliderHeight = static_cast<int>(reservedHeight) - waveformBounds.getHeight();
         constexpr int widthIncrease = 14;
 		auto const sliderWidth = waveformBounds.getWidth() + widthIncrease;
-		auto const sliderX = waveformBounds.getX() - (widthIncrease / 2);
+		auto const sliderX = waveformBounds.getX() - widthIncrease/2;
 		auto const sliderY = waveformBounds.getBottom();
 		auto const sliderRect = Rectangle(sliderX, sliderY, sliderWidth, sliderHeight);
 		positionSlider._slider.setBounds(sliderRect);
 	}
 }
-
-// void WaveformAndPositionComponent::paint (Graphics& g) {
-//
-// }
 

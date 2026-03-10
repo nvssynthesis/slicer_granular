@@ -284,6 +284,7 @@ private:
     gen::latch<float> _amplitude_for_note_latch {0.f};
 	gen::latch<float> _scanner_for_position_latch {0.f};
 	gen::latch<float> _grain_weight_latch {1.f}; // the weight based on distance to target point
+    gen::latch<bool> _pitchify_latch {false};
     gen::latch<float> _underlying_f0_latch {0.f};   // for pitch compensation. if non-positive, it will have no effect.
     
 	LatchedGaussianRandom_f 	_transpose_lgr;
@@ -318,6 +319,7 @@ private:
 	float _grain_drive {1.0f};
 	float _grain_makeup_gain {1.0f};
 
+    bool _pitchify { false };
     float _underlying_f0 {0.f};
 };
 

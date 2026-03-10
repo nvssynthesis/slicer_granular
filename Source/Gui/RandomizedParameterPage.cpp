@@ -27,7 +27,7 @@ RandomizedParameterPage::RandomizedParameterPage(AudioProcessorValueTreeState& a
         underlyingCB.addItemList({nvs::axiom::Continuous, nvs::axiom::Octaves}, 1);
     #ifdef TSN
         underlyingCB.addSectionHeading("Pitchify");
-        underlyingCB.addItemList({"On", "Off"}, 3);
+        underlyingCB.addItemList({"Off", "On"}, 3);
     #endif
         comboBoxes.add(std::move(cb));
         comboBoxes[0]->cb.onChange = [this, &apvts]() {

@@ -210,12 +210,6 @@ void PolyGrain::doNoteOn(noteNumber_t note, velocity_t velocity){
 	updateNotes();
 	_phasor_internal_trig.reset();
 	_voice_shared_state->_scanner.lfo.reset();
-	
-#if GRAIN_UPDATE_HACK
-	for (int i = 0; i < _grains.size(); ++i) {
-		_grains[i].setFirstPlaythroughOfVoicesNote(true);
-	}
-#endif
 }
 void PolyGrain::doNoteOff(const noteNumber_t note){
 	// remove from noteHolder
@@ -357,6 +351,8 @@ void Grain::setParams(){
 	_pan_lgr.setMu(1.f - *apvts.getRawParameterValue("pan"));	// makes more sense internally to reverse this
 	_pan_lgr.setSigma(*apvts.getRawParameterValue("pan_rand"));
 
+    _pitchify = static_cast<bool>(*apvts.getRawParameterValue("pitchify"));
+
     _grain_normalize_amount = *apvts.getRawParameterValue("fx_grain_normalize");
 	_grain_drive = *apvts.getRawParameterValue("fx_grain_drive");
 	_grain_makeup_gain = *apvts.getRawParameterValue("fx_makeup_gain");
@@ -413,11 +409,6 @@ GrainDescription Grain::getGrainDescription() const {
 	gd.window = _window;
 	gd.pan = _pan / (std::numbers::pi * 0.5f);
 	gd.busy = _busy_histo.val != 0.f;
-#if GRAIN_UPDATE_HACK
-	gd.first_playthrough = firstPlaythroughOfVoicesNote;
-#else
-	gd.first_playthrough = false;
-#endif
 	return gd;
 }
 
@@ -560,7 +551,9 @@ Grain::outs Grain::operator()(const float trig_in){
     const bool should_reset_accum = _busy_histo.val ? false : static_cast<bool>(trig_in);
     const bool should_open_latches = should_reset_accum || _voice_shared_state->forceGrainTrigger;
 
+    const bool pitchify = _pitchify_latch(_pitchify, should_open_latches);
     const auto f0_compensation_ratio =
+        !pitchify ? 1.f :
         _underlying_f0_latch(
             _underlying_f0 > 0 ?
                 _synth_shared_state->_concertPitchHz / _underlying_f0  :
@@ -587,14 +580,6 @@ Grain::outs Grain::operator()(const float trig_in){
 	    _postProcessing.setNormalization(_grain_normalize_amount);
 		_postProcessing.setDrive(_grain_drive);
 		_postProcessing.setMakeupGain(_grain_makeup_gain);
-
-#if GRAIN_UPDATE_HACK
-		if (wantsToDisableFirstPlaythroughOfVoicesNote){
-			firstPlaythroughOfVoicesNote = false;
-			wantsToDisableFirstPlaythroughOfVoicesNote = false;
-		}
-		wantsToDisableFirstPlaythroughOfVoicesNote = true;
-#endif
 	}
 
 	if (_normalized_read_bounds.end - _normalized_read_bounds.begin == 0.0){	// protection for initialization case
@@ -641,13 +626,6 @@ Grain::outs Grain::operator()(const float trig_in){
 							  duration_pitch_compensation_factor,	// const float transpositionMultiplier
 							  latch_skew_result,					// const float skew
 							  _plateau_lgr(should_open_latches));	// float plateau
-#if GRAIN_UPDATE_HACK
-	if (firstPlaythroughOfVoicesNote){
-		writeAudioToOuts(0.f, 0.f, o);
-		processBusyness(_window, _busy_histo, o);
-		return o;
-	}
-#endif
 
 	_sample_index = [this, norm_pos, duration_in_samps, latch_skew_result, duration_pitch_compensation_factor,
 	    file_sample_rate_compensate_ratio, &settings, &denormedReadBounds]()

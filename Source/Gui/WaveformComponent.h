@@ -68,9 +68,8 @@ public:
 		float window;
 		float pan;
 		bool busy;
-		bool first_playthrough;
 		static PositionMarker fromGrainDescription(nvs::gran::GrainDescription const &gd){
-			return PositionMarker{gd.grain_id, gd.position, gd.sample_playback_rate, gd.window, gd.pan, gd.busy, gd.first_playthrough};
+			return PositionMarker{gd.grain_id, gd.position, gd.sample_playback_rate, gd.window, gd.pan, gd.busy};
 		}
 	};
 protected:
@@ -107,8 +106,7 @@ public:
     explicit WaveformAndPositionComponent(SlicerGranularAudioProcessor &proc, int sourceSamplesPerThumbnailSample=512);
 	
 	void resized() override;
-	// void paint (Graphics& g) override;
-	
+
 	void hideSlider();	// effectively makes it function as just the waveformComponent. I don't want to simply use that though because then the slicer_granular version has to change a bunch of code based on #ifdef TSN.
 	
 	//========================================================================================
