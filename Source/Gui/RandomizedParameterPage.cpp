@@ -40,30 +40,34 @@ RandomizedParameterPage::RandomizedParameterPage(AudioProcessorValueTreeState& a
                 case 0:
                     break;
                 case 1: {
-                    RangedAudioParameter *fRandModeParam = apvts.getParameter(nvs::axiom::frequency_randomization_mode);
-                    if (fRandModeParam != nullptr) {
+                    if (RangedAudioParameter *fRandModeParam = apvts.getParameter(nvs::axiom::frequency_randomization_mode);
+                        fRandModeParam != nullptr)
+                    {
                         fRandModeParam->setValueNotifyingHost(0.f);
                     }
                     break;
                 }
                 case 2: {
-                    RangedAudioParameter *fRandModeParam = apvts.getParameter(nvs::axiom::frequency_randomization_mode);
-                    if (fRandModeParam != nullptr) {
+                    if (RangedAudioParameter *fRandModeParam = apvts.getParameter(nvs::axiom::frequency_randomization_mode);
+                        fRandModeParam != nullptr)
+                    {
                         fRandModeParam->setValueNotifyingHost(1.f);
                     }
                     break;
                 }
 #ifdef TSN
                 case 3: {
-                    RangedAudioParameter *pitchifyParam = apvts.getParameter(nvs::axiom::tsn::pitchify);
-                    if (pitchifyParam != nullptr) {
+                    if (RangedAudioParameter *pitchifyParam = apvts.getParameter(nvs::axiom::tsn::pitchify);
+                        pitchifyParam != nullptr)
+                    {
                         pitchifyParam->setValueNotifyingHost(0.f);
                     }
                     break;
                 }
                 case 4: {
-                    RangedAudioParameter *pitchifyParam = apvts.getParameter(nvs::axiom::tsn::pitchify);
-                    if (pitchifyParam != nullptr) {
+                    if (RangedAudioParameter *pitchifyParam = apvts.getParameter(nvs::axiom::tsn::pitchify);
+                        pitchifyParam != nullptr)
+                    {
                         pitchifyParam->setValueNotifyingHost(1.f);
                     }
                     break;
