@@ -373,6 +373,7 @@ inline const std::vector<ParameterDef> ALL_PARAMETERS = {
 
     ParameterDef::choice(nvs::axiom::tsn::pitchify, "Pitchify", "MainHidden", {"On", "Off"}, 0, ""),
 
+    ParameterDef::choice(nvs::axiom::tsn::DRMode, "DR Mode", "TSN", {"None", "PaCMAP"}, 0, "timbre_space"),
 	ParameterDef::linear(nvs::axiom::tsn::histogram_equalization, "Histogram Equalization", "TSN", 0.f, 1.f, 0.f, "", 0.f, "timbre_space"),
     ParameterDef::choice(nvs::axiom::tsn::x_axis, "X Axis", "TSN", analysis::getFeaturesStringArray(), 0, "timbre_space"),
     ParameterDef::choice(nvs::axiom::tsn::y_axis, "Y Axis", "TSN", analysis::getFeaturesStringArray(), 1, "timbre_space"),

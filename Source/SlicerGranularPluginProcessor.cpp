@@ -92,7 +92,7 @@ void SlicerGranularAudioProcessor::loadAudioFileAndUpdateState(const File f, con
 	const SpinLock::ScopedLockType lock(audioBlockLock);
 	loggingGuts.fileLogger.logMessage("                                          ...locked");
 
-#pragma message("we should find if the file was found and if not, give message");
+#pragma message("we should find if the file was found and if not, give message")
 	readIntoBufferAndUpdateState(f);
 	if (notifyEditor){
 		loggingGuts.fileLogger.logMessage("Processor: sending change message from loadAudioFileAndUpdateState");
