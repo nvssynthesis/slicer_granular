@@ -333,11 +333,11 @@ static constexpr float skeps = 5e-3f;	// epsilon for skew
 inline const std::vector<ParameterDef> ALL_PARAMETERS = {
 	ParameterDef::linear("transpose", 	"Transpose", 	"Main", -60.f,	    60.f,		0.f, 	" semi"),
 	ParameterDef::percent("position", "Position", 		"Main",   0.f,	     1.f,		0.f),
-	ParameterDef::skewed("speed", "Speed", 			 	"Main",  0.1f, 	  10000.f, 		50.f,	"hz"),
+	ParameterDef::skewed("speed", "Speed", 			 	"Main",  0.1f, 	 10000.f, 		50.f,	"hz"),
 	ParameterDef::percent("density", "Density", 	 	"Main", 1e-4f, 	  	 1.f, 		0.1f,	"", 1.0f, false, "duration"),	// percent with skew
-	ParameterDef::percent("skew", 	"Skew", 			"Main",	skeps, 	1.f-skeps, 		0.5f),						// percent with clipped range
-	ParameterDef::skewed("plateau", "Plateau", 		 	"Main",	0.01f, 		10.f, 		1.f, 	""),
-	ParameterDef::percent("pan", 	"Pan", 			 	"Main", 0.f,		 1.f,		0.5f),
+	ParameterDef::linear("skew", 	"Skew", 			"Main",	-10.f, 	    10.f, 		0.f),						// percent with clipped range
+	ParameterDef::linear("plateau", "Plateau", 		 	"Main",	-10.f, 		10.f, 		0.f),
+	ParameterDef::percent("pan", 	"Pan", 			 	"Main",   0.f,		 1.f,		0.5f),
 
     ParameterDef::choice(nvs::axiom::frequency_randomization_mode, "Frequency Randomization Mode", "MainHidden", {nvs::axiom::Continuous, nvs::axiom::Octaves}, 0, ""),
 

@@ -417,26 +417,57 @@ float calculateTransposeMultiplier(const float ratioBasedOnNote, const float rat
 	return memoryless::clamp(ratioBasedOnNote * ratioBasedOnTranspose * ratioBasedOnUnderlyingF0, 0.001f, 1000.f);
 }
 
-float calculateWindow(const double accum, const double duration, const float transpositionMultiplier, const float skew, float plateau){
-	assert(transpositionMultiplier > 0.f);
-	assert (duration > 0.0);
-	const double v = accum / duration;
-	const double windowIdx = memoryless::clamp(v / transpositionMultiplier, 0.0, 1.0);
-	auto win = gen::triangle<float, false>(static_cast<float>(windowIdx), skew);
-	
-	plateau = memoryless::clamp_low(plateau, 0.000001f);
-	win *= plateau;
-#define tanh util::tanh_pade_3_2
-	win = gen::parzen(tanh(win)) / gen::parzen(tanh(plateau));
-	if (plateau < 1.0){
-#if pade
-		win = util::pow_pade(win, 1.f / plateau);
-#else
-		win = pow(win, 1.f / plateau);
-#endif
-	}
-	return win;
+float calculateWindow(const double accum, const double duration, const float transpositionMultiplier,
+    float skew, float plateau)
+{
+    assert(transpositionMultiplier > 0.f);
+    assert(duration > 0.0);
+
+    const float x = static_cast<float>(
+        memoryless::clamp(accum / (duration * static_cast<double>(transpositionMultiplier)), 0.0, 1.0)
+    );
+
+    // smoothstep basis
+    const auto s = [](float v) -> float {
+        if (v <= 0.f) return 0.f;
+        if (v >= 1.f) return 1.f;
+        return v * v * (3.f - 2.f * v);
+    };
+
+    // sL and sR are mutually exclusive, so each branch incurs exactly one pow
+    const auto sT = [&s](float v, float p) -> float {
+        if (v <= 0.f || v >= 1.f) return 0.f;
+        return (v <= 0.5f)
+            ? std::pow(s(2.f * v), p)
+            : std::pow(1.f - s(2.f * v - 1.f), p);
+    };
+
+    const auto fT = [&s](float v, float p) -> float {
+        if (v <= 0.f || v >= 1.f) return 0.f;
+        return (v <= 0.5f)
+            ? 1.f - std::pow(s(1.f - 2.f * v), p)
+            : 1.f - std::pow(s(2.f * v - 1.f), p);
+    };
+
+    // kp and the shape exponent are both constant per grain — candidates for hoisting
+    const float kp = std::abs(skew) + 1.f;
+
+    const float xWarped = [&] {
+        const float base = (skew >= 0.f) ? x : 1.f - x;
+        if (base <= 0.f) return 0.f;
+        if (base >= 1.f) return 1.f;
+        return std::pow(base, kp);
+    }();
+
+    // plateau <= 0: thin-pulse family (squeeze);  plateau > 0: flat-top family
+    const float w = (plateau <= 0.f)
+        ? sT(xWarped, 1.f - plateau)
+        : fT(xWarped, 1.f + plateau);
+
+    constexpr float g = 1.f;
+    return w / g;
 }
+
 double calculateSampleReadRate(const double playback_sample_rate, const double file_sample_rate){
 	assert(playback_sample_rate > 0.0);
 	assert(file_sample_rate > 0.0);
@@ -604,7 +635,7 @@ Grain::outs Grain::operator()(const float trig_in){
 		return _density_lnr(should_open_latches) * grain_base_dur * playback_sr;
 	}();
 
-	const float latch_skew_result = memoryless::clamp(_skew_lgr(should_open_latches), 0.001f, 0.999f);
+	const float latch_skew_result = _skew_lgr(should_open_latches);
 	
 	const float duration_pitch_compensation_factor = getDurationPitchCompensationFactor(settings._duration_pitch_compensation, _waveform_read_rate);
 //#ifdef DBG
