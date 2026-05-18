@@ -308,7 +308,7 @@ private:
         Continuous = 0,
         Octaves
     } _frequencyRandomizationMode;
-    float _window {0.f};
+    float _window_val {0.f};
 	float _pan {0.f};
 	float _grain_weight {1.f};
     
@@ -321,6 +321,92 @@ private:
 
     bool _pitchify { false };
     float _underlying_f0 {0.f};
+
+    struct GrainWindow {
+        GrainWindow(const double duration, const float transpositionMultiplier, const float skew, const float plateau)
+            : invDurationTransposition(1.0 / (duration * static_cast<double>(transpositionMultiplier)))
+            , kp(std::abs(skew) + 1.f)
+            , shapeExponent((plateau <= 0.f) ? 1.f - plateau : 1.f + plateau)
+            , invG(1.f / g(plateau))
+            , skewPositive(skew >= 0.f)
+            , usePlateauPath(plateau > 0.f)
+            , warpIsIdentity(skew == 0.f)
+            , shapeIsIdentity(plateau == 0.f)
+        {
+            assert(transpositionMultiplier > 0.f);
+            assert(duration > 0.0);
+        }
+
+        float calculate(const double accum) const {
+            const float x = static_cast<float>(
+                memoryless::clamp(accum * invDurationTransposition, 0.0, 1.0)
+            );
+
+            const float xWarped = [&]() -> float {
+                const float base = skewPositive ? x : 1.f - x;
+                if (base <= 0.f) return 0.f;
+                if (base >= 1.f) return 1.f;
+                return warpIsIdentity ? base : std::pow(base, kp);
+            }();
+
+            const float w = [&]() -> float {
+                if (shapeIsIdentity) {
+                    if (xWarped <= 0.f || xWarped >= 1.f) return 0.f;
+                    return (xWarped <= 0.5f)
+                        ? s(2.f * xWarped)
+                        : 1.f - s(2.f * xWarped - 1.f);
+                }
+                return usePlateauPath ? fT(xWarped, shapeExponent) : sT(xWarped, shapeExponent);
+            }();
+
+            return w * invG;
+        }
+
+    private:
+        double invDurationTransposition;
+        float kp;
+        float shapeExponent;
+        float invG;
+        bool skewPositive;
+        bool usePlateauPath;
+        bool warpIsIdentity;
+        bool shapeIsIdentity;
+
+        static float g(float /*plateau*/) {
+            // g(x)=(0.98929477  +
+            //      -0.13804840x +
+            //       0.05481294x^{2} +
+            //      -0.00190264x^{3})
+            //      /
+            //      (1 +
+            //       0.09297753x +
+            //       0.06866064x^{2} +
+            //       0.00112537x^{3}
+            //      )
+            return 1.f; // placeholder
+        }
+
+        static float s(const float v) {
+            if (v <= 0.f) return 0.f;
+            if (v >= 1.f) return 1.f;
+            return v * v * (3.f - 2.f * v);
+        }
+
+        static float sT(const float v, const float p) {
+            if (v <= 0.f || v >= 1.f) return 0.f;
+            return (v <= 0.5f)
+                ? std::pow(s(2.f * v), p)
+                : std::pow(1.f - s(2.f * v - 1.f), p);
+        }
+
+        static float fT(const float v, const float p) {
+            if (v <= 0.f || v >= 1.f) return 0.f;
+            return (v <= 0.5f)
+                ? 1.f - std::pow(s(1.f - 2.f * v), p)
+                : 1.f - std::pow(s(2.f * v - 1.f), p);
+        }
+    };
+    GrainWindow _grainWindow;
 };
 
 } // namespace nvs::gran

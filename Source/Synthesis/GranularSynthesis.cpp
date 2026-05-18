@@ -372,6 +372,7 @@ Grain::Grain(GranularSynthSharedState *const synth_shared_state,
     , _pan_lgr(_voice_shared_state->_gaussian_rng, {0.5f, 0.23f})
     , _postProcessing(_synth_shared_state)
     , _frequencyRandomizationMode()
+    , _grainWindow(1.0, 1.f, 0.f, 0.f)
 {
     //#ifdef DBG
     //	_timed_printer = std::make_unique<util::TimedPrinter>(100);
@@ -406,7 +407,7 @@ GrainDescription Grain::getGrainDescription() const {
 	gd.grain_id = _grain_id;
 	gd.position = gen::wrap01(_sample_index / N);
 	gd.sample_playback_rate = _waveform_read_rate;
-	gd.window = _window;
+	gd.window = _window_val;
 	gd.pan = _pan / (std::numbers::pi * 0.5f);
 	gd.busy = _busy_histo.val != 0.f;
 	return gd;
@@ -614,9 +615,9 @@ Grain::outs Grain::operator()(const float trig_in){
 	}
 
 	if (_normalized_read_bounds.end - _normalized_read_bounds.begin == 0.0){	// protection for initialization case
-		_window = 0.f;
+		_window_val = 0.f;
 		writeAudioToOuts(0.f, 0.0, 0.f, _postProcessing, o);
-		processBusyness(_window, _busy_histo, o);
+		processBusyness(_window_val, _busy_histo, o);
 		return o;
 	}
 	
@@ -651,12 +652,11 @@ Grain::outs Grain::operator()(const float trig_in){
 		assert (np <= 1.0);
 		return np;
 	}();
-	
-	_window = calculateWindow(_accum.val,							// const double accum
-							  duration_in_samps,					// const double duration
-							  duration_pitch_compensation_factor,	// const float transpositionMultiplier
-							  latch_skew_result,					// const float skew
-							  _plateau_lgr(should_open_latches));	// float plateau
+
+    if (should_open_latches) {
+        _grainWindow = GrainWindow(duration_in_samps, duration_pitch_compensation_factor, latch_skew_result, _plateau_lgr(should_open_latches));
+    }
+	_window_val = _grainWindow.calculate(_accum.val);
 
 	_sample_index = [this, norm_pos, duration_in_samps, latch_skew_result, duration_pitch_compensation_factor,
 	    file_sample_rate_compensate_ratio, &settings, &denormedReadBounds]()
@@ -683,13 +683,13 @@ Grain::outs Grain::operator()(const float trig_in){
 								* _grain_weight_latch(_grain_weight, should_open_latches);
 #endif
 		;
-	    return calculateSample(wave_block, _sample_index, _window, vel_amplitude);
+	    return calculateSample(wave_block, _sample_index, _window_val, vel_amplitude);
 	}();
 	_pan = calculatePan(_pan_lgr(should_open_latches));
 	
 	writeAudioToOuts(sample, _sample_index, _pan, _postProcessing, o);
 	
-	processBusyness(_window, _busy_histo, o);
+	processBusyness(_window_val, _busy_histo, o);
 	
 	if (util::checkNanOrInf(std::array { o.audio_L, o.audio_R })){
 		return {};
