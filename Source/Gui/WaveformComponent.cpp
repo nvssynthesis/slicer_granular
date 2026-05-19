@@ -88,7 +88,7 @@ void processLine(Graphics& g, Line<float> &l, WaveformComponent::PositionMarker 
 
 	colour = colour.withRotatedHue(log2(static_cast<float>(r)) / 20.f);	// pitch affects hue
 	g.setColour(colour);
-	g.setOpacity(sqrt(w));						// envelope (window) affects opacity
+	g.setOpacity(nvs::memoryless::clamp(sqrt(w), 0.f, 1.f));				// envelope (window) affects opacity
 
 	l.applyTransform(AffineTransform::translation(0.0f, p * regionHeight));	// panning affects y position
 	l.applyTransform(AffineTransform::scale(1.f, 0.5f));						// make line take up just 1 channel's worth of space (half the height)

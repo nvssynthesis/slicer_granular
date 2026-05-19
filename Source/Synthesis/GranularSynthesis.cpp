@@ -282,7 +282,9 @@ std::array<float, 2> PolyGrain::doProcess(const float triggerIn){
 	std::array output {0.f, 0.f};
 	
 	// update phasor's frequency only if _triggerHisto.val is true
-	_voice_shared_state->grain_rate_hz = _speed_lnr(static_cast<bool>(_trigger_histo.val)); // used to clamp by percentage of mu. should no longer be necessary.
+    const bool should_open_latches = static_cast<bool>(_trigger_histo.val) || _voice_shared_state->forceGrainTrigger;
+
+	_voice_shared_state->grain_rate_hz = _speed_lnr(should_open_latches); // used to clamp by percentage of mu. should no longer be necessary.
 	_phasor_internal_trig.setFrequency(_voice_shared_state->grain_rate_hz);
 	++_phasor_internal_trig;
 	float trig = _ramp2trig(_phasor_internal_trig.getPhase());
@@ -335,6 +337,12 @@ std::vector<GrainDescription> PolyGrain::getGrainDescriptions() const {
 //=====================================================================================
 void Grain::setParams(){
 	const auto &apvts = _synth_shared_state->_apvts;
+    const auto getExtent = [&apvts](StringRef paramID) {
+        juce::NormalisableRange<float> skewRange = apvts.getParameterRange(paramID);
+        const auto r = skewRange.getRange();
+        return std::abs(r.getEnd() - r.getStart());
+    };
+
 	_transpose_lgr.setMu(*apvts.getRawParameterValue("transpose"));
     _frequencyRandomizationMode = *apvts.getRawParameterValue(axiom::frequency_randomization_mode)
         == 0.f ? FrequencyRandomizationMode::Continuous : FrequencyRandomizationMode::Octaves;
@@ -345,9 +353,9 @@ void Grain::setParams(){
 	_position_lgr.setMu(pos);
 	_position_lgr.setSigma(*apvts.getRawParameterValue("position_rand"));
 	_skew_lgr.setMu(*apvts.getRawParameterValue("skew"));
-	_skew_lgr.setSigma(*apvts.getRawParameterValue("skew_rand"));
+	_skew_lgr.setSigma(*apvts.getRawParameterValue("skew_rand") * getExtent("skew"));
 	_plateau_lgr.setMu(*apvts.getRawParameterValue("plateau"));
-	_plateau_lgr.setSigma(*apvts.getRawParameterValue("plateau_rand"));
+	_plateau_lgr.setSigma(*apvts.getRawParameterValue("plateau_rand") * getExtent("plateau"));
 	_pan_lgr.setMu(1.f - *apvts.getRawParameterValue("pan"));	// makes more sense internally to reverse this
 	_pan_lgr.setSigma(*apvts.getRawParameterValue("pan_rand"));
 
@@ -366,17 +374,17 @@ Grain::Grain(GranularSynthSharedState *const synth_shared_state,
     , _grain_id(newId)
     , _transpose_lgr(_voice_shared_state->_gaussian_rng, {0.f, 0.f})
     , _position_lgr(_voice_shared_state->_gaussian_rng, {0.0, 0.0})
-    , _density_lnr(_voice_shared_state->_gaussian_rng, {0.015f, 0.f})
-    , _skew_lgr(_voice_shared_state->_gaussian_rng, {0.5f, 0.f})
+    , _density_lnr(_voice_shared_state->_gaussian_rng, {0.5f, 0.f})
+    , _skew_lgr(_voice_shared_state->_gaussian_rng, {0.0f, 0.f})
     , _plateau_lgr(_voice_shared_state->_gaussian_rng, {1.f, 0.f})
     , _pan_lgr(_voice_shared_state->_gaussian_rng, {0.5f, 0.23f})
     , _postProcessing(_synth_shared_state)
     , _frequencyRandomizationMode()
     , _grainWindow(1.0, 1.f, 0.f, 0.f)
 {
-    //#ifdef DBG
-    //	_timed_printer = std::make_unique<util::TimedPrinter>(100);
-    //#endif
+// #ifdef DBG
+//     _timed_printer = std::make_unique<util::TimedPrinter>(100);
+// #endif
 }
 
 void Grain::setRatioBasedOnNote(const float ratioForNote){
@@ -416,57 +424,6 @@ GrainDescription Grain::getGrainDescription() const {
 namespace {	// anonymous namespace for local helper functions
 float calculateTransposeMultiplier(const float ratioBasedOnNote, const float ratioBasedOnTranspose, const float ratioBasedOnUnderlyingF0){
 	return memoryless::clamp(ratioBasedOnNote * ratioBasedOnTranspose * ratioBasedOnUnderlyingF0, 0.001f, 1000.f);
-}
-
-float calculateWindow(const double accum, const double duration, const float transpositionMultiplier,
-    float skew, float plateau)
-{
-    assert(transpositionMultiplier > 0.f);
-    assert(duration > 0.0);
-
-    const float x = static_cast<float>(
-        memoryless::clamp(accum / (duration * static_cast<double>(transpositionMultiplier)), 0.0, 1.0)
-    );
-
-    // smoothstep basis
-    const auto s = [](float v) -> float {
-        if (v <= 0.f) return 0.f;
-        if (v >= 1.f) return 1.f;
-        return v * v * (3.f - 2.f * v);
-    };
-
-    // sL and sR are mutually exclusive, so each branch incurs exactly one pow
-    const auto sT = [&s](float v, float p) -> float {
-        if (v <= 0.f || v >= 1.f) return 0.f;
-        return (v <= 0.5f)
-            ? std::pow(s(2.f * v), p)
-            : std::pow(1.f - s(2.f * v - 1.f), p);
-    };
-
-    const auto fT = [&s](float v, float p) -> float {
-        if (v <= 0.f || v >= 1.f) return 0.f;
-        return (v <= 0.5f)
-            ? 1.f - std::pow(s(1.f - 2.f * v), p)
-            : 1.f - std::pow(s(2.f * v - 1.f), p);
-    };
-
-    // kp and the shape exponent are both constant per grain — candidates for hoisting
-    const float kp = std::abs(skew) + 1.f;
-
-    const float xWarped = [&] {
-        const float base = (skew >= 0.f) ? x : 1.f - x;
-        if (base <= 0.f) return 0.f;
-        if (base >= 1.f) return 1.f;
-        return std::pow(base, kp);
-    }();
-
-    // plateau <= 0: thin-pulse family (squeeze);  plateau > 0: flat-top family
-    const float w = (plateau <= 0.f)
-        ? sT(xWarped, 1.f - plateau)
-        : fT(xWarped, 1.f + plateau);
-
-    constexpr float g = 1.f;
-    return w / g;
 }
 
 double calculateSampleReadRate(const double playback_sample_rate, const double file_sample_rate){
@@ -595,13 +552,17 @@ Grain::outs Grain::operator()(const float trig_in){
     static constexpr float twelfth = 1.f / 12.f;
 	const float randomSemitoneOffset = _frequencyRandomizationMode == FrequencyRandomizationMode::Continuous ? _transpose_lgr(should_open_latches)
 	    :   12.f * std::round( _transpose_lgr(should_open_latches) * twelfth );
-    const float randomPitchRatio = util::midiToFrequency(randomSemitoneOffset-69.f,
-        _synth_shared_state->_concertPitchHz,
-        69.f,
-        _synth_shared_state->_notesPerOctave);
+
+    if (should_open_latches) {
+        _random_pitch_ratio =
+            util::midiToFrequency(randomSemitoneOffset-69.f,
+                _synth_shared_state->_concertPitchHz,
+                69.f,
+                _synth_shared_state->_notesPerOctave);
+    }
 	_waveform_read_rate = calculateTransposeMultiplier(
 	    _ratio_for_note_latch(_ratio_based_on_note, should_open_latches),
-	    randomPitchRatio,
+	    _random_pitch_ratio,
 	    f0_compensation_ratio);
 	_accum(_waveform_read_rate, should_reset_accum);
 	
@@ -612,6 +573,16 @@ Grain::outs Grain::operator()(const float trig_in){
 	    _postProcessing.setNormalization(_grain_normalize_amount);
 		_postProcessing.setDrive(_grain_drive);
 		_postProcessing.setMakeupGain(_grain_makeup_gain);
+	    _duration_pitch_compensation_factor =
+	        getDurationPitchCompensationFactor(settings._duration_pitch_compensation, _waveform_read_rate);
+
+	    _duration_in_samps = [this, should_open_latches, playback_sr]()
+	    {
+	        const auto grain_rate_hz = _grain_rate_latch(_voice_shared_state->grain_rate_hz, should_open_latches);
+	        assert(grain_rate_hz > 0.f);
+	        const auto grain_base_dur = N_GRAINS / grain_rate_hz;
+	        return _density_lnr(should_open_latches) * grain_base_dur * playback_sr;
+	    }();
 	}
 
 	if (_normalized_read_bounds.end - _normalized_read_bounds.begin == 0.0){	// protection for initialization case
@@ -628,24 +599,15 @@ Grain::outs Grain::operator()(const float trig_in){
 		assert (denormedReadBounds.end > denormedReadBounds.begin);
 	}
 
-	const double duration_in_samps = [this, should_open_latches, playback_sr]()
-	{
-		const auto grain_rate_hz = _grain_rate_latch(_voice_shared_state->grain_rate_hz, should_open_latches);
-		assert(grain_rate_hz > 0.f);
-		const auto grain_base_dur = N_GRAINS / grain_rate_hz;
-		return _density_lnr(should_open_latches) * grain_base_dur * playback_sr;
-	}();
-
 	const float latch_skew_result = _skew_lgr(should_open_latches);
-	
-	const float duration_pitch_compensation_factor = getDurationPitchCompensationFactor(settings._duration_pitch_compensation, _waveform_read_rate);
-//#ifdef DBG
-//	_timed_printer->print("duration_pitch_compensation_factor: {}", duration_pitch_compensation_factor);
-//#endif
+// #ifdef DBG
+// 	_timed_printer->print("skew result: {}", latch_skew_result);
+// #endif
+
 	double norm_pos = [this, should_open_latches](){
 		double np = _position_lgr(should_open_latches);
 	    const auto &[lfo, shape, amount] = _voice_shared_state->_scanner;
-	    const auto phasorVal = (lfo.multi(shape * 4.0f) + 1) * 0.5f;
+	    const auto phasorVal = (lfo.multi(shape * 4.0f) + 1) * 0.5f;    // this MUST run every sample
 		const auto scanner_pos = _scanner_for_position_latch(phasorVal * amount, should_open_latches);
 		np = memoryless::mspWrap(np + scanner_pos);
 		assert (np >= 0.0);
@@ -654,18 +616,22 @@ Grain::outs Grain::operator()(const float trig_in){
 	}();
 
     if (should_open_latches) {
-        _grainWindow = GrainWindow(duration_in_samps, duration_pitch_compensation_factor, latch_skew_result, _plateau_lgr(should_open_latches));
+        _grainWindow = GrainWindow(
+            _duration_in_samps,
+            _duration_pitch_compensation_factor,
+            latch_skew_result,
+            _plateau_lgr(should_open_latches));
     }
 	_window_val = _grainWindow.calculate(_accum.val);
 
-	_sample_index = [this, norm_pos, duration_in_samps, latch_skew_result, duration_pitch_compensation_factor,
+	_sample_index = [this, norm_pos, latch_skew_result,
 	    file_sample_rate_compensate_ratio, &settings, &denormedReadBounds]()
     {
 		// const double normalized_position, const double sr_compensated_duration, const float skew, const float sample_playback_rate, const bool center_envelope_at_env_peak
 		const auto center_of_env = calculateCenterOfEnvelope(norm_pos,														// const double normalized_position
-															 duration_in_samps,												// const double sr_compensated_duration
+															 this->_duration_in_samps,												// const double sr_compensated_duration
 															 latch_skew_result,												// const float skew
-															 duration_pitch_compensation_factor,							// const float sample_playback_rate
+															 this->_duration_pitch_compensation_factor,							// const float sample_playback_rate
 															 settings._center_position_at_env_peak);	// const bool center_envelope_at_env_peak
 				
 		return calculateSampleIndex(_accum.val,							// const double accum
@@ -690,11 +656,13 @@ Grain::outs Grain::operator()(const float trig_in){
 	writeAudioToOuts(sample, _sample_index, _pan, _postProcessing, o);
 	
 	processBusyness(_window_val, _busy_histo, o);
-	
+
+#ifdef DBG
 	if (util::checkNanOrInf(std::array { o.audio_L, o.audio_R })){
 		return {};
 	}
-	
+#endif
+
 	return o;
 }
 // NOLINTEND(cppcoreguidelines-narrowing-conversions)

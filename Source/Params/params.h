@@ -344,8 +344,8 @@ inline const std::vector<ParameterDef> ALL_PARAMETERS = {
 	ParameterDef::skewed("transpose_rand", "Transpose Randomness", 		"MainRandom"),
 	ParameterDef::skewed("position_rand", "Position Randomness", 		"MainRandom"),
 	ParameterDef::skewed("speed_rand", "Speed Randomness", 				"MainRandom"),
-	ParameterDef::skewed("density_rand", "Density Randomness", 		"MainRandom", 0, 1, 0, "", 0.3, false, "", "duration_rand"),
-	ParameterDef::skewed("skew_rand", "Skew Randomness",	 			    "MainRandom"),
+	ParameterDef::skewed("density_rand", "Density Randomness", 		    "MainRandom", 0, 1, 0, "", 0.3, false, "", "duration_rand"),
+	ParameterDef::skewed("skew_rand", "Skew Randomness",	 			"MainRandom"),
 	ParameterDef::skewed("plateau_rand", "Plateau Randomness", 			"MainRandom"),
 	ParameterDef::skewed("pan_rand", "Pan Randomness",		 			"MainRandom", 0.0f, 1.0f, 0.5f),
 

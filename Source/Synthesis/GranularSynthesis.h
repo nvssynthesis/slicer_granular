@@ -17,9 +17,9 @@
 #include "GrainDescription.h"
 #include "VoicesXGrains.h"
 #include "../Random/LatchedRandom.h"
-#include "../utils/misc_util.h"
 #include "../../nvs_libraries/nvs_libraries/include/nvs_gen.h"
 #include "../../nvs_libraries/nvs_libraries/include/nvs_LFO.h"
+#include "juce_utils.h"
 
 /*** TODO:
  -optimize
@@ -267,9 +267,9 @@ private:
 		_synth_shared_state->_logger_func(s);
 	}
 
-//#ifdef DBG
-//	std::unique_ptr<nvs::util::TimedPrinter> _timed_printer;
-//#endif
+// #ifdef DBG
+// 	std::unique_ptr<nvs::util::TimedPrinter> _timed_printer;
+// #endif
 	
 	int _grain_id;
 	
@@ -311,7 +311,8 @@ private:
     float _window_val {0.f};
 	float _pan {0.f};
 	float _grain_weight {1.f};
-    
+
+    float _random_pitch_ratio {1.f};
     float _ratio_based_on_note {1.f}; // =1.f. later this may change according to a settable concert pitch
     float _amplitude_based_on_note {0.f};
 
@@ -320,6 +321,8 @@ private:
 	float _grain_makeup_gain {1.0f};
 
     bool _pitchify { false };
+    float _duration_pitch_compensation_factor {1.f};
+    double _duration_in_samps {441.0};
     float _underlying_f0 {0.f};
 
     struct GrainWindow {
@@ -327,7 +330,7 @@ private:
             : invDurationTransposition(1.0 / (duration * static_cast<double>(transpositionMultiplier)))
             , kp(std::abs(skew) + 1.f)
             , shapeExponent((plateau <= 0.f) ? 1.f - plateau : 1.f + plateau)
-            , invG(1.f / g(plateau))
+            , normCoef(g_refined(plateau))
             , skewPositive(skew >= 0.f)
             , usePlateauPath(plateau > 0.f)
             , warpIsIdentity(skew == 0.f)
@@ -335,6 +338,7 @@ private:
         {
             assert(transpositionMultiplier > 0.f);
             assert(duration > 0.0);
+            assert(normCoef > 0.f);
         }
 
         float calculate(const double accum) const {
@@ -358,32 +362,60 @@ private:
                 }
                 return usePlateauPath ? fT(xWarped, shapeExponent) : sT(xWarped, shapeExponent);
             }();
-
-            return w * invG;
+            jassert (w >= 0.f); jassert (w <= 1.f);
+            return w * normCoef;
         }
 
     private:
         double invDurationTransposition;
         float kp;
         float shapeExponent;
-        float invG;
+        float normCoef;
         bool skewPositive;
         bool usePlateauPath;
         bool warpIsIdentity;
         bool shapeIsIdentity;
 
-        static float g(float /*plateau*/) {
-            // g(x)=(0.98929477  +
-            //      -0.13804840x +
-            //       0.05481294x^{2} +
-            //      -0.00190264x^{3})
-            //      /
-            //      (1 +
-            //       0.09297753x +
-            //       0.06866064x^{2} +
-            //       0.00112537x^{3}
-            //      )
-            return 1.f; // placeholder
+        static float g(float plateau) {
+            // rational approximation of integral of window (taking into account only plateau)
+            // used np.linalg.lstsq to find coefficients.
+            plateau = std::min(plateau, 25.f);
+            const auto x = plateau;
+            const auto x2 = x * x;
+            const auto x3 = x * x2;
+            // g(x) =
+            //      (0.98929477  + -0.13804840x + 0.05481294x² + -0.00190264x³)
+            //      -----------------------------------------------------------
+            //             (1 + 0.09297753x + 0.06866064x² + 0.00112537x³)
+            const auto num = 0.98929477 +
+                            -0.13804840 * x +
+                             0.05481294 * x2 +
+                            -0.00190264 * x3;
+            const auto den = 1.0 +
+                             0.09297753 * x +
+                             0.06866064 * x2 +
+                             0.00112537 * x3;
+            return num / den;
+        }
+        static float g_refined(float plateau) {
+            // using g's coefficients as starting point, optimized further via scipy.optimize.least_squares
+            plateau = std::min(plateau, 36.f);
+            const auto x = plateau;
+            const auto x2 = x * x;
+            const auto x3 = x * x2;
+            // g_ref(x) =
+            //       (1.00018093 + -0.21485195x + 0.03825350x² + -0.00085922x³)
+            //       ----------------------------------------------------------
+            //            (1 + 0.00328264x + 0.03852408x² + 0.00000751x³)
+            const auto num = 1.00018093 +
+                -0.21485195 * x +
+                 0.03825350 * x2 +
+                -0.00085922 * x3;
+            const auto den = 1.0 +
+                 0.00328264 * x +
+                 0.03852408 * x2 +
+                 0.00000751 * x3;
+            return num / den;
         }
 
         static float s(const float v) {
