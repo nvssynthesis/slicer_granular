@@ -14,7 +14,6 @@
 #include "Gui/WaveformComponent.h"
 #include "Gui/TabbedPages.h"
 #include "Gui/GrainBusyDisplay.h"
-#include "juce_utils.h"
 
 //==============================================================================
 
@@ -28,7 +27,7 @@ protected:
 	void drawThumbnail() const;
 	virtual void displayGrainDescriptions();
 	
-	void handleSampleManagementBroadcast();
+	void handleSampleManagementBroadcast() const;
 	void handleGrainDescriptionBroadcast();
 	//===============================================================================
 	std::unique_ptr<WaveformComponent> waveformComponent;
@@ -40,7 +39,7 @@ protected:
 	std::vector<nvs::gran::GrainDescription> grainDescriptions;
 	
 	SlicerGranularAudioProcessor& audioProcessor;
-	nvs::util::SampleManagementGuts *sampleManagementGuts {nullptr};
+	nvs::util::BroadcastingSampleManager *sampleManager {nullptr};
 };
 
 inline void displayName(Graphics& g, Rectangle<int> bounds)

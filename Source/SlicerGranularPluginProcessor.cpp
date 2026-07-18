@@ -98,8 +98,8 @@ void SlicerGranularAudioProcessor::loadAudioFileAndUpdateState(const File f, con
 		loggingGuts.fileLogger.logMessage("Processor: sending change message from loadAudioFileAndUpdateState");
 		
 		// Whether to use Async or not probably could use more testing. 
-		MessageManager::callAsync([this]() { sampleManagementGuts.sendChangeMessage(); });
-//		sampleManagementGuts.sendChangeMessage();
+		MessageManager::callAsync([this]() { sampleManager.sendChangeMessage(); });
+//		sampleManager.sendChangeMessage();
 	}
 	writeToLog("slicer: loadAudioFileAndUpdateState exiting");
 }
@@ -108,20 +108,20 @@ void SlicerGranularAudioProcessor::readIntoBufferAndUpdateState(File const &f){
 	String const fullPath = f.getFullPathName();
 	writeToLog("                                          ...reading file" + fullPath);
 	
-	if (!sampleManagementGuts.loadAudioFile(f)) {
+	if (!sampleManager.loadAudioFile(f)) {
 		writeToLog(fmt::format("readIntoBufferAndUpdateState: could not load file {}\n", fullPath.toStdString()));
 	    return;
 	}
 	
 	writeToLog("                                          ...file read successful");
 
-    const auto sr = sampleManagementGuts.getSampleRate();
-	_granularSynth->setAudioBuffer(sampleManagementGuts.getSampleBuffer(), sr, sampleManagementGuts.getWaveformHash().hashCode64()); // waveformHash is a String, but we need to rehash it to get int64
+    const auto sr = sampleManager.getSampleRate();
+	_granularSynth->setAudioBuffer(sampleManager.getSampleBuffer(), sr, sampleManager.getWaveformHash().hashCode64()); // waveformHash is a String, but we need to rehash it to get int64
 	
 	auto fileInfo = apvts.state.getOrCreateChildWithName(nvs::axiom::FileInfo, nullptr);
 	fileInfo.setProperty(nvs::axiom::sampleFilePath, fullPath, nullptr);
 	fileInfo.setProperty(nvs::axiom::sampleRate, sr, nullptr);
-	fileInfo.setProperty(nvs::axiom::audioHash, sampleManagementGuts.getWaveformHash(), nullptr);
+	fileInfo.setProperty(nvs::axiom::audioHash, sampleManager.getWaveformHash(), nullptr);
 }
 String SlicerGranularAudioProcessor::getSampleFilePath() const {
 	return apvts.state.getChildWithName(nvs::axiom::FileInfo).getProperty(nvs::axiom::sampleFilePath);
@@ -139,7 +139,7 @@ AudioProcessorValueTreeState &SlicerGranularAudioProcessor::getAPVTS(){
 	return apvts;
 }
 AudioFormatManager &SlicerGranularAudioProcessor::getAudioFormatManager(){
-	return sampleManagementGuts.getFormatManager();
+	return sampleManager.getAudioFormatManager();
 }
 
 void SlicerGranularAudioProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMessages)
@@ -148,14 +148,14 @@ void SlicerGranularAudioProcessor::processBlock (AudioBuffer<float>& buffer, Mid
 	for (auto i = getTotalNumInputChannels(); i < getTotalNumOutputChannels(); ++i){
 		buffer.clear (i, 0, buffer.getNumSamples());
 	}
-	
-	const SpinLock::ScopedTryLockType lock(audioBlockLock);
-	if (!lock.isLocked()){
+
+    if (const SpinLock::ScopedTryLockType lock(audioBlockLock); !lock.isLocked())
+    {
 		writeToLog("processBlock: lock was not locked; exiting early.");
 		return;
 	}
 	
-	if ((sampleManagementGuts.getLength() == 0) || (sampleManagementGuts.getNumChannels() == 0)) {
+	if ((sampleManager.getLength() == 0) || (sampleManager.getNumChannels() == 0)) {
 		return;
 	}
 	

@@ -28,19 +28,19 @@ GranularEditorCommon::~GranularEditorCommon() {
 void GranularEditorCommon::drawThumbnail() const {
 	auto const &synthBuffer = audioProcessor.viewSynthSharedState()._buffer;
 
-	if (sampleManagementGuts == nullptr){
+	if (sampleManager == nullptr){
 		return;
 	}
-    if (!sampleManagementGuts->hasValidAudio()) {
+    if (!sampleManager->hasValidAudio()) {
         return;
     }
-	jassert (0 < sampleManagementGuts->getLength());
-	jassert (0 < sampleManagementGuts->getNumChannels());
+	jassert (0 < sampleManager->getLength());
+	jassert (0 < sampleManager->getNumChannels());
 	jassert (synthBuffer._file_sample_rate > 0);
 
     jassert (waveformComponent != nullptr);
 
-	waveformComponent->setThumbnailSource(&sampleManagementGuts->getSampleBuffer(), // do not worry about dangling reference; the thumbnail will internally copy the data as needed to draw waveform
+	waveformComponent->setThumbnailSource(&sampleManager->getSampleBuffer(), // do not worry about dangling reference; the thumbnail will internally copy the data as needed to draw waveform
 													   synthBuffer._file_sample_rate,
 													   synthBuffer._audio_hash);
 }
@@ -60,15 +60,15 @@ void GranularEditorCommon::handleGrainDescriptionBroadcast(){
     displayGrainDescriptions();
 	waveformComponent->repaint();
 }
-void GranularEditorCommon::handleSampleManagementBroadcast(){
+void GranularEditorCommon::handleSampleManagementBroadcast() const {
 	audioProcessor.writeToLog("common: handling sample management broadcast");
 	
 	auto const fileToRead = audioProcessor.getSampleFilePath();
 	drawThumbnail();
 }
-void GranularEditorCommon::changeListenerCallback (juce::ChangeBroadcaster* source){
-	if (auto *smg = dynamic_cast<nvs::util::SampleManagementGuts*>(source)){	// used to be received asynchronously
-		sampleManagementGuts = smg;
+void GranularEditorCommon::changeListenerCallback (ChangeBroadcaster* source){
+	if (auto *smg = dynamic_cast<nvs::util::BroadcastingSampleManager*>(source)){	// used to be received asynchronously
+		sampleManager = smg;
 		handleSampleManagementBroadcast();
 	}
 	else if (dynamic_cast<nvs::util::MeasuredData*>(source)) {
@@ -99,14 +99,14 @@ Slicer_granularAudioProcessorEditor::Slicer_granularAudioProcessorEditor (Slicer
 	setResizable(true, true);
 }
 //==============================================================================
-void Slicer_granularAudioProcessorEditor::paint (juce::Graphics& g)
+void Slicer_granularAudioProcessorEditor::paint (Graphics& g)
 {
-	juce::Image image(juce::Image::ARGB, getWidth(), getHeight(), true);
-    juce::Graphics tg(image);
+	const Image image(Image::ARGB, getWidth(), getHeight(), true);
+    Graphics tg(image);
 
-	juce::Colour upperLeftColour  = gradientColors[(colourOffsetIndex + 0) % gradientColors.size()];
-	juce::Colour lowerRightColour = gradientColors[(colourOffsetIndex + 4) % gradientColors.size()];
-	juce::ColourGradient cg(upperLeftColour, 0, 0, lowerRightColour, getWidth(), getHeight(), true);
+	const Colour upperLeftColour  = gradientColors[(colourOffsetIndex + 0) % gradientColors.size()];
+	const Colour lowerRightColour = gradientColors[(colourOffsetIndex + 4) % gradientColors.size()];
+	ColourGradient cg(upperLeftColour, 0, 0, lowerRightColour, getWidth(), getHeight(), true);
 	cg.addColour(0.3, gradientColors[(colourOffsetIndex + 1) % gradientColors.size()]);
 	cg.addColour(0.5, gradientColors[(colourOffsetIndex + 2) % gradientColors.size()]);
 	cg.addColour(0.7, gradientColors[(colourOffsetIndex + 3) % gradientColors.size()]);
@@ -121,7 +121,7 @@ void Slicer_granularAudioProcessorEditor::paint (juce::Graphics& g)
 
 void Slicer_granularAudioProcessorEditor::resized()
 {
-	juce::Rectangle<int> localBounds = getLocalBounds();
+	Rectangle<int> localBounds = getLocalBounds();
     constexpr int smallPad = 10;
 	localBounds.reduce(smallPad, smallPad);
 	

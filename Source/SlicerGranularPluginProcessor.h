@@ -4,19 +4,21 @@
 #pragma once
 
 #include <JuceHeader.h>
+
+#include "AnalysisUsing.h"
 #include "Synthesis/GranularSynthesis.h"
 #include "Synthesis/GranularSynthesizer.h"
 #include "utils/misc_util_juce.h"
-#include "juce_utils.h"
-#include "Params/params.h"
+#include "SampleManager.h"
 #include "Service/PresetManager.h"
 
 //==============================================================================
 
-class SlicerGranularAudioProcessor  : 	public juce::AudioProcessor
-,										public juce::ChangeListener
+
+class SlicerGranularAudioProcessor  : 	public AudioProcessor
+,										public ChangeListener
                             #if JucePlugin_Enable_ARA
-                             , public juce::AudioProcessorARAExtension
+                             , public AudioProcessorARAExtension
                             #endif
 {
 public:
@@ -37,14 +39,14 @@ public:
 	bool isBusesLayoutSupported (const BusesLayout& layouts) const override;
 #endif
 
-	void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
+	void processBlock (AudioBuffer<float>&, MidiBuffer&) override;
 	
 	//==============================================================================
-	juce::AudioProcessorEditor* createEditor() override;
+	AudioProcessorEditor* createEditor() override;
 	bool hasEditor() const override;
 	
 	//==============================================================================
-	const juce::String getName() const override;
+	const String getName() const override;
 	
 	bool acceptsMidi() const override;
 	bool producesMidi() const override;
@@ -55,42 +57,42 @@ public:
 	int getNumPrograms() override;
 	int getCurrentProgram() override;
 	void setCurrentProgram (int index) override;
-	const juce::String getProgramName (int index) override;
-	void changeProgramName (int index, const juce::String& newName) override;
+	const String getProgramName (int index) override;
+	void changeProgramName (int index, const String& newName) override;
 	
 	//==============================================================================
-	void getStateInformation (juce::MemoryBlock& destData) override;
+	void getStateInformation (MemoryBlock& destData) override;
 	void setStateInformation (const void* data, int sizeInBytes) override;
 	//==============================================================================
-	void changeListenerCallback (juce::ChangeBroadcaster *source) override;
+	void changeListenerCallback (ChangeBroadcaster *source) override;
 	//==============================================================================
-	void writeToLog(juce::String const &s);
+	void writeToLog(String const &s);
 	void loadStoredAudioFileAndUpdateState();	// calls loadAudioFileAndUpdateState using path stored in APVTS
-	virtual void loadAudioFileAndUpdateState(juce::File const f, bool notifyEditor);
+	virtual void loadAudioFileAndUpdateState(File f, bool notifyEditor);
 
-	juce::String getSampleFilePath() const;
-	juce::String getAudioHash() const;
-	juce::AudioFormatManager &getAudioFormatManager();
-	juce::AudioProcessorValueTreeState &getAPVTS();
+	String getSampleFilePath() const;
+	String getAudioHash() const;
+	AudioFormatManager &getAudioFormatManager();
+	AudioProcessorValueTreeState &getAPVTS();
 	
 	void writeGrainDescriptionData(const std::vector<nvs::gran::GrainDescription> &newData);
 	void readGrainDescriptionData(std::vector<nvs::gran::GrainDescription> &outData);
 	
 	// change broadcasters
-	void addSampleManagementGutsListener(juce::ChangeListener *newListener){
-		sampleManagementGuts.addChangeListener(newListener);
+	void addSampleManagementGutsListener(ChangeListener *newListener){
+		sampleManager.addChangeListener(newListener);
 	}
-	void addMeasuredGrainDescriptionsListener(juce::ChangeListener *newListener){
+	void addMeasuredGrainDescriptionsListener(ChangeListener *newListener){
 		measuredGrainDescriptions.addChangeListener(newListener);
 	}
-	void removeSampleManagementGutsListener(juce::ChangeListener *newListener){
-		sampleManagementGuts.removeChangeListener(newListener);
+	void removeSampleManagementGutsListener(ChangeListener *newListener){
+		sampleManager.removeChangeListener(newListener);
 	}
-	void removeMeasuredGrainDescriptionsListener(juce::ChangeListener *newListener){
+	void removeMeasuredGrainDescriptionsListener(ChangeListener *newListener){
 		measuredGrainDescriptions.removeChangeListener(newListener);
 	}
-	int getCurrentWaveSize() {
-		return sampleManagementGuts.getLength();
+	int getCurrentWaveSize() const {
+		return sampleManager.getLength();
 	}
 	nvs::service::PresetManager &getPresetManager() { return presetManager; }
 	
@@ -99,9 +101,9 @@ protected:
 	SlicerGranularAudioProcessor();
 	void initialize() {
 		initSynth();
-		_granularSynth->setLogger([this](const juce::String& message)
+		_granularSynth->setLogger([this](const String& message)
 		{
-			if (juce::FileLogger::getCurrentLogger()){
+			if (FileLogger::getCurrentLogger()){
 				loggingGuts.fileLogger.logMessage(message);
 			}
 		});
@@ -110,28 +112,29 @@ protected:
 		// this one-line function gets overriden by TSNGranularAudioProcessor to create a derived type of synthesizer
 		_granularSynth = std::make_unique<nvs::gran::GranularSynthesizer>(apvts);
 	}
-	
-	nvs::util::SampleManagementGuts sampleManagementGuts;
+
+
+	nvs::util::BroadcastingSampleManager sampleManager;
 	nvs::util::LoggingGuts loggingGuts;
 
-	juce::int64 lastLogTimeMs = 0;
-	void logRateLimited(const juce::String& message, int cooldownMs)
+	int64 lastLogTimeMs = 0;
+	void logRateLimited(const String& message, const int cooldownMs)
 	{
-		auto now = juce::Time::getMillisecondCounter();
-		if (now - lastLogTimeMs >= cooldownMs)
+        if (const auto now = Time::getMillisecondCounter();
+            now - lastLogTimeMs >= cooldownMs)
 		{
 			lastLogTimeMs = now;
 			writeToLog(message);
 		}
 	}
 	
-	juce::AudioProcessorValueTreeState apvts;
+	AudioProcessorValueTreeState apvts;
 	nvs::service::PresetManager presetManager;
 
 	std::unique_ptr<nvs::gran::GranularSynthesizer> _granularSynth;
 	
-	juce::SpinLock audioBlockLock;
-	void readIntoBufferAndUpdateState(const juce::File &f);
+	SpinLock audioBlockLock;
+	void readIntoBufferAndUpdateState(const File &f);
 	
 private:
 	nvs::util::MeasuredData measuredGrainDescriptions;
@@ -139,4 +142,4 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SlicerGranularAudioProcessor)
 };
 
-juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
+AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
