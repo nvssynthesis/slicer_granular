@@ -274,10 +274,6 @@ void PolyGrain::setParams() {
 	}
 }
 
-std::array<float, 2> PolyGrain::operator()(const float triggerIn){
-	return doProcess(triggerIn);
-}
-
 std::array<float, 2> PolyGrain::doProcess(const float triggerIn){
 	std::array output {0.f, 0.f};
 	

@@ -106,7 +106,7 @@ void GranularVoice::renderNextBlock (AudioBuffer< float > &outputBuffer, const i
             if (env != env) { logger("ENVELOPE has NaN"); }
             env *= env;
 
-            std::array<float, 2> output = (*granularSynthGuts)(0.f /*_voice_shared_state.trigger*/);
+            std::array<float, 2> output = granularSynthGuts->doProcess(0.f /*_voice_shared_state.trigger*/);
             //		_voice_shared_state.trigger = 0.f;
 
             output[0] *= env;

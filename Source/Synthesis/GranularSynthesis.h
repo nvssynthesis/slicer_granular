@@ -183,7 +183,9 @@ public:
 	void setGrainsIdle();
 	std::vector<float> getBusyStatuses() const;
 	//=======================================================================
-	std::array<float, 2> operator()(float triggerIn);
+
+    std::array<float, 2> doProcess(float triggerIn);
+
 	void setReadBounds(ReadBounds newReadBounds) ;
 	struct WeightedReadBounds {
 		ReadBounds bounds;
@@ -203,8 +205,6 @@ protected:
 	virtual void doClearNotes();
 	virtual void doShuffleIndices();
 
-	std::array<float, 2> doProcess(float triggerIn);
-	
 	//================================================================================
 	GranularSynthSharedState *const _synth_shared_state;
 	GranularVoiceSharedState *const _voice_shared_state;
