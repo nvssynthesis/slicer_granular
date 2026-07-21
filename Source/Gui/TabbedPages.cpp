@@ -11,6 +11,7 @@
 #include "TabbedPages.h"
 #include "./RandomizedParameterPage.h"
 #include "./BasicParameterPage.h"
+#include "./FxParameterPage.h"
 
 TabbedPagesComponent::TabbedPagesComponent (juce::AudioProcessorValueTreeState &apvts)
 	: TabbedComponent (juce::TabbedButtonBar::TabsAtTop)
@@ -41,8 +42,11 @@ TabbedPagesComponent::TabbedPagesComponent (juce::AudioProcessorValueTreeState &
 																			   {"scanner_shape", "scanner_rate", "scanner_amount"},
 																			   Slider::SliderStyle::LinearVertical
 																			   ), true);
-	addTab ("Fx", juce::Colours::transparentWhite, new BasicParameterPage(apvts,
-																		  {"fx_grain_normalize", "fx_grain_drive", "fx_makeup_gain"}, juce::
-																		  Slider::SliderStyle::LinearVertical
-																		  ), true);
+	addTab ("Fx", juce::Colours::transparentWhite, new FxParameterPage(apvts,
+																		{	{"fx_grain_normalize", false},
+																			{"fx_grain_drive", true},
+																			{"fx_makeup_gain", false}
+																		},
+																		juce::Slider::SliderStyle::LinearVertical
+																		), true);
 }

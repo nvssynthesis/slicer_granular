@@ -345,8 +345,7 @@ void Grain::setParams(){
 	_transpose_lgr.setSigma(*apvts.getRawParameterValue("transpose_rand") * 24.0f);
 	_density_lnr.setMu(*apvts.getRawParameterValue("density"));
 	_density_lnr.setSigma(*apvts.getRawParameterValue("density_rand"));
-	const float pos = *apvts.getRawParameterValue("position");
-	_position_lgr.setMu(pos);
+	_position_lgr.setMu(*apvts.getRawParameterValue("position"));
 	_position_lgr.setSigma(*apvts.getRawParameterValue("position_rand"));
 	_skew_lgr.setMu(*apvts.getRawParameterValue("skew"));
 	_skew_lgr.setSigma(*apvts.getRawParameterValue("skew_rand") * getExtent("skew"));
@@ -357,8 +356,12 @@ void Grain::setParams(){
 
     _pitchify = static_cast<bool>(*apvts.getRawParameterValue("pitchify"));
 
+    //==============================================================================
     _grain_normalize_amount = *apvts.getRawParameterValue("fx_grain_normalize");
-	_grain_drive = *apvts.getRawParameterValue("fx_grain_drive");
+
+	_postProcessing.setDriveMu(*apvts.getRawParameterValue("fx_grain_drive"));
+	_postProcessing.setDriveSigma(*apvts.getRawParameterValue("fx_grain_drive_rand"));
+
 	_grain_makeup_gain = *apvts.getRawParameterValue("fx_makeup_gain");
 }
 
@@ -374,7 +377,7 @@ Grain::Grain(GranularSynthSharedState *const synth_shared_state,
     , _skew_lgr(_voice_shared_state->_gaussian_rng, {0.0f, 0.f})
     , _plateau_lgr(_voice_shared_state->_gaussian_rng, {1.f, 0.f})
     , _pan_lgr(_voice_shared_state->_gaussian_rng, {0.5f, 0.23f})
-    , _postProcessing(_synth_shared_state)
+    , _postProcessing(_synth_shared_state, _voice_shared_state)
     , _frequencyRandomizationMode()
     , _grainWindow(1.0, 1.f, 0.f, 0.f)
 {
@@ -469,7 +472,7 @@ float calculatePan(const float pan_latch_val){
 void writeAudioToOuts(const float sample, const double fractionalIndex, const float pan_latch_val,
     const GrainwisePostProcessing &postProcessing, Grain::outs &outs)
 {
-	const std::array<float, 2> lr = postProcessing(gen::pol2car(sample, pan_latch_val), fractionalIndex);
+	const std::array<float, 2> lr = postProcessing.process(gen::pol2car(sample, pan_latch_val), fractionalIndex);
 	outs.audio_L = lr[0];
 	outs.audio_R = lr[1];
 }
@@ -491,8 +494,46 @@ void Grain::resetAccum() {
 void Grain::setAccum(const float newVal) {
 	_accum.set(newVal);
 }
+
+
+
+GrainwisePostProcessing::GrainwisePostProcessing(GranularSynthSharedState *synth_shared_state,
+    GranularVoiceSharedState *voice_shared_state)
+:   _drive_lgr(voice_shared_state->_gaussian_rng, {1.f, 0.f})
+,   _synth_shared_state(synth_shared_state)
+{
+    jassert(synth_shared_state != nullptr);
+    jassert(voice_shared_state != nullptr);
+}
+
+std::array<float, 2> GrainwisePostProcessing::process(std::array<float, 2> x, const double fractionalSample) const
+{
+    std::array<float, 2> retval {0.f, 0.f};
+    for (size_t i = 0; i < x.size(); ++i){
+        retval[i] = processChannel(x[i], fractionalSample);
+    }
+    return retval;
+}
+void GrainwisePostProcessing::setNormalization(const float norm) {
+    _normalization = norm;
+}
+void GrainwisePostProcessing::setDriveMu(const float muDb) {
+    _drive_lgr.setMu(muDb);
+}
+void GrainwisePostProcessing::setDriveSigma(const float sigmaDb) {
+    _drive_lgr.setSigma(sigmaDb);
+}
+void GrainwisePostProcessing::updateDrive(const bool shouldOpenLatches) {
+    const auto d_dB = _drive_lgr(shouldOpenLatches);
+    const auto d_rat = std::exp(d_dB * std::numbers::ln10_v<float> / 20.f);
+    _drive = d_rat;
+    jassert(_drive > 0.0f);
+}
+
+void GrainwisePostProcessing::setMakeupGain(const float gain) {
+    _makeup_gain = gain;
+}
 float GrainwisePostProcessing::processChannel(float x, double t) const {
-	float retval {0.f};
 
     // NEED TO WRAP t
     const auto L = static_cast<double>(_synth_shared_state->_buffer._loudness_profile.size());
@@ -500,20 +541,30 @@ float GrainwisePostProcessing::processChannel(float x, double t) const {
     t = memoryless::mspWrap(t);
     t *= L;
 
-    const float signal_rms = _synth_shared_state->_buffer._loudness_profile[static_cast<size_t>(t)];
+    const auto idx = static_cast<size_t>(t);
+    jassert (idx < _synth_shared_state->_buffer._loudness_profile.size());
+    const float signal_rms = _synth_shared_state->_buffer._loudness_profile[idx];
     float normalizer = 1.f / std::max(signal_rms, 0.05f);
     static constexpr auto NORMALIZATION_TARGET_AMPLITUDE = 0.33;
     normalizer = _normalization * normalizer * NORMALIZATION_TARGET_AMPLITUDE + (1.f - _normalization);
 
     x *= normalizer;
+    // saturating waveshaper: slope falls off as |v| grows, asymptoting toward +-2.
+    auto const shaper = [](const float v) {
+        return 2.f * v / (1.f + std::sqrt(1.f + std::abs(v)));
+    };
 
-	jassert (_drive > 0);
-	x *= _drive;
-	retval = 2.f*x / (1.f + std::sqrt(1.f + std::abs(x)));
-	retval /= 2.f*_drive / (1.f + std::sqrt(1.f + std::abs(_drive)));
-	jassert(_makeup_gain > 0.f);
-	retval *= _makeup_gain;
-	return retval;
+
+    jassert (_drive > 0.f);
+    // _drive scales the signal before shaping, pushing it further out onto the saturating curve
+    // (more compression/harmonics). dividing by shaper(_drive) renormalizes so that a full-scale
+    // input (|x| == 1) always maps back to ~unity output regardless of how much drive is dialed
+    // in -- i.e. drive reshapes the curve the signal traverses without changing the output level
+    // at full scale.
+    const float shaped = shaper(x * _drive) / shaper(_drive);
+
+    jassert (_makeup_gain > 0.f);
+    return shaped * _makeup_gain;
 }
 void Grain::setUnderlyingFundamentalFrequency(const float midi_f0) {
     _underlying_f0 = midi_f0 <= 0 ? 0 :
@@ -564,10 +615,11 @@ Grain::outs Grain::operator()(const float trig_in){
 	
 	const double file_sample_rate_compensate_ratio = calculateSampleReadRate(playback_sr, file_sr);
 
+	_postProcessing.updateDrive(should_open_latches);
+
 	if (should_open_latches){
 		_normalized_read_bounds = _upcoming_normalized_read_bounds;
 	    _postProcessing.setNormalization(_grain_normalize_amount);
-		_postProcessing.setDrive(_grain_drive);
 		_postProcessing.setMakeupGain(_grain_makeup_gain);
 	    _duration_pitch_compensation_factor =
 	        getDurationPitchCompensationFactor(settings._duration_pitch_compensation, _waveform_read_rate);

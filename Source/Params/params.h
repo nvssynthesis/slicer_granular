@@ -412,7 +412,9 @@ inline const std::vector<ParameterDef> ALL_PARAMETERS = {
 #endif
 
     ParameterDef::linear("fx_grain_normalize", "Grain Normalization", "Fx", 0, 1, 0.1f, "", 0, "normalization"),
-	ParameterDef::decibel("fx_grain_drive", "Grain Drive", "Fx", -10.f, 60.f, 0.f, "drive"),
+    // tempting to use ParameterDef::decibel, but we actually want to internally store these params as dB to simply add them and convert the final randomized result to ratio
+	ParameterDef::linear("fx_grain_drive", "Grain Drive", "Fx", -10.f, 60.f, 0.f, "dB", 0.1, "drive"),
+	ParameterDef::linear("fx_grain_drive_rand", "Grain Drive Randomness", "Fx", 0.f, 30.f, 0.f, "dB", 0.1, "drive"),
 	ParameterDef::decibel("fx_makeup_gain", "Makeup Gain", "Fx", -40.f, 20.f, 0.f, "drive")
 };
 

@@ -123,33 +123,21 @@ struct ReadBounds {
 class GrainwisePostProcessing
 {
 public:
-    explicit GrainwisePostProcessing(GranularSynthSharedState *synth_shared_state) {
-        jassert(synth_shared_state != nullptr);
-        _synth_shared_state = synth_shared_state;
-    }
+    GrainwisePostProcessing(GranularSynthSharedState *synth_shared_state, GranularVoiceSharedState *voice_shared_state);
 
-	std::array<float, 2> operator()(std::array<float, 2> x, double fractionalSample) const {	// apply single to both channels
-		std::array<float, 2> retval {0.f, 0.f};
-		for (size_t i = 0; i < x.size(); ++i){
-			retval[i] = processChannel(x[i], fractionalSample);
-		}
-		return retval;
-	}
-    void setNormalization(float norm) {
-        _normalization = norm;
-    }
-    void setDrive(float drive) {
-        _drive = drive;
-    }
-    void setMakeupGain(float gain) {
-        _makeup_gain = gain;
-    }
+	std::array<float, 2> process(std::array<float, 2> x, double fractionalSample) const; // apply single to both channels
+    void setNormalization(float norm);
+    void setDriveMu(float muDb);					// linear gain (drive param is stored/consumed in linear gain, mapped from dB)
+    void setDriveSigma(float sigmaDb);				// standard deviation, in dB, of the per-grain drive spread around the mu
+    void updateDrive(bool shouldOpenLatches);	// per-grain latched randomization of drive
+    void setMakeupGain(float gain);
 private:
     float processChannel(float x, double t) const;	// single channel
 
     float _normalization {0.f};
 	float _drive {1.0f};
 	float _makeup_gain {1.0f};
+	LatchedGaussianRandom_f _drive_lgr; // latches per-grain drive multiplier from gate on
 
     GranularSynthSharedState *_synth_shared_state;
 };
@@ -293,7 +281,7 @@ private:
 	LatchedGaussianRandom_f 	_skew_lgr;
 	LatchedGaussianRandom_f 	_plateau_lgr;
 	LatchedGaussianRandom_f 	_pan_lgr;
-    
+
     gen::accum<double> _accum; // accumulates samplewise and resets from gate on, goes to windowing and sample lookup!
     
 	ReadBounds _normalized_read_bounds;// defaults to normalized read bounds. TSN variant can adjust effective read bounds (changing begin and end based on event positions/durations).
@@ -317,7 +305,6 @@ private:
     float _amplitude_based_on_note {0.f};
 
     float _grain_normalize_amount {0.f};    // works as lerp between no normalization to full normalization
-	float _grain_drive {1.0f};
 	float _grain_makeup_gain {1.0f};
 
     bool _pitchify { false };
