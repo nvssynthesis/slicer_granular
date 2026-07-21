@@ -125,19 +125,37 @@ class GrainwisePostProcessing
 public:
     GrainwisePostProcessing(GranularSynthSharedState *synth_shared_state, GranularVoiceSharedState *voice_shared_state);
 
-	std::array<float, 2> process(std::array<float, 2> x, double fractionalSample) const; // apply single to both channels
+	std::array<float, 2> process(std::array<float, 2> x, double fractionalSample); // apply single to both channels; not const, as the filter stage carries per-channel state
     void setNormalization(float norm);
     void setDriveMu(float muDb);					// linear gain (drive param is stored/consumed in linear gain, mapped from dB)
     void setDriveSigma(float sigmaDb);				// standard deviation, in dB, of the per-grain drive spread around the mu
     void updateDrive(bool shouldOpenLatches);	// per-grain latched randomization of drive
     void setMakeupGain(float gain);
+
+    void setFilterCutoffMu(float hz);
+    void setFilterCutoffSigma(float octaves);		// standard deviation, in octaves, of the per-grain cutoff spread around the mu
+    void setFilterQMu(float q);
+    void setFilterQSigma(float q);
+    void setFilterModeMu(float modeIndex);			// 0 = lowpass, 1 = bandpass, 2 = highpass (see FilterMode)
+    void setFilterModeSigma(float modeIndexSpread);
+    void updateFilter(bool shouldOpenLatches);		// per-grain latched randomization of cutoff/Q/mode + coefficient recompute
 private:
-    float processChannel(float x, double t) const;	// single channel
+    enum class FilterMode { Lowpass = 0, Bandpass = 1, Highpass = 2 };
+    static constexpr int numFilterModes = 3;
+
+    float processChannel(float x, double t, size_t channel);	// single channel
+    float driveStage(float x) const;
+    float filterStage(float x, size_t channel);
 
     float _normalization {0.f};
 	float _drive {1.0f};
 	float _makeup_gain {1.0f};
 	LatchedGaussianRandom_f _drive_lgr; // latches per-grain drive multiplier from gate on
+
+	LatchedLogNormalRandom_f _filter_cutoff_lnr;	// latches per-grain filter cutoff (Hz) from gate on
+	LatchedGaussianRandom_f _filter_q_lgr;			// latches per-grain filter Q from gate on
+	LatchedGaussianRandom_f _filter_mode_lgr;		// latches per-grain filter mode (cast to FilterMode) from gate on
+	std::array<juce::dsp::IIR::Filter<float>, 2> _filters;	// one per channel (L, R)
 
     GranularSynthSharedState *_synth_shared_state;
 };

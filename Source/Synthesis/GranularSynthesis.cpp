@@ -363,6 +363,13 @@ void Grain::setParams(){
 	_postProcessing.setDriveSigma(*apvts.getRawParameterValue("fx_grain_drive_rand"));
 
 	_grain_makeup_gain = *apvts.getRawParameterValue("fx_makeup_gain");
+
+	_postProcessing.setFilterCutoffMu(*apvts.getRawParameterValue("fx_filter_cutoff"));
+	_postProcessing.setFilterCutoffSigma(*apvts.getRawParameterValue("fx_filter_cutoff_rand"));
+	_postProcessing.setFilterQMu(*apvts.getRawParameterValue("fx_filter_q"));
+	_postProcessing.setFilterQSigma(*apvts.getRawParameterValue("fx_filter_q_rand"));
+	_postProcessing.setFilterModeMu(*apvts.getRawParameterValue("fx_filter_mode"));
+	_postProcessing.setFilterModeSigma(*apvts.getRawParameterValue("fx_filter_mode_rand"));
 }
 
 Grain::Grain(GranularSynthSharedState *const synth_shared_state,
@@ -470,7 +477,7 @@ float calculatePan(const float pan_latch_val){
 	return memoryless::clamp(pan_latch_val, 0.f, 1.f) * std::numbers::pi * 0.5f;
 }
 void writeAudioToOuts(const float sample, const double fractionalIndex, const float pan_latch_val,
-    const GrainwisePostProcessing &postProcessing, Grain::outs &outs)
+    GrainwisePostProcessing &postProcessing, Grain::outs &outs)
 {
 	const std::array<float, 2> lr = postProcessing.process(gen::pol2car(sample, pan_latch_val), fractionalIndex);
 	outs.audio_L = lr[0];
@@ -500,17 +507,20 @@ void Grain::setAccum(const float newVal) {
 GrainwisePostProcessing::GrainwisePostProcessing(GranularSynthSharedState *synth_shared_state,
     GranularVoiceSharedState *voice_shared_state)
 :   _drive_lgr(voice_shared_state->_gaussian_rng, {1.f, 0.f})
+,   _filter_cutoff_lnr(voice_shared_state->_gaussian_rng, {20000.f, 0.f})
+,   _filter_q_lgr(voice_shared_state->_gaussian_rng, {0.707f, 0.f})
+,   _filter_mode_lgr(voice_shared_state->_gaussian_rng, {0.f, 0.f})
 ,   _synth_shared_state(synth_shared_state)
 {
     jassert(synth_shared_state != nullptr);
     jassert(voice_shared_state != nullptr);
 }
 
-std::array<float, 2> GrainwisePostProcessing::process(std::array<float, 2> x, const double fractionalSample) const
+std::array<float, 2> GrainwisePostProcessing::process(std::array<float, 2> x, const double fractionalSample)
 {
     std::array<float, 2> retval {0.f, 0.f};
     for (size_t i = 0; i < x.size(); ++i){
-        retval[i] = processChannel(x[i], fractionalSample);
+        retval[i] = processChannel(x[i], fractionalSample, i);
     }
     return retval;
 }
@@ -533,7 +543,78 @@ void GrainwisePostProcessing::updateDrive(const bool shouldOpenLatches) {
 void GrainwisePostProcessing::setMakeupGain(const float gain) {
     _makeup_gain = gain;
 }
-float GrainwisePostProcessing::processChannel(float x, double t) const {
+
+void GrainwisePostProcessing::setFilterCutoffMu(const float hz) {
+    _filter_cutoff_lnr.setMu(hz);
+}
+void GrainwisePostProcessing::setFilterCutoffSigma(const float octaves) {
+    // _filter_cutoff_lnr operates in natural-log (neper) space; an octave is a doubling,
+    // so a standard deviation of `octaves` octaves is `octaves * ln(2)` nepers.
+    static constexpr float nepersPerOctave = std::numbers::ln2_v<float>;
+    _filter_cutoff_lnr.setSigma(octaves * nepersPerOctave);
+}
+void GrainwisePostProcessing::setFilterQMu(const float q) {
+    _filter_q_lgr.setMu(q);
+}
+void GrainwisePostProcessing::setFilterQSigma(const float q) {
+    _filter_q_lgr.setSigma(q);
+}
+void GrainwisePostProcessing::setFilterModeMu(const float modeIndex) {
+    _filter_mode_lgr.setMu(modeIndex);
+}
+void GrainwisePostProcessing::setFilterModeSigma(const float modeIndexSpread) {
+    _filter_mode_lgr.setSigma(modeIndexSpread);
+}
+void GrainwisePostProcessing::updateFilter(const bool shouldOpenLatches) {
+    if (!shouldOpenLatches){	// coefficients are cached on the filters between grains; nothing to recompute mid-grain
+        return;
+    }
+
+    const auto sampleRate = _synth_shared_state->_playback_sample_rate;
+    jassert (sampleRate > 0.0);
+    const auto nyquist = static_cast<float>(sampleRate * 0.5 - 1.0);
+
+    const float cutoffHz = memoryless::clamp(_filter_cutoff_lnr(shouldOpenLatches), 20.f, nyquist);
+    const float q = std::max(_filter_q_lgr(shouldOpenLatches), 0.05f);
+    const int modeIdx = juce::jlimit(0, numFilterModes - 1,
+        static_cast<int>(std::round(_filter_mode_lgr(shouldOpenLatches))));
+
+    auto const makeCoefficients = [sampleRate, cutoffHz, q](const int mode) {
+        switch (static_cast<FilterMode>(mode)) {
+            case FilterMode::Bandpass: return juce::dsp::IIR::Coefficients<float>::makeBandPass(sampleRate, cutoffHz, q);
+            case FilterMode::Highpass: return juce::dsp::IIR::Coefficients<float>::makeHighPass(sampleRate, cutoffHz, q);
+            case FilterMode::Lowpass:
+            default:                  return juce::dsp::IIR::Coefficients<float>::makeLowPass(sampleRate, cutoffHz, q);
+        }
+    };
+
+    const auto newCoefficients = makeCoefficients(modeIdx);
+    for (auto &filter : _filters){
+        filter.coefficients = newCoefficients;
+        filter.reset();	// avoid a resonant tail from the previous grain's filter state bleeding into this one
+    }
+}
+
+float GrainwisePostProcessing::driveStage(float x) const {
+    // saturating waveshaper: slope falls off as |v| grows, asymptoting toward +-2.
+    auto const shaper = [](const float v) {
+        return 2.f * v / (1.f + std::sqrt(1.f + std::abs(v)));
+    };
+
+    jassert (_drive > 0.f);
+    // _drive scales the signal before shaping, pushing it further out onto the saturating curve
+    // (more compression/harmonics). dividing by shaper(_drive) renormalizes so that a full-scale
+    // input (|x| == 1) always maps back to ~unity output regardless of how much drive is dialed
+    // in -- i.e. drive reshapes the curve the signal traverses without changing the output level
+    // at full scale.
+    return shaper(x * _drive) / shaper(_drive);
+}
+float GrainwisePostProcessing::filterStage(float x, const size_t channel) {
+    jassert (channel < _filters.size());
+    return _filters[channel].processSample(x);
+}
+
+float GrainwisePostProcessing::processChannel(float x, double t, const size_t channel) {
 
     // NEED TO WRAP t
     const auto L = static_cast<double>(_synth_shared_state->_buffer._loudness_profile.size());
@@ -549,22 +630,16 @@ float GrainwisePostProcessing::processChannel(float x, double t) const {
     normalizer = _normalization * normalizer * NORMALIZATION_TARGET_AMPLITUDE + (1.f - _normalization);
 
     x *= normalizer;
-    // saturating waveshaper: slope falls off as |v| grows, asymptoting toward +-2.
-    auto const shaper = [](const float v) {
-        return 2.f * v / (1.f + std::sqrt(1.f + std::abs(v)));
-    };
 
+    // pipeline stages, applied in order below -- e.g. swap the next two lines to run the filter before drive.
+    auto const applyDrive  = [this](const float v) { return driveStage(v); };
+    auto const applyFilter = [this, channel](const float v) { return filterStage(v, channel); };
 
-    jassert (_drive > 0.f);
-    // _drive scales the signal before shaping, pushing it further out onto the saturating curve
-    // (more compression/harmonics). dividing by shaper(_drive) renormalizes so that a full-scale
-    // input (|x| == 1) always maps back to ~unity output regardless of how much drive is dialed
-    // in -- i.e. drive reshapes the curve the signal traverses without changing the output level
-    // at full scale.
-    const float shaped = shaper(x * _drive) / shaper(_drive);
+    x = applyDrive(x);
+    x = applyFilter(x);
 
     jassert (_makeup_gain > 0.f);
-    return shaped * _makeup_gain;
+    return x * _makeup_gain;
 }
 void Grain::setUnderlyingFundamentalFrequency(const float midi_f0) {
     _underlying_f0 = midi_f0 <= 0 ? 0 :
@@ -616,6 +691,7 @@ Grain::outs Grain::operator()(const float trig_in){
 	const double file_sample_rate_compensate_ratio = calculateSampleReadRate(playback_sr, file_sr);
 
 	_postProcessing.updateDrive(should_open_latches);
+	_postProcessing.updateFilter(should_open_latches);
 
 	if (should_open_latches){
 		_normalized_read_bounds = _upcoming_normalized_read_bounds;

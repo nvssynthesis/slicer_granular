@@ -42,10 +42,15 @@ TabbedPagesComponent::TabbedPagesComponent (juce::AudioProcessorValueTreeState &
 																			   {"scanner_shape", "scanner_rate", "scanner_amount"},
 																			   Slider::SliderStyle::LinearVertical
 																			   ), true);
+	using FxEntry = FxParameterPage::Entry;
+	using FxKind = FxParameterPage::Entry::Kind;
 	addTab ("Fx", juce::Colours::transparentWhite, new FxParameterPage(apvts,
-																		{	{"fx_grain_normalize", false},
-																			{"fx_grain_drive", true},
-																			{"fx_makeup_gain", false}
+																		{	FxEntry{"fx_grain_normalize", FxKind::Plain},
+																			FxEntry{"fx_grain_drive", FxKind::Randomized},
+																			FxEntry{"fx_makeup_gain", FxKind::Plain},
+																			FxEntry{"fx_filter_cutoff", FxKind::Randomized},
+																			FxEntry{"fx_filter_q", FxKind::Randomized},
+																			FxEntry{"fx_filter_mode", FxKind::Choice}
 																		},
 																		juce::Slider::SliderStyle::LinearVertical
 																		), true);
