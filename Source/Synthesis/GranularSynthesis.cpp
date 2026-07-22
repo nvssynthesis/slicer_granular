@@ -611,7 +611,10 @@ float GrainwisePostProcessing::driveStage(float x) const {
 }
 float GrainwisePostProcessing::filterStage(float x, const size_t channel) {
     jassert (channel < _filters.size());
-    return _filters[channel].processSample(x);
+    const auto ret = _filters[channel].processSample(x);
+    jassert (std::isfinite(ret));
+    jassert (ret == ret);
+    return ret;
 }
 
 float GrainwisePostProcessing::processChannel(float x, double t, const size_t channel) {
