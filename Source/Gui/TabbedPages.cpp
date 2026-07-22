@@ -47,10 +47,10 @@ TabbedPagesComponent::TabbedPagesComponent (juce::AudioProcessorValueTreeState &
 	addTab ("Fx", juce::Colours::transparentWhite, new FxParameterPage(apvts,
 																		{	FxEntry{"fx_grain_normalize", FxKind::Plain},
 																			FxEntry{"fx_grain_drive", FxKind::Randomized},
-																			FxEntry{"fx_makeup_gain", FxKind::Plain},
 																			FxEntry{"fx_filter_cutoff", FxKind::Randomized},
 																			FxEntry{"fx_filter_q", FxKind::Randomized},
-																			FxEntry{"fx_filter_mode", FxKind::Choice}
+																			FxEntry{"fx_filter_mode", FxKind::Choice},
+																			FxEntry{"fx_makeup_gain", FxKind::Plain}
 																		},
 																		juce::Slider::SliderStyle::LinearVertical
 																		), true);

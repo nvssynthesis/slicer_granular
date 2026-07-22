@@ -415,14 +415,15 @@ inline const std::vector<ParameterDef> ALL_PARAMETERS = {
     // tempting to use ParameterDef::decibel, but we actually want to internally store these params as dB to simply add them and convert the final randomized result to ratio
 	ParameterDef::linear("fx_grain_drive", "Grain Drive", "Fx", -10.f, 60.f, 0.f, "dB", 0.1, "drive"),
 	ParameterDef::linear("fx_grain_drive_rand", "Grain Drive Randomness", "Fx", 0.f, 30.f, 0.f, "dB", 0.1, "drive"),
-	ParameterDef::decibel("fx_makeup_gain", "Makeup Gain", "Fx", -40.f, 20.f, 0.f, "drive"),
 
     ParameterDef::skewed("fx_filter_cutoff", "Filter Cutoff", "Fx", 20.f, 20000.f, 20000.f, "Hz", 0.3f, false, "filter"),
 	ParameterDef::skewed("fx_filter_cutoff_rand", "Filter Cutoff Randomness", "Fx", 0.f, 4.f, 0.f, " oct", 0.3f, false, "filter"),
 	ParameterDef::skewed("fx_filter_q", "Filter Q", "Fx", 0.1f, 20.f, 0.707f, "", 0.3f, false, "filter"),
 	ParameterDef::skewed("fx_filter_q_rand", "Filter Q Randomness", "Fx", 0.f, 10.f, 0.f, "", 0.3f, false, "filter"),
 	ParameterDef::choice("fx_filter_mode", "Filter Mode", "Fx", {"Lowpass", "Bandpass", "Highpass"}, 0, "filter"),
-	ParameterDef::skewed("fx_filter_mode_rand", "Filter Mode Randomness", "Fx", 0.f, 1.f, 0.f, "", 1.f, false, "filter")
+	ParameterDef::skewed("fx_filter_mode_rand", "Filter Mode Randomness", "Fx", 0.f, 1.f, 0.f, "", 1.f, false, "filter"),
+
+	ParameterDef::decibel("fx_makeup_gain", "Makeup Gain", "Fx", -40.f, 20.f, 0.f, "output")
 };
 
 
