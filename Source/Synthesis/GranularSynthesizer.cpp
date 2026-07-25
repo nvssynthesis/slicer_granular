@@ -69,6 +69,40 @@ void GranularSynthesizer::setCurrentPlaybackSampleRate(double newSampleRate) {
     Synthesiser::setCurrentPlaybackSampleRate(newSampleRate);	// so far this is not necessary
 }
 
+void GranularSynthesizer::prepareToPlay(const double sampleRate, const int samplesPerBlock) {
+    setCurrentPlaybackSampleRate(sampleRate);
+
+    _synth_shared_state._reverb_send_buffer.setSize(2, samplesPerBlock, false, true, true);
+
+    _reverb.setSampleRate(sampleRate);
+    // fixed for now (non-variable, per-grain send amount is the only thing that varies);
+    // wetLevel/dryLevel are set so the reverb outputs pure wet -- "dry" is already the
+    // unprocessed voice output, mixed in separately.
+    _reverb.setParameters(juce::Reverb::Parameters {
+        .roomSize = 0.5f,
+        .damping = 0.5f,
+        .wetLevel = 1.0f,
+        .dryLevel = 0.0f,
+        .width = 1.0f,
+        .freezeMode = 0.0f
+    });
+}
+
+void GranularSynthesizer::renderVoices(juce::AudioBuffer<float> &outputAudio, const int startSample, const int numSamples) {
+    auto &sendBuffer = _synth_shared_state._reverb_send_buffer;
+    jassert (startSample + numSamples <= sendBuffer.getNumSamples());
+    sendBuffer.clear(startSample, numSamples);
+
+    Synthesiser::renderVoices(outputAudio, startSample, numSamples);	// voices accumulate dry into outputAudio, wet into sendBuffer
+
+    auto *wetL = sendBuffer.getWritePointer(0, startSample);
+    auto *wetR = sendBuffer.getWritePointer(1, startSample);
+    _reverb.processStereo(wetL, wetR, numSamples);
+
+    outputAudio.addFrom(0, startSample, wetL, numSamples);
+    outputAudio.addFrom(1, startSample, wetR, numSamples);
+}
+
 void GranularSynthesizer::setLogger(std::function<void(const juce::String&)> loggerFunction) {
     _synth_shared_state._logger_func = std::move(loggerFunction);
 }

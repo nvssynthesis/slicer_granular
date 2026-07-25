@@ -423,7 +423,10 @@ inline const std::vector<ParameterDef> ALL_PARAMETERS = {
 	ParameterDef::choice("fx_filter_mode", "Filter Mode", "Fx", {"Lowpass", "Bandpass", "Highpass"}, 0, "filter"),
 	ParameterDef::skewed("fx_filter_mode_rand", "Filter Mode Randomness", "Fx", 0.f, 1.f, 0.f, "", 1.f, false, "filter"),
 
-	ParameterDef::decibel("fx_makeup_gain", "Makeup Gain", "Fx", -40.f, 20.f, 0.f, "output")
+	ParameterDef::decibel("fx_makeup_gain", "Makeup Gain", "Fx", -40.f, 20.f, 0.f, "output"),
+
+    ParameterDef::linear("fx_reverb_send", "Reverb Send", "Fx", -60.f, 0.f, -60.f, "dB", 0.1f, "reverb"),
+	ParameterDef::linear("fx_reverb_send_rand", "Reverb Send Randomness", "Fx", 0.f, 24.f, 0.f, "dB", 0.1f, "reverb")
 };
 
 

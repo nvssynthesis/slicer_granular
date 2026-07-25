@@ -78,7 +78,13 @@ struct GranularSynthSharedState {
 	Buffer _buffer;
 
 	std::function<void(const juce::String&)> _logger_func {nullptr};   // NOLINT
-	
+
+	// shared reverb-send buss: grains accumulate their per-grain wet contribution here (see
+	// GrainwisePostProcessing's send stage); the single reverb owned by GranularSynthesizer reads
+	// and processes this buffer once per block, in GranularSynthesizer::renderVoices. sized/cleared
+	// there -- not touched on the audio thread anywhere else.
+	juce::AudioBuffer<float> _reverb_send_buffer;
+
 	struct Settings {
 	    bool _center_position_at_env_peak { true };
 		float _duration_pitch_compensation { 1.f };
@@ -120,12 +126,18 @@ struct ReadBounds {
 
 //========================================================================================================================================
 
+// dry: goes to the voice's normal output. wet: this grain's send to the shared reverb buss.
+struct DryWet {
+	std::array<float, 2> dry {};
+	std::array<float, 2> wet {};
+};
+
 class GrainwisePostProcessing
 {
 public:
     GrainwisePostProcessing(GranularSynthSharedState *synth_shared_state, GranularVoiceSharedState *voice_shared_state);
 
-	std::array<float, 2> process(std::array<float, 2> x, double fractionalSample); // apply single to both channels; not const, as the filter stage carries per-channel state
+	DryWet process(std::array<float, 2> x, double fractionalSample); // apply single to both channels; not const, as the filter stage carries per-channel state
     void setNormalization(float norm);
     void setDriveMu(float muDb);					// linear gain (drive param is stored/consumed in linear gain, mapped from dB)
     void setDriveSigma(float sigmaDb);				// standard deviation, in dB, of the per-grain drive spread around the mu
@@ -139,6 +151,10 @@ public:
     void setFilterModeMu(float modeIndex);			// 0 = lowpass, 1 = bandpass, 2 = highpass (see FilterMode)
     void setFilterModeSigma(float modeIndexSpread);
     void updateFilter(bool shouldOpenLatches);		// per-grain latched randomization of cutoff/Q/mode + coefficient recompute
+
+    void setSendMu(float muDb);					// send amount, in dB, mapped internally to a linear ratio (like drive)
+    void setSendSigma(float sigmaDb);				// standard deviation, in dB, of the per-grain send spread around the mu
+    void updateSend(bool shouldOpenLatches);		// per-grain latched randomization of reverb-send amount
 private:
     enum class FilterMode { Lowpass = 0, Bandpass = 1, Highpass = 2 };
     static constexpr int numFilterModes = 3;
@@ -156,6 +172,9 @@ private:
 	LatchedGaussianRandom_f _filter_q_lgr;			// latches per-grain filter Q from gate on
 	LatchedGaussianRandom_f _filter_mode_lgr;		// latches per-grain filter mode (cast to FilterMode) from gate on
 	std::array<juce::dsp::IIR::Filter<float>, 2> _filters;	// one per channel (L, R)
+
+	float _send {0.f};								// linear ratio, applied to the post-processed signal to form the send to the shared reverb buss
+	LatchedGaussianRandom_f _send_lgr;				// latches per-grain reverb-send amount (dB) from gate on
 
     GranularSynthSharedState *_synth_shared_state;
 };
@@ -190,7 +209,7 @@ public:
 	std::vector<float> getBusyStatuses() const;
 	//=======================================================================
 
-    std::array<float, 2> doProcess(float triggerIn);
+    DryWet doProcess(float triggerIn);
 
 	void setReadBounds(ReadBounds newReadBounds) ;
 	struct WeightedReadBounds {
@@ -249,6 +268,8 @@ public:
 		float busy 		{0.f};
 		float audio_L	{0.f};
 		float audio_R 	{0.f};
+		float send_L	{0.f};
+		float send_R	{0.f};
 	};
 	
 	void setReadBounds(ReadBounds newReadBounds);

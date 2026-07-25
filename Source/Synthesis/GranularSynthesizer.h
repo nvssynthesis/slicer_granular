@@ -23,6 +23,10 @@ public:
     explicit GranularSynthesizer(juce::AudioProcessorValueTreeState &apvts);
     void setAudioBuffer(juce::AudioBuffer<float> &waveBuffer, double newFileSampleRate, juce::int64 audioHash);
 
+    // sizes the shared reverb-send buss and prepares the single shared reverb; must be called
+    // before rendering, and again whenever sampleRate/samplesPerBlock change.
+    void prepareToPlay(double sampleRate, int samplesPerBlock);
+
     virtual void processBlock(juce::AudioBuffer<float> &buffer, juce::MidiBuffer &midi)
     {
         // wrapper around renderNextBlock that should also manage any synth-global necessities (because otherwise we must take care
@@ -51,6 +55,15 @@ public:
 protected:
     constexpr static int num_voices = N_VOICES;
     GranularSynthSharedState _synth_shared_state;
+
+    // called by juce::Synthesiser once per (MIDI-accurate) sub-block of actual voice rendering.
+    // wraps the base voice-rendering pass with the single shared reverb: grains have already
+    // written their per-grain sends into _synth_shared_state._reverb_send_buffer by the time
+    // the base call returns, so the reverb reads/processes exactly that range and gets mixed
+    // into outputAudio alongside the (already-written) dry voice output.
+    void renderVoices(juce::AudioBuffer<float> &outputAudio, int startSample, int numSamples) override;
+
+    juce::Reverb _reverb;
 private:
     void initializeVoices();
     size_t totalNumGrains_;

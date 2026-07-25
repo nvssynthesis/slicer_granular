@@ -50,6 +50,7 @@ TabbedPagesComponent::TabbedPagesComponent (juce::AudioProcessorValueTreeState &
 																			FxEntry{"fx_filter_cutoff", FxKind::Randomized},
 																			FxEntry{"fx_filter_q", FxKind::Randomized},
 																			FxEntry{"fx_filter_mode", FxKind::Choice},
+																			FxEntry{"fx_reverb_send", FxKind::Randomized},
 																			FxEntry{"fx_makeup_gain", FxKind::Plain}
 																		},
 																		juce::Slider::SliderStyle::LinearVertical

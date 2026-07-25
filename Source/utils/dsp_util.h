@@ -214,10 +214,14 @@ inline void calculateSymmetricEnvelope(const juce::dsp::AudioBlock<float>& audio
     // bidirectional filtering: backward (and in-place)
     smoothingFilter.reset();
     for (int i = numSamples - 1; i >= 0; --i) {
-        envelope[i] = smoothingFilter.processSample(signal[i]);
+        const auto tmp = smoothingFilter.processSample(signal[i]);
+        jassert (std::isfinite(tmp));
+        envelope[i] = tmp;
     }
-    std::ranges::transform(envelope, envelope.begin(),[](const float x) {
-        return std::sqrt(x);
+
+    std::ranges::transform(envelope, envelope.begin(),
+    [](float x) {
+        return std::sqrt(std::max(x, 0.0f));
     });
 }
 

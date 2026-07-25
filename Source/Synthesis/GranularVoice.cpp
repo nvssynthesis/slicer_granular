@@ -106,15 +106,22 @@ void GranularVoice::renderNextBlock (AudioBuffer< float > &outputBuffer, const i
             if (env != env) { logger("ENVELOPE has NaN"); }
             env *= env;
 
-            std::array<float, 2> output = granularSynthGuts->doProcess(0.f /*_voice_shared_state.trigger*/);
+            DryWet output = granularSynthGuts->doProcess(0.f /*_voice_shared_state.trigger*/);
             //		_voice_shared_state.trigger = 0.f;
 
-            output[0] *= env;
-            output[1] *= env;
+            output.dry[0] *= env;
+            output.dry[1] *= env;
             for (int channel = 0; channel < totalNumOutputChannels; ++channel) {
                 auto* channelData = outputBuffer.getWritePointer (channel);
-                *(channelData + samp) += output[channel];
+                *(channelData + samp) += output.dry[channel];
             }
+
+            // send this voice's per-sample reverb-send contribution into the shared buss; the single
+            // reverb owned by GranularSynthesizer reads/processes this buffer once per block.
+            auto &sendBuffer = _synth_shared_state->_reverb_send_buffer;
+            jassert (samp < sendBuffer.getNumSamples());
+            sendBuffer.addSample(0, samp, output.wet[0] * env);
+            sendBuffer.addSample(1, samp, output.wet[1] * env);
         }
         return env;
     }();

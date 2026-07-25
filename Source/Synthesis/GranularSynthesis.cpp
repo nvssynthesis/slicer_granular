@@ -274,9 +274,9 @@ void PolyGrain::setParams() {
 	}
 }
 
-std::array<float, 2> PolyGrain::doProcess(const float triggerIn){
-	std::array output {0.f, 0.f};
-	
+DryWet PolyGrain::doProcess(const float triggerIn){
+	DryWet output;
+
 	// update phasor's frequency only if _triggerHisto.val is true
     const bool should_open_latches = static_cast<bool>(_trigger_histo.val) || _voice_shared_state->forceGrainTrigger;
 
@@ -298,6 +298,8 @@ std::array<float, 2> PolyGrain::doProcess(const float triggerIn){
 	_outs[idx] = _grains[idx](trig);
 	float audio_out_L = _outs[idx].audio_L;
 	float audio_out_R = _outs[idx].audio_R;
+	float send_out_L = _outs[idx].send_L;
+	float send_out_R = _outs[idx].send_R;
 	float voices_active = _outs[idx].busy;
 
 	for (size_t i = 1; i < N_GRAINS; ++i){
@@ -308,16 +310,23 @@ std::array<float, 2> PolyGrain::doProcess(const float triggerIn){
 		_outs[idx] = _grains[idx](currentTrig);
 		audio_out_L += _outs[idx].audio_L;
 		audio_out_R += _outs[idx].audio_R;
+		send_out_L += _outs[idx].send_L;
+		send_out_R += _outs[idx].send_R;
 		voices_active += _outs[idx].busy;
 	}
     _voice_shared_state->forceGrainTrigger = false;
 
-	output[0] = audio_out_L * _normalizer;
-	output[1] = audio_out_R * _normalizer;
+	output.dry[0] = audio_out_L * _normalizer;
+	output.dry[1] = audio_out_R * _normalizer;
+	output.wet[0] = send_out_L * _normalizer;
+	output.wet[1] = send_out_R * _normalizer;
 
-	if (util::checkNanOrInf(output)){
+#ifdef DBG
+	if (util::checkNanOrInf(output.dry) || util::checkNanOrInf(output.wet)){
+	    jassertfalse;
 		return {};
 	}
+#endif
 	return output;
 }
 
@@ -370,6 +379,9 @@ void Grain::setParams(){
 	_postProcessing.setFilterQSigma(*apvts.getRawParameterValue("fx_filter_q_rand"));
 	_postProcessing.setFilterModeMu(*apvts.getRawParameterValue("fx_filter_mode"));
 	_postProcessing.setFilterModeSigma(*apvts.getRawParameterValue("fx_filter_mode_rand"));
+
+	_postProcessing.setSendMu(*apvts.getRawParameterValue("fx_reverb_send"));
+	_postProcessing.setSendSigma(*apvts.getRawParameterValue("fx_reverb_send_rand"));
 }
 
 Grain::Grain(GranularSynthSharedState *const synth_shared_state,
@@ -479,9 +491,11 @@ float calculatePan(const float pan_latch_val){
 void writeAudioToOuts(const float sample, const double fractionalIndex, const float pan_latch_val,
     GrainwisePostProcessing &postProcessing, Grain::outs &outs)
 {
-	const std::array<float, 2> lr = postProcessing.process(gen::pol2car(sample, pan_latch_val), fractionalIndex);
-	outs.audio_L = lr[0];
-	outs.audio_R = lr[1];
+	const DryWet dryWet = postProcessing.process(gen::pol2car(sample, pan_latch_val), fractionalIndex);
+	outs.audio_L = dryWet.dry[0];
+	outs.audio_R = dryWet.dry[1];
+	outs.send_L = dryWet.wet[0];
+	outs.send_R = dryWet.wet[1];
 }
 void processBusyness(const float window, gen::history<float> &busyHistory, Grain::outs &outs){
 	const float  busy_tmp = window > 0.f;
@@ -510,17 +524,19 @@ GrainwisePostProcessing::GrainwisePostProcessing(GranularSynthSharedState *synth
 ,   _filter_cutoff_lnr(voice_shared_state->_gaussian_rng, {20000.f, 0.f})
 ,   _filter_q_lgr(voice_shared_state->_gaussian_rng, {0.707f, 0.f})
 ,   _filter_mode_lgr(voice_shared_state->_gaussian_rng, {0.f, 0.f})
+,   _send_lgr(voice_shared_state->_gaussian_rng, {-60.f, 0.f})
 ,   _synth_shared_state(synth_shared_state)
 {
     jassert(synth_shared_state != nullptr);
     jassert(voice_shared_state != nullptr);
 }
 
-std::array<float, 2> GrainwisePostProcessing::process(std::array<float, 2> x, const double fractionalSample)
+DryWet GrainwisePostProcessing::process(std::array<float, 2> x, const double fractionalSample)
 {
-    std::array<float, 2> retval {0.f, 0.f};
+    DryWet retval;
     for (size_t i = 0; i < x.size(); ++i){
-        retval[i] = processChannel(x[i], fractionalSample, i);
+        retval.dry[i] = processChannel(x[i], fractionalSample, i);
+        retval.wet[i] = retval.dry[i] * _send;	// parallel tap to the shared reverb buss, post drive/filter/makeup
     }
     return retval;
 }
@@ -542,6 +558,22 @@ void GrainwisePostProcessing::updateDrive(const bool shouldOpenLatches) {
 
 void GrainwisePostProcessing::setMakeupGain(const float gain) {
     _makeup_gain = gain;
+}
+
+void GrainwisePostProcessing::setSendMu(const float muDb) {
+    _send_lgr.setMu(muDb);
+}
+void GrainwisePostProcessing::setSendSigma(const float sigmaDb) {
+    _send_lgr.setSigma(sigmaDb);
+}
+void GrainwisePostProcessing::updateSend(const bool shouldOpenLatches) {
+    auto send_dB = _send_lgr(shouldOpenLatches);
+
+    if (shouldOpenLatches){
+        send_dB = memoryless::clamp(send_dB, -60.f, 0.f);
+        _send = std::exp(send_dB * std::numbers::ln10_v<float> / 20.f);
+    }
+    jassert (_send > 0.0f);
 }
 
 void GrainwisePostProcessing::setFilterCutoffMu(const float hz) {
@@ -575,7 +607,7 @@ void GrainwisePostProcessing::updateFilter(const bool shouldOpenLatches) {
     const auto nyquist = static_cast<float>(sampleRate * 0.5 - 1.0);
 
     const float cutoffHz = memoryless::clamp(_filter_cutoff_lnr(shouldOpenLatches), 20.f, nyquist);
-    const float q = std::max(_filter_q_lgr(shouldOpenLatches), 0.05f);
+    const float q = std::min(std::max(_filter_q_lgr(shouldOpenLatches), 0.05f), 50.0f);
     const int modeIdx = juce::jlimit(0, numFilterModes - 1,
         static_cast<int>(std::round(_filter_mode_lgr(shouldOpenLatches))));
 
@@ -633,6 +665,8 @@ float GrainwisePostProcessing::processChannel(float x, double t, const size_t ch
     normalizer = _normalization * normalizer * NORMALIZATION_TARGET_AMPLITUDE + (1.f - _normalization);
 
     x *= normalizer;
+
+    jassert (std::isfinite(x));
 
     // pipeline stages, applied in order below -- e.g. swap the next two lines to run the filter before drive.
     auto const applyDrive  = [this](const float v) { return driveStage(v); };
@@ -695,6 +729,7 @@ Grain::outs Grain::operator()(const float trig_in){
 
 	_postProcessing.updateDrive(should_open_latches);
 	_postProcessing.updateFilter(should_open_latches);
+	_postProcessing.updateSend(should_open_latches);
 
 	if (should_open_latches){
 		_normalized_read_bounds = _upcoming_normalized_read_bounds;

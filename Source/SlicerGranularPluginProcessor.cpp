@@ -23,7 +23,7 @@ SlicerGranularAudioProcessor::~SlicerGranularAudioProcessor() = default;
 
 void SlicerGranularAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-	_granularSynth->setCurrentPlaybackSampleRate (sampleRate);
+	_granularSynth->prepareToPlay (sampleRate, samplesPerBlock);
 	for (int i = 0; i < _granularSynth->getNumVoices(); i++)
 	{
 		if (auto voice = dynamic_cast<nvs::gran::GranularVoice *>(_granularSynth->getVoice(i)))
