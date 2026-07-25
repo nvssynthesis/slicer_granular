@@ -7,3 +7,6 @@
 [submodule "juce_utils"]
 	path = juce_utils
 	url = https://github.com/nvssynthesis/juce_utils.git
+[submodule "juce-MultiStepEnvelopeGenerator"]
+	path = juce-MultiStepEnvelopeGenerator
+	url = https://github.com/nvssynthesis/juce-MultiStepEnvelopeGenerator.git
