@@ -11,7 +11,7 @@
 
 GranularEditorCommon::GranularEditorCommon (SlicerGranularAudioProcessor& p)
 :	presetPanel(p.getPresetManager())
-,	tabbedPages(p.getAPVTS())
+,	tabbedPages(p.getAPVTS(), p)
 ,	audioProcessor(p)
 {
 	audioProcessor.addSampleManagementGutsListener(this);

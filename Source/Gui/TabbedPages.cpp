@@ -12,8 +12,9 @@
 #include "./RandomizedParameterPage.h"
 #include "./BasicParameterPage.h"
 #include "./FxParameterPage.h"
+#include "./AmpEnvelopePage.h"
 
-TabbedPagesComponent::TabbedPagesComponent (juce::AudioProcessorValueTreeState &apvts)
+TabbedPagesComponent::TabbedPagesComponent (juce::AudioProcessorValueTreeState &apvts, SlicerGranularAudioProcessor &processor)
 	: TabbedComponent (juce::TabbedButtonBar::TabsAtTop)
 {
 	auto &bar = getTabbedButtonBar();
@@ -31,13 +32,8 @@ TabbedPagesComponent::TabbedPagesComponent (juce::AudioProcessorValueTreeState &
 											"pan"
 										}), true);
 	addTab ("Envelope", juce::Colours::transparentWhite,
-			new BasicParameterPage(apvts,
-								   {"amp_env_attack",
-									"amp_env_decay",
-									"amp_env_sustain",
-									"amp_env_release"
-									}//, juce::Slider::SliderStyle::LinearVertical
-								   ), true);
+			new AmpEnvelopePage(apvts, processor), true);
+
 	addTab ("Scanner", juce::Colours::transparentWhite, new BasicParameterPage(apvts,
 																			   {"scanner_shape", "scanner_rate", "scanner_amount"},
 																			   Slider::SliderStyle::LinearVertical

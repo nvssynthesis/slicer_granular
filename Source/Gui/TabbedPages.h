@@ -11,8 +11,10 @@
 #pragma once
 #include <JuceHeader.h>
 
+class SlicerGranularAudioProcessor;
+
 struct TabbedPagesComponent  : public juce::TabbedComponent
 {
-	TabbedPagesComponent (juce::AudioProcessorValueTreeState &apvts);
+	TabbedPagesComponent (juce::AudioProcessorValueTreeState &apvts, SlicerGranularAudioProcessor &processor);
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TabbedPagesComponent)
 };

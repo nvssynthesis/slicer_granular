@@ -12,6 +12,7 @@
 
 #include <JuceHeader.h>
 #include "./GranularSynthesis.h"
+#include "./BreakpointEnvelopeShape.h"
 #include "../Params/params.h"
 
 namespace nvs::gran {
@@ -63,6 +64,17 @@ private:
     int lastMidiNoteNumber {0};
     std::vector<GrainDescription> _grainDescriptions;
     ADSR adsr;
+
+    // alternative amp envelope engine (see BreakpointEnvelopeShape.h). the mode is decided
+    // once at startNote and held for the note's whole lifetime, so switching modes mid-note
+    // never changes what's already sounding.
+    MultiSegmentEnvelopeGenerator breakpointEnv {512};
+    MultiSegmentEnvelopeGenerator::Descriptor breakpointRuntimeDesc;	// owned storage; generator only holds a raw pointer to it
+    BreakpointEnvShape cachedBreakpointShape;	// last shape seen; fallback if the try-lock at startNote fails
+    bool noteUsesBreakpointEnv {false};
+    int sustainSegIndexForThisNote {0};
+    bool breakpointReleaseTriggered {false};
+    bool breakpointEnvActive {false};
 
     std::function<void(const String&)> logger = nullptr;
 

@@ -97,6 +97,10 @@ public:
 	nvs::service::PresetManager &getPresetManager() { return presetManager; }
 	
 	nvs::gran::GranularSynthSharedState const &viewSynthSharedState() const;
+	void publishAmpBreakpointEnvShape(const nvs::gran::BreakpointEnvShape &shape) {
+		jassert (_granularSynth != nullptr);
+		_granularSynth->publishAmpBreakpointEnvShape(shape);
+	}
 protected:
 	SlicerGranularAudioProcessor();
 	void initialize() {
@@ -107,7 +111,13 @@ protected:
 				loggingGuts.fileLogger.logMessage(message);
 			}
 		});
+		ensureAmpBreakpointEnvInitialized();
 	}
+	// lazily creates a default breakpoint-envelope shape (mirroring the current ADSR values)
+	// if none is persisted yet, then publishes whatever's in the ValueTree to the synth --
+	// called on construction and after loading state, so the shared state is always populated
+	// even if the editor GUI never opens.
+	void ensureAmpBreakpointEnvInitialized();
 	virtual void initSynth(){
 		// this one-line function gets overriden by TSNGranularAudioProcessor to create a derived type of synthesizer
 		_granularSynth = std::make_unique<nvs::gran::GranularSynthesizer>(apvts);

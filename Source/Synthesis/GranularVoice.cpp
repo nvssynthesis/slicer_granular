@@ -42,42 +42,78 @@ void GranularVoice::startNote (const int midiNoteNumber, const float velocity, S
     const int velIntegral = static_cast<int>(velocity * 127.f);
     //	_voice_shared_state.trigger = 1.0;
 
-    if (adsr.isActive()) {}
+    if (isVoiceActive()) {}
     else {
         granularSynthGuts->clearNotes();
         granularSynthGuts->noteOn(midiNoteNumber, velIntegral);
         _voice_shared_state.forceGrainTrigger = true;
     }
 
-    {
-        const auto &apvts = _synth_shared_state->_apvts;
+    const auto &apvts = _synth_shared_state->_apvts;
+
+    // the mode is decided here, once, for this note's whole lifetime -- a mode switch made
+    // while this note is sounding will not affect it, only notes triggered after the switch.
+    noteUsesBreakpointEnv = static_cast<int>(*apvts.getRawParameterValue("amp_env_mode")) != 0;
+
+    if (noteUsesBreakpointEnv) {
+        {
+            const SpinLock::ScopedTryLockType lock(_synth_shared_state->_amp_breakpoint_env_lock);
+            if (lock.isLocked()) {
+                cachedBreakpointShape = _synth_shared_state->_amp_breakpoint_env_shape;
+            }
+            // else: try-lock lost to a concurrent GUI edit; fall back to the last shape this voice saw.
+        }
+        const double lengthSeconds = *apvts.getRawParameterValue("amp_env_bp_length");
+        breakpointRuntimeDesc = toRuntimeDescriptor(cachedBreakpointShape, lengthSeconds, getSampleRate());
+        breakpointReleaseTriggered = false;
+        breakpointEnvActive = !breakpointRuntimeDesc.empty();
+        if (breakpointEnvActive) {
+            sustainSegIndexForThisNote = jlimit(0, static_cast<int>(breakpointRuntimeDesc.size()) - 1, cachedBreakpointShape.sustainIndex);
+            breakpointEnv.reset(&breakpointRuntimeDesc);
+        }
+    }
+    else {
         adsr.setParameters(ADSR::Parameters (
             *apvts.getRawParameterValue("amp_env_attack"),
             *apvts.getRawParameterValue("amp_env_decay"),
             *apvts.getRawParameterValue("amp_env_sustain"),
             *apvts.getRawParameterValue("amp_env_release")
         ));
+        adsr.noteOn();
     }
 
     lastMidiNoteNumber = midiNoteNumber;
-    adsr.noteOn();
 }
 void GranularVoice::stopNote (const float velocity, const bool allowTailOff)
 {
     (void)velocity;
     if (allowTailOff)	// releasing regularly
     {
-        adsr.noteOff();
+        if (noteUsesBreakpointEnv) {
+            const int numSegments = static_cast<int>(breakpointRuntimeDesc.size());
+            const int releaseIndex = sustainSegIndexForThisNote + 1;
+            if (releaseIndex < numSegments) {
+                // jump from the currently-held value into the release portion of the shape
+                breakpointEnv.advanceToSegment(releaseIndex);
+                breakpointReleaseTriggered = true;
+            } else {
+                // no release segments after the sustain point: nothing left to play
+                breakpointEnvActive = false;
+            }
+        } else {
+            adsr.noteOff();
+        }
     }
     else	// !allowTailOff, so voice was stolen
     {
         adsr.reset();
+        breakpointEnvActive = false;
         clearCurrentNote();
         granularSynthGuts->clearNotes();
     }
 }
 bool GranularVoice::isVoiceActive() const {
-    return adsr.isActive();
+    return noteUsesBreakpointEnv ? breakpointEnvActive : adsr.isActive();
 }
 std::vector<GrainDescription> GranularVoice::getGrainDescriptions() const {
     return _grainDescriptions;
@@ -102,7 +138,19 @@ void GranularVoice::renderNextBlock (AudioBuffer< float > &outputBuffer, const i
     const auto envelopeVal = [startSample, numSamples, totalNumOutputChannels, this, &outputBuffer] -> float {
         float env {1.0};
         for (auto samp = startSample; samp < startSample + numSamples; ++samp){
-            env = adsr.getNextSample();
+            if (noteUsesBreakpointEnv) {
+                if (breakpointEnvActive) {
+                    // never reads past a just-finished release (which would otherwise auto-loop
+                    // back to the start of the shape) -- see MultiSegmentEnvelopeGenerator::getSample.
+                    if (breakpointEnv.getSample(env) && breakpointReleaseTriggered) {
+                        breakpointEnvActive = false;
+                    }
+                } else {
+                    env = 0.f;
+                }
+            } else {
+                env = adsr.getNextSample();
+            }
             if (env != env) { logger("ENVELOPE has NaN"); }
             env *= env;
 

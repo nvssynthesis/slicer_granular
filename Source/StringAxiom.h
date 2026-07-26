@@ -29,5 +29,13 @@ namespace tsn {
 STRAXIOMIZE(pitchify);
 }
 
+STRAXIOMIZE(AmpBreakpointEnv);
+STRAXIOMIZE(bpSustainIndex);
+STRAXIOMIZE(bpSegment);
+STRAXIOMIZE(bpInitialValue);
+STRAXIOMIZE(bpFinalValue);
+STRAXIOMIZE(bpCurvature);
+STRAXIOMIZE(bpProportion);
+
 #undef STRAXIOMIZE
 }

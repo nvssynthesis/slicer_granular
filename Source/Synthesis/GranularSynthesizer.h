@@ -52,6 +52,12 @@ public:
     GranularSynthSharedState const &viewSynthSharedState() {
         return _synth_shared_state;
     }
+
+    // called from the GUI thread on every breakpoint-envelope edit.
+    void publishAmpBreakpointEnvShape(const BreakpointEnvShape &shape) {
+        const juce::SpinLock::ScopedLockType lock(_synth_shared_state._amp_breakpoint_env_lock);
+        _synth_shared_state._amp_breakpoint_env_shape = shape;
+    }
 protected:
     constexpr static int num_voices = N_VOICES;
     GranularSynthSharedState _synth_shared_state;

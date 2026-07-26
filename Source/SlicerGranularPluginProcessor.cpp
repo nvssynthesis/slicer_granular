@@ -65,6 +65,7 @@ void SlicerGranularAudioProcessor::setStateInformation (const void* data, int si
 	}
 	const ValueTree root = ValueTree::fromXml (*xmlState);
 	apvts.replaceState (root);
+	ensureAmpBreakpointEnvInitialized();
 
 	loadStoredAudioFileAndUpdateState();
 
@@ -84,6 +85,19 @@ void SlicerGranularAudioProcessor::changeListenerCallback (ChangeBroadcaster *so
 nvs::gran::GranularSynthSharedState const &SlicerGranularAudioProcessor::viewSynthSharedState() const {
 	jassert (_granularSynth != nullptr);
 	return _granularSynth->viewSynthSharedState();
+}
+
+void SlicerGranularAudioProcessor::ensureAmpBreakpointEnvInitialized() {
+	auto tree = apvts.state.getOrCreateChildWithName(nvs::axiom::AmpBreakpointEnv, nullptr);
+	if (tree.getNumChildren() == 0) {
+		const auto defaultShape = nvs::gran::defaultAdsrMirrorShape(
+			*apvts.getRawParameterValue("amp_env_attack"),
+			*apvts.getRawParameterValue("amp_env_decay"),
+			*apvts.getRawParameterValue("amp_env_sustain"),
+			*apvts.getRawParameterValue("amp_env_release"));
+		nvs::gran::saveBreakpointEnvShapeToValueTree(tree, defaultShape);
+	}
+	publishAmpBreakpointEnvShape(nvs::gran::loadBreakpointEnvShapeFromValueTree(tree));
 }
 
 void SlicerGranularAudioProcessor::loadAudioFileAndUpdateState(const File f, const bool notifyEditor){

@@ -20,6 +20,7 @@
 #include "../../nvs_libraries/nvs_libraries/include/nvs_gen.h"
 #include "../../nvs_libraries/nvs_libraries/include/nvs_LFO.h"
 #include "juce_utils.h"
+#include "BreakpointEnvelopeShape.h"
 
 /*** TODO:
  -optimize
@@ -95,6 +96,11 @@ struct GranularSynthSharedState {
     double _notesPerOctave { 12.0 };
 
 	AudioProcessorValueTreeState& _apvts;
+
+	// published by the GUI on every breakpoint-envelope edit; voices copy this out (try-lock)
+	// at note-on only, so mid-note edits never affect an already-sounding note.
+	juce::SpinLock _amp_breakpoint_env_lock;
+	BreakpointEnvShape _amp_breakpoint_env_shape;
 };
 
 struct GranularVoiceSharedState {

@@ -129,6 +129,14 @@ file(GLOB_RECURSE SOURCE_FILES
 # Add all source files
 target_sources(slicer-granular PRIVATE ${SOURCE_FILES})
 
+# juce-MultiStepEnvelopeGenerator (submodule fork): only the reusable generator/editor
+# sources, not Main.cpp/MainComponent.* which are that fork's own standalone demo app.
+target_sources(slicer-granular PRIVATE
+    juce-MultiStepEnvelopeGenerator/Source/SegmentGenerator.cpp
+    juce-MultiStepEnvelopeGenerator/Source/FunctionTable.cpp
+    juce-MultiStepEnvelopeGenerator/Source/EnvelopeEditor.cpp
+)
+
 juce_generate_juce_header(slicer-granular)
 
 # Add include directories
@@ -139,6 +147,7 @@ target_include_directories(slicer-granular
     PRIVATE
         Source
         nvs_libraries/nvs_libraries/include
+        juce-MultiStepEnvelopeGenerator/Source
     PUBLIC
         juce_utils
 )
