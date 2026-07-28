@@ -66,6 +66,7 @@ void GranularVoice::startNote (const int midiNoteNumber, const float velocity, S
         const double lengthSeconds = *apvts.getRawParameterValue("amp_env_bp_length");
         breakpointRuntimeDesc = toRuntimeDescriptor(cachedBreakpointShape, lengthSeconds, getSampleRate());
         breakpointReleaseTriggered = false;
+        breakpointHolding = false;
         breakpointEnvActive = !breakpointRuntimeDesc.empty();
         if (breakpointEnvActive) {
             sustainSegIndexForThisNote = jlimit(0, static_cast<int>(breakpointRuntimeDesc.size()) - 1, cachedBreakpointShape.sustainIndex);
@@ -90,15 +91,19 @@ void GranularVoice::stopNote (const float velocity, const bool allowTailOff)
     if (allowTailOff)	// releasing regularly
     {
         if (noteUsesBreakpointEnv) {
-            const int numSegments = static_cast<int>(breakpointRuntimeDesc.size());
-            const int releaseIndex = sustainSegIndexForThisNote + 1;
-            if (releaseIndex < numSegments) {
-                // jump from the currently-held value into the release portion of the shape
-                breakpointEnv.advanceToSegment(releaseIndex);
+            if (breakpointEnvActive) {
+                if (!breakpointHolding) {
+                    // released before reaching the sustain point (e.g. a very short note):
+                    // jump from wherever the envelope currently sits straight into the release
+                    // portion, skipping the rest of the attack/decay.
+                    const int numSegments = static_cast<int>(breakpointRuntimeDesc.size());
+                    const int releaseIndex = jlimit(0, jmax(0, numSegments - 1), sustainSegIndexForThisNote);
+                    breakpointEnv.advanceToSegment(releaseIndex);
+                }
+                // else: already frozen exactly at the start of the release portion -- just
+                // un-freeze below and let it play from here.
+                breakpointHolding = false;
                 breakpointReleaseTriggered = true;
-            } else {
-                // no release segments after the sustain point: nothing left to play
-                breakpointEnvActive = false;
             }
         } else {
             adsr.noteOff();
@@ -140,9 +145,19 @@ void GranularVoice::renderNextBlock (AudioBuffer< float > &outputBuffer, const i
         for (auto samp = startSample; samp < startSample + numSamples; ++samp){
             if (noteUsesBreakpointEnv) {
                 if (breakpointEnvActive) {
-                    // never reads past a just-finished release (which would otherwise auto-loop
-                    // back to the start of the shape) -- see MultiSegmentEnvelopeGenerator::getSample.
-                    if (breakpointEnv.getSample(env) && breakpointReleaseTriggered) {
+                    if (breakpointHolding) {
+                        // frozen at the sustain point until note-off (see stopNote)
+                        env = breakpointRuntimeDesc[sustainSegIndexForThisNote].initialValue;
+                    } else if (!breakpointReleaseTriggered
+                               && breakpointEnv.getCurrentSegmentIndex() == sustainSegIndexForThisNote) {
+                        // just reached the sustain point: freeze here without consuming any of
+                        // the release segment's samples yet.
+                        breakpointHolding = true;
+                        env = breakpointRuntimeDesc[sustainSegIndexForThisNote].initialValue;
+                    } else if (breakpointEnv.getSample(env) && breakpointReleaseTriggered) {
+                        // never reads past a just-finished release (which would otherwise
+                        // auto-loop back to the start of the shape) -- see
+                        // MultiSegmentEnvelopeGenerator::getSample.
                         breakpointEnvActive = false;
                     }
                 } else {

@@ -72,7 +72,8 @@ private:
     MultiSegmentEnvelopeGenerator::Descriptor breakpointRuntimeDesc;	// owned storage; generator only holds a raw pointer to it
     BreakpointEnvShape cachedBreakpointShape;	// last shape seen; fallback if the try-lock at startNote fails
     bool noteUsesBreakpointEnv {false};
-    int sustainSegIndexForThisNote {0};
+    int sustainSegIndexForThisNote {0};	// first segment played after note-off
+    bool breakpointHolding {false};	// frozen at the sustain point, waiting for note-off
     bool breakpointReleaseTriggered {false};
     bool breakpointEnvActive {false};
 
